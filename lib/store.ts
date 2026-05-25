@@ -13,11 +13,8 @@ export interface Product {
   is_featured: boolean;
   created_at: string;
   sku: string;
-  sizes?: string[];
-  colors?: string[];
-  stock_per_size?: Record<string, string>;
-  product_type?: string;
-  back_image_url?: string;
+  sizes: string[];
+  colors: string[];
 }
 
 export interface Catalog {

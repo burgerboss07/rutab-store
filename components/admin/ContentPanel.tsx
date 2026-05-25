@@ -17,21 +17,27 @@ function formatKWD(v: number) { return `${v.toFixed(3)} KWD`; }
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 interface ProductFormData {
-  name: string; sku: string; catalog: string; subCatalog: string; price: string;
-  stock: string; description: string; image_url: string; is_featured: boolean;
+  name: string; sku: string; price: string; stock: string;
+  description: string; image_url: string; is_featured: boolean;
+  catalog: string; subCatalog: string;
+  sizes: string[]; colors: string[];
 }
 
 const emptyForm: ProductFormData = {
-  name: '', sku: '', catalog: '', subCatalog: '', price: '', stock: '0',
+  name: '', sku: '', price: '', stock: '0',
   description: '', image_url: '/placeholder.svg', is_featured: false,
+  catalog: '', subCatalog: '',
+  sizes: [], colors: [],
 };
 
 interface BulkEditFormData {
   price: string; stock: string; catalog: string; subCatalog: string;
+  sizes: string[]; colors: string[];
 }
 
 const emptyBulkForm: BulkEditFormData = {
-  price: '', stock: '', catalog: '', subCatalog: ''
+  price: '', stock: '', catalog: '', subCatalog: '',
+  sizes: [], colors: [],
 };
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
 
@@ -86,7 +92,9 @@ export default function ContentPanel() {
     !search.trim() || p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.sku?.toLowerCase().includes(search.toLowerCase()) ||
     p.catalog?.toLowerCase().includes(search.toLowerCase()) ||
-    p.subCatalog?.toLowerCase().includes(search.toLowerCase())
+    p.subCatalog?.toLowerCase().includes(search.toLowerCase()) ||
+    p.sizes?.some(size => size.toLowerCase().includes(search.toLowerCase())) ||
+    p.colors?.some(color => color.toLowerCase().includes(search.toLowerCase()))
   );
   const filteredOrders = orders.filter((o) =>
     !search.trim() || o.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -152,7 +160,9 @@ export default function ContentPanel() {
           ...(priceVal !== undefined ? { price: priceVal } : {}),
           ...(stockVal !== undefined ? { stock: stockVal } : {}),
           ...(bulkEditForm.catalog ? { catalog: bulkEditForm.catalog } : {}),
-          ...(bulkEditForm.subCatalog ? { subCatalog: bulkEditForm.subCatalog } : {})
+          ...(bulkEditForm.subCatalog ? { subCatalog: bulkEditForm.subCatalog } : {}),
+          ...(bulkEditForm.sizes && bulkEditForm.sizes.length > 0 ? { sizes: bulkEditForm.sizes } : {}),
+          ...(bulkEditForm.colors && bulkEditForm.colors.length > 0 ? { colors: bulkEditForm.colors } : {}),
         };
       }));
       
@@ -164,10 +174,15 @@ export default function ContentPanel() {
   const handleEditProduct = (p: Product) => {
     setEditingProduct(p);
     setForm({
-      name: p.name, sku: p.sku || '', category: p.category || 'T-Shirts',
+      ...form,
+      name: p.name, sku: p.sku || '',
       price: String(p.price), stock: String(p.stock ?? 0),
       description: p.description || '', image_url: p.image_url || '/placeholder.svg',
       is_featured: p.is_featured || false,
+      catalog: p.catalog || '',
+      subCatalog: p.subCatalog || '',
+      sizes: p.sizes || [],
+      colors: p.colors || [],
     });
     setShowForm(true);
   };
@@ -177,17 +192,21 @@ export default function ContentPanel() {
     if (!form.name || !form.price) return;
     const payload: Product = {
       id: editingProduct?.id || uid(),
-      name: form.name, sku: form.sku, category: form.category,
+      name: form.name, sku: form.sku,
       price: parseFloat(form.price), stock: parseInt(form.stock) || 0,
       description: form.description, image_url: form.image_url,
       is_featured: form.is_featured,
+      sizes: form.sizes,
+      colors: form.colors,
       created_at: editingProduct?.created_at || new Date().toISOString(),
     };
+
     if (editingProduct) {
       setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? payload : p)));
     } else {
       setProducts((prev) => [payload, ...prev]);
     }
+
     resetForm();
   };
 
@@ -201,13 +220,13 @@ export default function ContentPanel() {
   const exportCSV = () => {
     const data = tab === 'products' ? filteredProds : filteredOrders;
     const rows = selectedRows.size > 0 ? data.filter((d) => selectedRows.has(d.id)) : data;
-    const headers = tab === 'products'
-      ? ['Name', 'SKU', 'Category', 'Price', 'Stock', 'Featured']
+      const headers = tab === 'products'
+      ? ['Name', 'SKU', 'Catalog', 'Sub Catalog', 'Price', 'Stock', 'Sizes', 'Colors', 'Featured']
       : ['ID', 'Total', 'Status', 'Payment', 'Date', 'Phone'];
     const csv = [
       headers.join(','),
       ...rows.map((d: any) => {
-        if (tab === 'products') return `"${d.name}","${d.sku}","${d.category}",${d.price},${d.stock},${d.is_featured}`;
+        if (tab === 'products') return `"${d.name}","${d.sku}","${d.catalog}","${d.subCatalog}",${d.price},${d.stock},"${d.sizes?.join(';') || ''}","${d.colors?.join(';') || ''}",${d.is_featured}`;
         return `"${d.id}",${d.total_price},"${d.status}","${d.payment_method}","${d.created_at}","${d.phone}"`;
       }),
     ].join('\n');
@@ -310,10 +329,33 @@ export default function ContentPanel() {
                 <Field label="Price (KWD)" value={form.price} onChange={(v: string) => setForm({ ...form, price: v })} type="number" step="0.001" placeholder="45.000" required />
                 <Field label="Stock" value={form.stock} onChange={(v: string) => setForm({ ...form, stock: v })} type="number" placeholder="10" />
                 <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
+                  <select value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value.split(',') })} multiple className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {['S', 'M', 'L', 'XL', 'XXL', 'One Size'].map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
+                  <select value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value.split(',') })} multiple className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {['Black', 'White', 'Grey', 'Navy', 'Yellow', 'Blue'].map((color) => (
+                      <option key={color} value={color}>{color}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
                   <select value={form.catalog} onChange={(e) => setForm({ ...form, catalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {catalogs.map((c) => <option key={c} value={c}>{c.name}</option>)}
+                    {catalogs.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
+                  <select value={form.subCatalog} onChange={(e) => setForm({ ...form, subCatalog: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {filteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -459,6 +501,12 @@ export default function ContentPanel() {
                   <span className={`text-[10px] font-bold ${(p.stock ?? 0) <= 0 ? 'text-red-400' : (p.stock ?? 0) <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
                     {p.stock ?? 0}
                   </span>
+                )},
+                { key: 'sizes', label: 'Sizes', render: (p: Product) => (
+                  <span className="text-[10px] text-[#a1a1a1]">{p.sizes?.join(', ') || '-'}</span>
+                )},
+                { key: 'colors', label: 'Colors', render: (p: Product) => (
+                  <span className="text-[10px] text-[#a1a1a1]">{p.colors?.join(', ') || '-'}</span>
                 )},
                 { key: 'featured', label: '', render: (p: Product) => (
                   p.is_featured ? <span className="text-[8px] bg-[#ff0000]/10 text-[#ff0000] px-2 py-0.5 rounded-full uppercase font-black">FEATURED</span> : null
