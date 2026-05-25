@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useStore, Order, OrderItem } from '../lib/store';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
@@ -175,8 +175,9 @@ export default function CheckoutForm() {
       const shippingAddress = `${house}, Street ${street}, Block ${block}, ${area}, Kuwait`;
       const finalPrice = parseFloat(totalAmount.toFixed(3));
 
+      const client = getSupabase();
       // 1. Insert into orders table in Supabase
-      const { data: orderData, error: orderError } = await supabase
+      const { data: orderData, error: orderError } = await client
         .from('orders')
         .insert({
           total_price: finalPrice,
@@ -198,7 +199,7 @@ export default function CheckoutForm() {
           price: item.price,
         }));
 
-        const { error: itemsError } = await supabase
+        const { error: itemsError } = await client
           .from('order_items')
           .insert(orderItemsPayload);
 

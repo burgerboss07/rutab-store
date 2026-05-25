@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 
 export default function CartDrawer() {
   const isCartOpen = useStore((state) => state.isCartOpen);
@@ -23,7 +23,8 @@ export default function CartDrawer() {
   useEffect(() => {
     async function fetchUpsell() {
       try {
-        const { data } = await supabase
+        const client = getSupabase();
+        const { data } = await client
           .from('products')
           .select('*')
           .eq('category', 'Caps')

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 import { Product, Order } from '../lib/store';
 import Image from 'next/image';
 import { ShieldCheck, Plus, Pencil, Trash2, CheckCircle2, Package, RefreshCw, BarChart2, DollarSign, Users } from 'lucide-react';
+import CustomersPanel from './admin/CustomersPanel';
 
 let skuCounter = 0;
 function generateSku(category: string): string {
@@ -12,18 +13,9 @@ function generateSku(category: string): string {
   return `RTB-${category.substring(0, 2).toUpperCase()}-${skuCounter.toString(36).padStart(4, '0')}`;
 }
 
-export interface Profile {
-  id: string;
-  email: string;
-  full_name: string;
-  phone: string;
-  created_at: string;
-}
-
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Active view inside Admin
@@ -49,35 +41,28 @@ export default function AdminDashboard() {
   const [prodColors, setProdColors] = useState<string[]>([]);
   const [prodBackImg, setProdBackImg] = useState('');
 
+  const [productSearch, setProductSearch] = useState('');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'shipped' | 'delivered'>('all');
+  const [productFilter, setProductFilter] = useState<'all' | 'featured' | 'low-stock' | 'out-of-stock'>('all');
+
   const fetchAdminData = async () => {
     setLoading(true);
     try {
+      const client = getSupabase();
       // Fetch Products
-      const { data: prodData } = await supabase
+      const { data: prodData } = await client
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
       if (prodData) setProducts(prodData as Product[]);
 
       // Fetch Orders
-      const { data: ordData } = await supabase
+      const { data: ordData } = await client
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
       if (ordData) setOrders(ordData as Order[]);
-
-      // Fetch User Profiles (graceful check)
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (profileData) {
-          setProfiles(profileData as Profile[]);
-        }
-      } catch (profileErr) {
-        console.warn('Profiles table might not exist yet:', profileErr);
-      }
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
@@ -121,13 +106,14 @@ export default function AdminDashboard() {
       back_image_url: prodBackImg
     };
 
-    try {
+      try {
+      const client = getSupabase();
       if (formMode === 'add') {
-        const { error } = await supabase.from('products').insert(payload);
+        const { error } = await client.from('products').insert(payload);
         if (error) throw error;
         alert('Product added successfully!');
       } else if (formMode === 'edit' && editingId) {
-        const { error } = await supabase
+        const { error } = await client
           .from('products')
           .update(payload)
           .eq('id', editingId);
@@ -165,7 +151,8 @@ export default function AdminDashboard() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const client = getSupabase();
+      const { error } = await client.from('products').delete().eq('id', id);
       if (error) throw error;
       alert('Product deleted.');
       fetchAdminData();
@@ -178,7 +165,8 @@ export default function AdminDashboard() {
   const handleUpdateOrderStatus = async (orderId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'pending' ? 'shipped' : 'delivered';
     try {
-      const { error } = await supabase
+      const client = getSupabase();
+      const { error } = await client
         .from('orders')
         .update({ status: nextStatus })
         .eq('id', orderId);
@@ -212,6 +200,23 @@ export default function AdminDashboard() {
   const formatKWD = (value: number) => {
     return `${value.toFixed(3)} KWD`;
   };
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = productSearch.trim() === '' || p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.category.toLowerCase().includes(productSearch.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (productFilter === 'featured') return p.is_featured;
+    if (productFilter === 'low-stock') return p.stock > 0 && p.stock <= 5;
+    if (productFilter === 'out-of-stock') return p.stock <= 0;
+    return true;
+  });
+
+  const filteredOrders = orders.filter((ord) => {
+    const matchesSearch = orderSearch.trim() === '' || ord.id.toLowerCase().includes(orderSearch.toLowerCase()) || ord.address.toLowerCase().includes(orderSearch.toLowerCase()) || ord.payment_method.toLowerCase().includes(orderSearch.toLowerCase());
+    if (!matchesSearch) return false;
+    if (orderStatusFilter !== 'all') return ord.status === orderStatusFilter;
+    return true;
+  });
 
   // Calculations for Analytics
   const totalRevenue = orders.reduce((sum, o) => sum + (typeof o.total_price === 'number' ? o.total_price : parseFloat(String(o.total_price))), 0);
@@ -282,13 +287,13 @@ export default function AdminDashboard() {
             }`}
           >
             <Users className="w-4 h-4" />
-            Vault Members ({profiles.length})
+            Vault Members
           </button>
         </div>
       </aside>
 
       {/* Main Tab Panels */}
-      <main className="bg-[#0a0a0a] border border-white/5 rounded-[40px] p-6 md:p-8 shadow-xl min-h-[60vh] overflow-x-auto">
+      <main className="bg-[#0a0a0a] border border-white/5 rounded-[40px] p-6 md:p-8 shadow-xl min-h-[60vh] overflow-x-auto space-y-8">
         {loading ? (
           <div className="h-[40vh] flex flex-col items-center justify-center">
             <RefreshCw className="w-8 h-8 text-[#ff0000] animate-spin mb-4" />
@@ -296,7 +301,30 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <>
-            {/* ANALYTICS Tab Panel */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+              <div className="rounded-3xl bg-white/5 border border-white/5 p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-[#a1a1a1]">Live Sales</p>
+                <p className="text-3xl font-black text-white">{formatKWD(totalRevenue)}</p>
+                <p className="text-[11px] text-[#a1a1a1]">Total revenue across all orders.</p>
+              </div>
+              <div className="rounded-3xl bg-white/5 border border-white/5 p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-[#a1a1a1]">Orders</p>
+                <p className="text-3xl font-black text-white">{orders.length}</p>
+                <p className="text-[11px] text-[#a1a1a1]">New + active orders in the system.</p>
+              </div>
+              <div className="rounded-3xl bg-white/5 border border-white/5 p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-[#a1a1a1]">Customers</p>
+                <p className="text-3xl font-black text-white">—</p>
+                <p className="text-[11px] text-[#a1a1a1]">See Vault Members tab.</p>
+              </div>
+              <div className="rounded-3xl bg-white/5 border border-white/5 p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-[#a1a1a1]">Alerts</p>
+                <p className="text-3xl font-black text-white">{outOfStockCount}</p>
+                <p className="text-[11px] text-[#a1a1a1]">Products currently out of stock.</p>
+              </div>
+            </div>
+
+            {/* Admin Tab Panel */}
             {adminTab === 'analytics' && (
               <div className="space-y-8 animate-fade-in-up">
                 <h2 className="text-3xl font-black uppercase tracking-wider pb-4 border-b border-white/5">Store Metrics Overview</h2>
@@ -332,17 +360,48 @@ export default function AdminDashboard() {
             {/* PRODUCTS CRUD Tab Panel */}
             {adminTab === 'products' && (
               <div className="space-y-6 animate-fade-in-up">
-                <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                  <h2 className="text-3xl font-black uppercase tracking-wider">Catalog CRUD</h2>
-                  <button
-                    onClick={() => {
-                      resetForm();
-                      setShowProductForm(true);
-                    }}
-                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ff0000] border border-white/10 flex items-center justify-center cursor-pointer transition text-white"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between pb-4 border-b border-white/5">
+                  <div>
+                    <h2 className="text-3xl font-black uppercase tracking-wider">Catalog CRUD</h2>
+                    <p className="text-sm text-[#a1a1a1] mt-1">Add, edit, and manage product inventory from one dashboard.</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <button
+                      onClick={() => {
+                        resetForm();
+                        setShowProductForm(true);
+                      }}
+                      className="px-5 py-3 rounded-2xl bg-[#ff0000] hover:bg-[#e31d1d] text-white font-bold uppercase text-xs tracking-[0.2em] transition"
+                    >
+                      Add product
+                    </button>
+                    <div className="relative w-full sm:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        className="w-full min-w-[220px] bg-[#0a0a0a] border border-white/10 rounded-2xl py-3 px-4 text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {[
+                    { label: 'All', value: 'all' },
+                    { label: 'Featured', value: 'featured' },
+                    { label: 'Low Stock', value: 'low-stock' },
+                    { label: 'Out of Stock', value: 'out-of-stock' },
+                  ].map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setProductFilter(filter.value as any)}
+                      className={`px-4 py-2 rounded-full uppercase text-[10px] font-bold tracking-[0.3em] transition ${productFilter === filter.value ? 'bg-[#ff0000] text-white' : 'bg-white/5 text-white/80 hover:bg-white/10'}`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
                 </div>
 
                 {showProductForm && (
@@ -579,9 +638,33 @@ export default function AdminDashboard() {
             {/* ORDERS Tab Panel */}
             {adminTab === 'orders' && (
               <div className="space-y-6 animate-fade-in-up">
-                <h2 className="text-3xl font-black uppercase tracking-wider pb-4 border-b border-white/5">Fulfillments Manager</h2>
-                
-                {orders.length === 0 ? (
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pb-4 border-b border-white/5">
+                  <div>
+                    <h2 className="text-3xl font-black uppercase tracking-wider">Fulfillments Manager</h2>
+                    <p className="text-sm text-[#a1a1a1] mt-1">Search orders, update status, and keep fulfilment moving.</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <input
+                      type="text"
+                      placeholder="Search orders by ID, address or method"
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                      className="w-full min-w-[260px] bg-[#0a0a0a] border border-white/10 rounded-2xl py-3 px-4 text-sm text-white"
+                    />
+                    <select
+                      value={orderStatusFilter}
+                      onChange={(e) => setOrderStatusFilter(e.target.value as any)}
+                      className="bg-[#0a0a0a] border border-white/10 rounded-2xl py-3 px-4 text-sm text-white outline-none"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                    </select>
+                  </div>
+                </div>
+
+                {filteredOrders.length === 0 ? (
                   <div className="text-center py-12 text-[#a1a1a1] text-xs">No orders stored.</div>
                 ) : (
                   <div className="space-y-4">
@@ -625,45 +708,7 @@ export default function AdminDashboard() {
 
             {/* CUSTOMERS Tab Panel */}
             {adminTab === 'customers' && (
-              <div className="space-y-6 animate-fade-in-up">
-                <h2 className="text-3xl font-black uppercase tracking-wider pb-4 border-b border-white/5">Vault Members</h2>
-                
-                {profiles.length === 0 ? (
-                  <div className="text-center py-12 text-[#a1a1a1] text-xs">
-                    No vault members stored yet.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {profiles.map((p) => (
-                      <div
-                        key={p.id}
-                        className="p-5 rounded-2xl bg-white/5 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                      >
-                        <div className="flex gap-4 items-center min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-[#ff0000]/10 border border-[#ff0000]/20 flex items-center justify-center text-[#ff0000] shrink-0">
-                            <Users className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-sm uppercase text-white truncate">{p.full_name || 'Streetwear Enthusiast'}</h4>
-                            <p className="text-[10px] text-[#a1a1a1] truncate mt-0.5">{p.email}</p>
-                          </div>
-                        </div>
-
-                        <div className="text-right self-start sm:self-auto space-y-1">
-                          <p className="text-xs text-white font-bold">{p.phone || 'No phone provided'}</p>
-                          <p className="text-[9px] text-[#a1a1a1] uppercase">
-                            Registered: {new Date(p.created_at).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CustomersPanel />
             )}
           </>
         )}

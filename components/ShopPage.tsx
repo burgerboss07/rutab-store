@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 import ProductCard from './ProductCard';
 import { Product } from '../lib/store';
 import { SlidersHorizontal, Search, RotateCcw, X } from 'lucide-react';
@@ -36,7 +36,8 @@ export default function ShopPage() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const { data } = await supabase
+        const client = getSupabase();
+        const { data } = await client
           .from('products')
           .select('*')
           .order('created_at', { ascending: false });

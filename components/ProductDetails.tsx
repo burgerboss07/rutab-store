@@ -1,7 +1,7 @@
 'use client';
 
 import { useStore, Product } from '../lib/store';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { X, Heart, ShoppingBag, Ruler, Check, ChevronDown, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,7 +74,8 @@ export default function ProductDetails() {
       if (!selectedProductId) return;
       setLoading(true);
       try {
-        const { data } = await supabase
+        const client = getSupabase();
+        const { data } = await client
           .from('products')
           .select('*')
           .eq('id', selectedProductId)

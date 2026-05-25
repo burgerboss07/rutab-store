@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 import ProductCard from './ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../lib/store';
@@ -14,7 +14,8 @@ export default function TrendingSlider() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const { data } = await supabase
+        const client = getSupabase();
+        const { data } = await client
           .from('products')
           .select('*')
           .eq('is_featured', true);

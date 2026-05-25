@@ -1,10 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createBrowserClient } from './supabase-browser';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+let _supabase: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials missing from environment variables.');
+export function getSupabase(): SupabaseClient {
+  if (typeof window === 'undefined') {
+    throw new Error('getSupabase() is for client use. Use createClient() from supabase-server in server code.');
+  }
+  if (!_supabase) {
+    _supabase = createBrowserClient() as unknown as SupabaseClient;
+  }
+  return _supabase;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
