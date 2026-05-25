@@ -107,16 +107,86 @@ export interface PayoutRecord {
   method: string; description: string;
 }
 
+// ─── Catalog Management ────────────────────────────────────────
+export interface Catalog {
+  id: string;
+  name: string;
+  description?: string;
+  image_url?: string;
+  subCatalogs: SubCatalog[];
+  created_at: string;
+}
+
+export interface SubCatalog {
+  id: string;
+  name: string;
+  description?: string;
+  catalogId: string;
+  created_at: string;
+}
+
+export const mockCatalogs: Catalog[] = [
+  {
+    id: 'c1',
+    name: 'Hoodies',
+    description: 'Premium hooded sweatshirts',
+    image_url: '/placeholder.svg',
+    subCatalogs: [
+      { id: 'sc1', name: 'Streetwear', description: 'Urban street style', catalogId: 'c1', created_at: '2026-05-01T00:00:00Z' },
+      { id: 'sc2', name: 'Classic', description: 'Timeless logo designs', catalogId: 'c1', created_at: '2026-05-01T00:00:00Z' },
+    ],
+    created_at: '2026-05-01T00:00:00Z'
+  },
+  {
+    id: 'c2',
+    name: 'T-Shirts',
+    description: 'Premium graphic tees',
+    image_url: '/placeholder.svg',
+    subCatalogs: [
+      { id: 'sc3', name: 'Graphic Tees', description: 'Kuwait heritage designs', catalogId: 'c2', created_at: '2026-04-15T00:00:00Z' },
+      { id: 'sc4', name: 'Summer', description: 'Lightweight summer collection', catalogId: 'c2', created_at: '2026-06-01T00:00:00Z' },
+    ],
+    created_at: '2026-04-15T00:00:00Z'
+  },
+  {
+    id: 'c3',
+    name: 'Caps',
+    description: 'Headwear collections',
+    image_url: '/placeholder.svg',
+    subCatalogs: [
+      { id: 'sc5', name: 'Heritage', description: 'Arabic poetry designs', catalogId: 'c3', created_at: '2026-03-20T00:00:00Z' },
+      { id: 'sc6', name: 'Limited', description: 'Exclusive drops', catalogId: 'c3', created_at: '2026-05-25T00:00:00Z' },
+    ],
+    created_at: '2026-03-20T00:00:00Z'
+  },
+  {
+    id: 'c4',
+    name: 'Accessories',
+    description: 'Bags, socks, and more',
+    image_url: '/placeholder.svg',
+    subCatalogs: [],
+    created_at: '2026-05-10T00:00:00Z'
+  },
+  {
+    id: 'c5',
+    name: 'Bottoms',
+    description: 'Pants and shorts',
+    image_url: '/placeholder.svg',
+    subCatalogs: [],
+    created_at: '2026-05-10T00:00:00Z'
+  },
+];
+
 // ─── Mock data for admin panels when Supabase is unavailable ────────
 import { Product, Order } from './store';
 
 export const mockProducts: Product[] = [
-  { id: 'p1', name: 'Travis Scott Hoodie', description: 'Limited edition Travis Scott merch', price: 45.000, image_url: '/placeholder.svg', category: 'Hoodies', stock: 12, is_featured: true, created_at: '2026-05-01T00:00:00Z', sku: 'TS-HD-001', sizes: ['S','M','L','XL'], colors: ['Black','Grey'] },
-  { id: 'p2', name: 'Kuwait City Tee', description: 'Premium Kuwait graphic tee', price: 22.500, image_url: '/placeholder.svg', category: 'T-Shirts', stock: 45, is_featured: true, created_at: '2026-04-15T00:00:00Z', sku: 'KW-TE-002', sizes: ['S','M','L','XL','XXL'], colors: ['White','Black'] },
-  { id: 'p3', name: 'Arabic Poetry Cap', description: 'Classic cap with Arabic calligraphy', price: 18.000, image_url: '/placeholder.svg', category: 'Caps', stock: 28, is_featured: false, created_at: '2026-03-20T00:00:00Z', sku: 'AP-CP-003', sizes: ['One Size'], colors: ['Black','White','Navy'] },
-  { id: 'p4', name: 'Classic Logo Hoodie', description: 'Signature RUTAB logo hoodie', price: 38.000, image_url: '/placeholder.svg', category: 'Hoodies', stock: 8, is_featured: true, created_at: '2026-05-10T00:00:00Z', sku: 'CL-HD-004', sizes: ['M','L','XL'], colors: ['Black','Grey'] },
-  { id: 'p5', name: 'Summer 2026 Tee', description: 'Limited summer collection tee', price: 25.000, image_url: '/placeholder.svg', category: 'T-Shirts', stock: 60, is_featured: false, created_at: '2026-06-01T00:00:00Z', sku: 'SM-TE-005', sizes: ['S','M','L','XL'], colors: ['White','Yellow','Blue'] },
-  { id: 'p6', name: 'Limited Edition Cap', description: 'Exclusive drop cap', price: 22.000, image_url: '/placeholder.svg', category: 'Caps', stock: 0, is_featured: false, created_at: '2026-05-25T00:00:00Z', sku: 'LE-CP-006', sizes: ['One Size'], colors: ['Black'] },
+  { id: 'p1', name: 'Travis Scott Hoodie', description: 'Limited edition Travis Scott merch', price: 45.000, image_url: '/placeholder.svg', catalog: 'Hoodies', subCatalog: 'Streetwear', stock: 12, is_featured: true, created_at: '2026-05-01T00:00:00Z', sku: 'TS-HD-001', sizes: ['S','M','L','XL'], colors: ['Black','Grey'] },
+  { id: 'p2', name: 'Kuwait City Tee', description: 'Premium Kuwait graphic tee', price: 22.500, image_url: '/placeholder.svg', catalog: 'T-Shirts', subCatalog: 'Graphic Tees', stock: 45, is_featured: true, created_at: '2026-04-15T00:00:00Z', sku: 'KW-TE-002', sizes: ['S','M','L','XL','XXL'], colors: ['White','Black'] },
+  { id: 'p3', name: 'Arabic Poetry Cap', description: 'Classic cap with Arabic calligraphy', price: 18.000, image_url: '/placeholder.svg', catalog: 'Caps', subCatalog: 'Heritage', stock: 28, is_featured: false, created_at: '2026-03-20T00:00:00Z', sku: 'AP-CP-003', sizes: ['One Size'], colors: ['Black','White','Navy'] },
+  { id: 'p4', name: 'Classic Logo Hoodie', description: 'Signature RUTAB logo hoodie', price: 38.000, image_url: '/placeholder.svg', catalog: 'Hoodies', subCatalog: 'Classic', stock: 8, is_featured: true, created_at: '2026-05-10T00:00:00Z', sku: 'CL-HD-004', sizes: ['M','L','XL'], colors: ['Black','Grey'] },
+  { id: 'p5', name: 'Summer 2026 Tee', description: 'Limited summer collection tee', price: 25.000, image_url: '/placeholder.svg', catalog: 'T-Shirts', subCatalog: 'Summer', stock: 60, is_featured: false, created_at: '2026-06-01T00:00:00Z', sku: 'SM-TE-005', sizes: ['S','M','L','XL'], colors: ['White','Yellow','Blue'] },
+  { id: 'p6', name: 'Limited Edition Cap', description: 'Exclusive drop cap', price: 22.000, image_url: '/placeholder.svg', catalog: 'Caps', subCatalog: 'Limited', stock: 0, is_featured: false, created_at: '2026-05-25T00:00:00Z', sku: 'LE-CP-006', sizes: ['One Size'], colors: ['Black'] },
 ];
 
 export const mockOrders: Order[] = [

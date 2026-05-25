@@ -5,20 +5,21 @@ import { usePathname } from 'next/navigation';
 import { useAdminStore } from '@/lib/admin-store';
 import {
   LayoutDashboard, Users, Package, BarChart3, Settings, Shield,
-  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent, Image
+  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent, Image, Folder
 } from 'lucide-react';
 
 const navItems = [
-  { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Users', href: '/admin/users', icon: Users },
-  { label: 'Content', href: '/admin/content', icon: Package },
-  { label: 'Discounts', href: '/admin/discounts', icon: Percent },
-  { label: 'Banners', href: '/admin/banners', icon: Image },
-  { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { label: 'Security', href: '/admin/security', icon: Shield },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
-  { label: 'Profile', href: '/admin/profile', icon: UserCircle },
-];
+    { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Content', href: '/admin/content', icon: Package },
+    { label: 'Catalogs', href: '/admin/catalogs', icon: Folder },
+    { label: 'Discounts', href: '/admin/discounts', icon: Percent },
+    { label: 'Banners', href: '/admin/banners', icon: Image },
+    { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { label: 'Security', href: '/admin/security', icon: Shield },
+    { label: 'Settings', href: '/admin/settings', icon: Settings },
+    { label: 'Profile', href: '/admin/profile', icon: UserCircle },
+  ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();

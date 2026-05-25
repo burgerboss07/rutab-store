@@ -7,7 +7,8 @@ export interface Product {
   description: string;
   price: string | number;
   image_url: string;
-  category: string;
+  catalog: string;
+  subCatalog: string;
   stock: number;
   is_featured: boolean;
   created_at: string;
@@ -17,6 +18,23 @@ export interface Product {
   stock_per_size?: Record<string, string>;
   product_type?: string;
   back_image_url?: string;
+}
+
+export interface Catalog {
+  id: string;
+  name: string;
+  description?: string;
+  image_url?: string;
+  subCatalogs: SubCatalog[];
+  created_at: string;
+}
+
+export interface SubCatalog {
+  id: string;
+  name: string;
+  description?: string;
+  catalogId: string;
+  created_at: string;
 }
 
 export interface CartItem {

@@ -11,7 +11,8 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters State
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCatalog, setSelectedCatalog] = useState<string>('All');
+  const [selectedSubCatalog, setSelectedSubCatalog] = useState<string>('All');
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>('All');
   const [selectedSize, setSelectedSize] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -20,8 +21,10 @@ export default function ShopPage() {
   // Mobile filter drawer state
   const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
-  // Categories list
-  const categories = ['All', 'Arabic Poetry', 'Cartoons', 'Brand Shirts', 'Urdu Poetry', 'Trippy Designs'];
+  // Catalogs list (will be populated from products)
+  const [catalogs, setCatalogs] = useState<string[]>(['All']);
+  // SubCatalogs list (will be populated based on selected catalog)
+  const [subCatalogs, setSubCatalogs] = useState<string[]>(['All']);
   // Sizes list
   const sizes = ['All', 'S', 'M', 'L', 'XL', 'One Size'];
   // Price ranges list
@@ -32,9 +35,9 @@ export default function ShopPage() {
     { label: 'Over 25 KWD', value: 'over-25' },
   ];
 
-  // Fetch products from database
+  // Fetch products and set filter options
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchProductsAndSetFilters() {
       try {
         const client = getSupabase();
         const { data } = await client
@@ -43,6 +46,13 @@ export default function ShopPage() {
           .order('created_at', { ascending: false });
         if (data) {
           setProducts(data);
+
+          // Extract unique catalogs and subCatalogs for filters
+          const uniqueCatalogs = ['All', ...new Set(data.map(p => p.catalog).filter(Boolean))];
+          setCatalogs(uniqueCatalogs);
+
+          // Initialize subCatalogs to ['All'] - will update when catalog changes
+          setSubCatalogs(['All']);
         }
       } catch (err) {
         console.error('Error fetching shop products:', err);
@@ -50,8 +60,24 @@ export default function ShopPage() {
         setLoading(false);
       }
     }
-    fetchProducts();
+    fetchProductsAndSetFilters();
   }, []);
+
+  // Update subCatalogs options when selectedCatalog changes
+  useEffect(() => {
+    if (selectedCatalog === 'All') {
+      setSubCatalogs(['All']);
+      return;
+    }
+    // Get unique subCatalogs for the selectedCatalog
+    const uniqueSubCatalogs = ['All', ...new Set(
+      products
+        .filter(p => p.catalog === selectedCatalog)
+        .map(p => p.subCatalog)
+        .filter(Boolean)
+    )];
+    setSubCatalogs(uniqueSubCatalogs);
+  }, [selectedCatalog, products]);
 
   // Apply filters inline during render
   const filteredProducts = products.filter((p) => {
@@ -63,18 +89,23 @@ export default function ShopPage() {
       if (!nameMatch && !descMatch) return false;
     }
 
-    // Category Filter
-    if (selectedCategory !== 'All' && p.category !== selectedCategory) {
+    // Catalog Filter
+    if (selectedCatalog !== 'All' && p.catalog !== selectedCatalog) {
+      return false;
+    }
+    // SubCatalog Filter
+    if (selectedSubCatalog !== 'All' && p.subCatalog !== selectedSubCatalog) {
       return false;
     }
 
     // Size Filter
     if (selectedSize !== 'All') {
       if (selectedSize === 'One Size') {
-        if (p.category !== 'Caps') return false;
+        if (p.catalog !== 'Caps') return false;
       } else {
-        if (p.category === 'Caps') return false;
+        if (p.catalog === 'Caps') return false;
       }
+    }
     }
 
     // Price Range Filter
@@ -109,7 +140,8 @@ export default function ShopPage() {
   }
 
   const resetFilters = () => {
-    setSelectedCategory('All');
+    setSelectedCatalog('All');
+    setSelectedSubCatalog('All');
     setSelectedPriceRange('All');
     setSelectedSize('All');
     setSearchQuery('');
@@ -159,23 +191,41 @@ export default function ShopPage() {
             </button>
           </div>
 
-          {/* Category Filter */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Category</h4>
-            <div className="flex flex-col gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`text-left text-xs py-1.5 transition-colors uppercase tracking-wider font-semibold cursor-pointer ${
-                    selectedCategory === cat ? 'text-[#ff0000]' : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
+           {/* Catalog Filter */}
+           <div className="space-y-3">
+             <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Catalog</h4>
+             <div className="flex flex-col gap-2">
+               {catalogs.map((cat) => (
+                 <button
+                   key={cat}
+                   onClick={() => { setSelectedCatalog(cat); setSelectedSubCatalog('All'); }}
+                   className={`text-left text-xs py-1.5 transition-colors uppercase tracking-wider font-semibold cursor-pointer ${
+                     selectedCatalog === cat ? 'text-[#ff0000]' : 'text-white/60 hover:text-white'
+                   }`}
+                 >
+                   {cat}
+                 </button>
+               ))}
+             </div>
+           </div>
+
+           {/* SubCatalog Filter */}
+           <div className="space-y-3 pt-4 border-t border-white/5">
+             <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Sub Catalog</h4>
+             <div className="flex flex-col gap-2">
+               {subCatalogs.map((sc) => (
+                 <button
+                   key={sc}
+                   onClick={() => setSelectedSubCatalog(sc)}
+                   className={`text-left text-xs py-1.5 transition-colors uppercase tracking-wider font-semibold cursor-pointer ${
+                     selectedSubCatalog === sc ? 'text-[#ff0000]' : 'text-white/60 hover:text-white'
+                   }`}
+                 >
+                   {sc}
+                 </button>
+               ))}
+             </div>
+           </div>
 
           {/* Price Range Filter */}
           <div className="space-y-3 pt-4 border-t border-white/5">
@@ -301,25 +351,45 @@ export default function ShopPage() {
                 </button>
               </div>
 
-              {/* Category Filter */}
-              <div className="space-y-3">
-                <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Category</h4>
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition uppercase cursor-pointer ${
-                        selectedCategory === cat
-                          ? 'bg-[#ff0000] text-white border-[#ff0000]'
-                          : 'border-white/10 bg-white/5 text-white'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
+             {/* Catalog Filter */}
+             <div className="space-y-3">
+               <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Catalog</h4>
+               <div className="flex flex-wrap gap-2">
+                 {catalogs.map((cat) => (
+                   <button
+                     key={cat}
+                     onClick={() => { setSelectedCatalog(cat); setSelectedSubCatalog('All'); }}
+                     className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition uppercase cursor-pointer ${
+                       selectedCatalog === cat
+                         ? 'bg-[#ff0000] text-white border-[#ff0000]'
+                         : 'border-white/10 bg-white/5 text-white'
+                     }`}
+                   >
+                     {cat}
+                   </button>
+                 ))}
+               </div>
+             </div>
+
+             {/* SubCatalog Filter */}
+             <div className="space-y-3 pt-4 border-t border-white/5">
+               <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Sub Catalog</h4>
+               <div className="flex flex-wrap gap-2">
+                 {subCatalogs.map((sc) => (
+                   <button
+                     key={sc>
+                     onClick={() => setSelectedSubCatalog(sc)}
+                     className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition uppercase cursor-pointer ${
+                       selectedSubCatalog === sc
+                         ? 'bg-[#ff0000] text-white border-[#ff0000]'
+                         : 'border-white/10 bg-white/5 text-white'
+                     }`}
+                   >
+                     {sc}
+                   </button>
+                 ))}
+               </div>
+             </div>
 
               {/* Price Range Filter */}
               <div className="space-y-3 pt-4 border-t border-white/5">

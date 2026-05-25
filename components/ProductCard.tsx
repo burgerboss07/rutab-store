@@ -12,7 +12,8 @@ interface ProductCardProps {
     description: string;
     price: string | number;
     image_url: string;
-    category: string;
+    catalog: string;
+    subCatalog: string;
     sku: string;
     stock: number;
   };
@@ -164,19 +165,26 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
 
-      {/* Info Details */}
-      <div className="p-6 flex-1 flex flex-col justify-between">
-        <div onClick={handleCardClick} className="cursor-pointer">
-          <span className="text-[10px] text-[#ff0000] uppercase font-bold tracking-widest block mb-1">
-            {product.category}
-          </span>
-          <h3 className="font-bold text-sm text-white uppercase line-clamp-1 group-hover:text-[#ff0000] transition-colors duration-300">
-            {product.name}
-          </h3>
-          <p className="text-[11px] text-[#a1a1a1] line-clamp-2 mt-2 leading-relaxed">
-            {product.description}
-          </p>
-        </div>
+       {/* Info Details */}
+       <div className="p-6 flex-1 flex flex-col justify-between">
+         <div onClick={handleCardClick} className="cursor-pointer">
+           <div className="flex items-center gap-2 mb-1">
+             <span className="text-[9px] text-[#ff0000] uppercase font-bold tracking-wider">
+               {product.catalog}
+             </span>
+             {product.subCatalog && (
+               <span className="text-[8px] text-[#a1a1a1] uppercase tracking-wider font-light">
+                 / {product.subCatalog}
+               </span>
+             )}
+           </div>
+           <h3 className="font-bold text-sm text-white uppercase line-clamp-1 group-hover:text-[#ff0000] transition-colors duration-300">
+             {product.name}
+           </h3>
+           <p className="text-[11px] text-[#a1a1a1] line-clamp-2 mt-2 leading-relaxed">
+             {product.description}
+           </p>
+         </div>
 
         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
           <span className="text-lg font-black text-white">

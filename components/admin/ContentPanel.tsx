@@ -17,16 +17,22 @@ function formatKWD(v: number) { return `${v.toFixed(3)} KWD`; }
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 interface ProductFormData {
-  name: string; sku: string; category: string; price: string;
+  name: string; sku: string; catalog: string; subCatalog: string; price: string;
   stock: string; description: string; image_url: string; is_featured: boolean;
 }
 
 const emptyForm: ProductFormData = {
-  name: '', sku: '', category: 'T-Shirts', price: '', stock: '0',
+  name: '', sku: '', catalog: '', subCatalog: '', price: '', stock: '0',
   description: '', image_url: '/placeholder.svg', is_featured: false,
 };
 
-const categories = ['Hoodies', 'T-Shirts', 'Caps', 'Accessories', 'Bottoms'];
+interface BulkEditFormData {
+  price: string; stock: string; catalog: string; subCatalog: string;
+}
+
+const emptyBulkForm: BulkEditFormData = {
+  price: '', stock: '', catalog: '', subCatalog: ''
+};
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
 
 export default function ContentPanel() {
@@ -38,10 +44,13 @@ export default function ContentPanel() {
   const [search, setSearch] = useState('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [bulkEditForm, setBulkEditForm] = useState<BulkEditFormData>(emptyBulkForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductFormData>(emptyForm);
-  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [orderStatusEdit, setOrderStatusEdit] = useState('');
 
@@ -76,7 +85,8 @@ export default function ContentPanel() {
   const filteredProds = products.filter((p) =>
     !search.trim() || p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.sku?.toLowerCase().includes(search.toLowerCase()) ||
-    p.category?.toLowerCase().includes(search.toLowerCase())
+    p.catalog?.toLowerCase().includes(search.toLowerCase()) ||
+    p.subCatalog?.toLowerCase().includes(search.toLowerCase())
   );
   const filteredOrders = orders.filter((o) =>
     !search.trim() || o.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -117,7 +127,39 @@ export default function ContentPanel() {
   };
 
   // ─── Product Form ───
-  const resetForm = () => { setForm(emptyForm); setEditingProduct(null); setShowForm(false); };
+    const resetForm = () => {
+      setForm(emptyForm);
+      setEditingProduct(null);
+      setShowForm(false);
+    };
+
+    const resetBulkForm = () => {
+      setBulkEditForm(emptyBulkForm);
+      setBulkEditMode(false);
+    };
+
+    const handleSaveBulkEdit = () => {
+      if (selectedRows.size === 0 || tab !== 'products') return;
+      
+      const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
+      const stockVal = bulkEditForm.stock ? parseInt(bulkEditForm.stock) : undefined;
+      
+      setProducts(prev => prev.map(p => {
+        if (!selectedRows.has(p.id)) return p;
+        
+        return {
+          ...p,
+          ...(priceVal !== undefined ? { price: priceVal } : {}),
+          ...(stockVal !== undefined ? { stock: stockVal } : {}),
+          ...(bulkEditForm.catalog ? { catalog: bulkEditForm.catalog } : {}),
+          ...(bulkEditForm.subCatalog ? { subCatalog: bulkEditForm.subCatalog } : {})
+        };
+      }));
+      
+      setSelectedRows(new Set());
+      setSelectAll(false);
+      resetBulkForm();
+    };
 
   const handleEditProduct = (p: Product) => {
     setEditingProduct(p);
@@ -211,6 +253,13 @@ export default function ContentPanel() {
                 <span className="text-[10px] text-white font-bold bg-[#ff0000]/10 px-3 py-1.5 rounded-full border border-[#ff0000]/20">
                   {selectedRows.size} selected
                 </span>
+                {/* Bulk Edit Button (only for products tab) */}
+                {tab === 'products' && (
+                  <button onClick={() => setBulkEditMode(true)}
+                    className="px-4 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
+                    <Edit className="w-3.5 h-3.5" /> Bulk Edit
+                  </button>
+                )}
                 {!bulkDeleteConfirm ? (
                   <button onClick={() => setBulkDeleteConfirm(true)}
                     className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
@@ -261,10 +310,17 @@ export default function ContentPanel() {
                 <Field label="Price (KWD)" value={form.price} onChange={(v: string) => setForm({ ...form, price: v })} type="number" step="0.001" placeholder="45.000" required />
                 <Field label="Stock" value={form.stock} onChange={(v: string) => setForm({ ...form, stock: v })} type="number" placeholder="10" />
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Category</label>
-                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
+                  <select value={form.catalog} onChange={(e) => setForm({ ...form, catalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {catalogs.map((c) => <option key={c} value={c}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
+                  <select value={form.subCatalog} onChange={(e) => setForm({ ...form, subCatalog: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {filteredSubCatalogs.map((sc) => <option key={sc} value={sc}>{sc.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -293,6 +349,60 @@ export default function ContentPanel() {
               </div>
             </div>
           </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Edit Form */}
+      <AnimatePresence>
+        {bulkEditMode && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-[#111111] border border-white/5 rounded-3xl w-full max-w-md p-6 space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bulk Edit Products</h3>
+                <button type="button" onClick={resetBulkForm}
+                  className="px-3 py-1.5 rounded-xl border border-white/10 text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Price (KWD)</label>
+                  <input value={bulkEditForm.price} onChange={(e) => setBulkEditForm({ ...bulkEditForm, price: e.target.value })} type="number" step="0.001"
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Stock</label>
+                  <input value={bulkEditForm.stock} onChange={(e) => setBulkEditForm({ ...bulkEditForm, stock: e.target.value })} type="number"
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
+                  <select value={bulkEditForm.catalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, catalog: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {catalogs.map((c) => <option key={c} value={c}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
+                  <select value={bulkEditForm.subCatalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, subCatalog: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    {filteredSubCatalogs.map((sc) => <option key={sc} value={sc}>{sc.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <button type="button" onClick={resetBulkForm}
+                    className="px-4 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                    Cancel
+                  </button>
+                  <button type="submit" className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+                    <Save className="w-3.5 h-3.5" /> Apply Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -336,8 +446,11 @@ export default function ContentPanel() {
                     </div>
                   </div>
                 )},
-                { key: 'category', label: 'Category', render: (p: Product) => (
-                  <span className="text-[10px] text-[#a1a1a1]">{p.category}</span>
+                { key: 'catalog', label: 'Catalog', render: (p: Product) => (
+                  <span className="text-[10px] text-[#a1a1a1]">{p.catalog}</span>
+                )},
+                { key: 'subCatalog', label: 'Sub Catalog', render: (p: Product) => (
+                  <span className="text-[10px] text-[#a1a1a1]">{p.subCatalog}</span>
                 )},
                 { key: 'price', label: 'Price', render: (p: Product) => (
                   <span className="text-xs font-bold text-white">{formatKWD(Number(p.price))}</span>
