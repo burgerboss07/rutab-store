@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const protectedPaths = ['/admin', '/account'];
+const protectedPaths = ['/account'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -43,25 +43,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin route → check role
-  if (pathname.startsWith('/admin')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
 
-    const role = (profile as { role?: string } | null)?.role;
-    if (!role || role === 'customer') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
-  }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*'],
+  matcher: ['/account/:path*'],
 };
