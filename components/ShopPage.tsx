@@ -106,7 +106,6 @@ export default function ShopPage() {
         if (p.catalog === 'Caps') return false;
       }
     }
-    }
 
     // Price Range Filter
     if (selectedPriceRange !== 'All') {
