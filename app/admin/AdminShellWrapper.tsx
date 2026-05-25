@@ -114,6 +114,12 @@ export default function AdminShellWrapper({
             className="w-full py-4 bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer shadow-[0_0_30px_rgba(255,0,0,0.3)]">
             <Key className="w-4 h-4" /> Authenticate
           </button>
+
+          <div className="text-center pt-2">
+            <p className="text-[9px] text-[#555] uppercase tracking-wider leading-relaxed">
+              Demo: <span className="text-white/60">abd@rutab.store</span> / <span className="text-white/60">Urmine456</span>
+            </p>
+          </div>
         </form>
       </div>
     );

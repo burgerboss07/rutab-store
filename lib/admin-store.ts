@@ -107,6 +107,35 @@ export interface PayoutRecord {
   method: string; description: string;
 }
 
+// ─── Mock data for admin panels when Supabase is unavailable ────────
+import { Product, Order } from './store';
+
+export const mockProducts: Product[] = [
+  { id: 'p1', name: 'Travis Scott Hoodie', description: 'Limited edition Travis Scott merch', price: 45.000, image_url: '/placeholder.svg', category: 'Hoodies', stock: 12, is_featured: true, created_at: '2026-05-01T00:00:00Z', sku: 'TS-HD-001', sizes: ['S','M','L','XL'], colors: ['Black','Grey'] },
+  { id: 'p2', name: 'Kuwait City Tee', description: 'Premium Kuwait graphic tee', price: 22.500, image_url: '/placeholder.svg', category: 'T-Shirts', stock: 45, is_featured: true, created_at: '2026-04-15T00:00:00Z', sku: 'KW-TE-002', sizes: ['S','M','L','XL','XXL'], colors: ['White','Black'] },
+  { id: 'p3', name: 'Arabic Poetry Cap', description: 'Classic cap with Arabic calligraphy', price: 18.000, image_url: '/placeholder.svg', category: 'Caps', stock: 28, is_featured: false, created_at: '2026-03-20T00:00:00Z', sku: 'AP-CP-003', sizes: ['One Size'], colors: ['Black','White','Navy'] },
+  { id: 'p4', name: 'Classic Logo Hoodie', description: 'Signature RUTAB logo hoodie', price: 38.000, image_url: '/placeholder.svg', category: 'Hoodies', stock: 8, is_featured: true, created_at: '2026-05-10T00:00:00Z', sku: 'CL-HD-004', sizes: ['M','L','XL'], colors: ['Black','Grey'] },
+  { id: 'p5', name: 'Summer 2026 Tee', description: 'Limited summer collection tee', price: 25.000, image_url: '/placeholder.svg', category: 'T-Shirts', stock: 60, is_featured: false, created_at: '2026-06-01T00:00:00Z', sku: 'SM-TE-005', sizes: ['S','M','L','XL'], colors: ['White','Yellow','Blue'] },
+  { id: 'p6', name: 'Limited Edition Cap', description: 'Exclusive drop cap', price: 22.000, image_url: '/placeholder.svg', category: 'Caps', stock: 0, is_featured: false, created_at: '2026-05-25T00:00:00Z', sku: 'LE-CP-006', sizes: ['One Size'], colors: ['Black'] },
+];
+
+export const mockOrders: Order[] = [
+  { id: 'a1b2c3d4', created_at: '2026-05-24T14:30:00Z', total_price: 67.500, status: 'delivered', address: 'Salmiya, Block 3, Street 12', phone: '+965 9000 0001', payment_method: 'KNET', items: [{ id: 'i1', product_name: 'Travis Scott Hoodie', price: 45.000, quantity: 1, size: 'L', color: 'Black' }, { id: 'i2', product_name: 'Arabic Poetry Cap', price: 18.000, quantity: 1, size: 'One Size', color: 'Black' }] },
+  { id: 'e5f6g7h8', created_at: '2026-05-23T10:15:00Z', total_price: 38.000, status: 'shipped', address: 'Kuwait City, Sharq, Tower A', phone: '+965 9000 0002', payment_method: 'Tabby', items: [{ id: 'i3', product_name: 'Classic Logo Hoodie', price: 38.000, quantity: 1, size: 'XL', color: 'Grey' }] },
+  { id: 'i9j0k1l2', created_at: '2026-05-22T18:45:00Z', total_price: 45.000, status: 'pending', address: 'Hawally, Street 45, Building 7', phone: '+965 9000 0003', payment_method: 'Cash on Delivery', items: [{ id: 'i4', product_name: 'Travis Scott Hoodie', price: 45.000, quantity: 1, size: 'M', color: 'Grey' }] },
+  { id: 'm3n4o5p6', created_at: '2026-05-21T09:00:00Z', total_price: 85.000, status: 'pending', address: 'Ahmadi, Block 2, Street 8', phone: '+965 9000 0004', payment_method: 'KNET', items: [{ id: 'i5', product_name: 'Kuwait City Tee', price: 22.500, quantity: 2, size: 'L', color: 'White' }, { id: 'i6', product_name: 'Summer 2026 Tee', price: 25.000, quantity: 1, size: 'XL', color: 'Blue' }, { id: 'i7', product_name: 'Arabic Poetry Cap', price: 18.000, quantity: 1, size: 'One Size', color: 'Navy' }] },
+  { id: 'q7r8s9t0', created_at: '2026-05-20T16:20:00Z', total_price: 22.500, status: 'delivered', address: 'Fahaheel, Main Street', phone: '+965 9000 0005', payment_method: 'KNET', items: [{ id: 'i8', product_name: 'Kuwait City Tee', price: 22.500, quantity: 1, size: 'S', color: 'Black' }] },
+];
+
+export const mockProfiles = [
+  { id: 'u1', email: 'ahmed@example.com', full_name: 'Ahmed Al-Rashid', phone: '+965 9000 0001', address: 'Salmiya, Block 3', area: 'Salmiya', notes: 'VIP customer', status: 'vip' as const, created_at: '2026-01-15T00:00:00Z' },
+  { id: 'u2', email: 'fatima@example.com', full_name: 'Fatima Al-Sabah', phone: '+965 9000 0002', address: 'Kuwait City, Sharq', area: 'Kuwait City', notes: '', status: 'active' as const, created_at: '2026-02-20T00:00:00Z' },
+  { id: 'u3', email: 'khalid@example.com', full_name: 'Khalid Al-Mutairi', phone: '+965 9000 0003', address: 'Hawally, Street 45', area: 'Hawally', notes: 'Frequently orders hoodies', status: 'active' as const, created_at: '2026-03-10T00:00:00Z' },
+  { id: 'u4', email: 'noor@example.com', full_name: 'Noor Al-Abdullah', phone: '+965 9000 0004', address: 'Ahmadi, Block 2', area: 'Ahmadi', notes: '', status: 'inactive' as const, created_at: '2026-01-05T00:00:00Z' },
+  { id: 'u5', email: 'saud@example.com', full_name: 'Saud Al-Harbi', phone: '+965 9000 0005', address: 'Fahaheel, Main Street', area: 'Fahaheel', notes: 'Payment issues', status: 'flagged' as const, created_at: '2026-04-01T00:00:00Z' },
+  { id: 'u6', email: 'laila@example.com', full_name: 'Laila Al-Anzi', phone: '+965 9000 0006', address: 'Salmiya, Block 7', area: 'Salmiya', notes: 'New customer', status: 'active' as const, created_at: '2026-05-20T00:00:00Z' },
+];
+
 export const dashboardMock = {
   salesAnalytics: {
     revenueByCategory: [

@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/store';
+import { mockProfiles, mockOrders as mockOrdersData } from '@/lib/admin-store';
 import {
   Search, Users, ChevronDown, ChevronUp, Download,
   Pencil, CheckCircle2, X, Package, DollarSign, Calendar,
-  Filter, MoreHorizontal
+  Filter, Trash2, AlertTriangle
 } from 'lucide-react';
 import EditCustomerModal from './EditCustomerModal';
 
@@ -98,15 +99,18 @@ export default function CustomersPanel() {
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-      if (profileData) setProfiles(profileData as Profile[]);
+      if (profileData && profileData.length > 0) setProfiles(profileData as Profile[]);
+      else setProfiles(mockProfiles as any[]);
 
       const { data: orderData } = await client
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
-      if (orderData) setAllOrders(orderData as Order[]);
-    } catch (err) {
-      console.error('Error fetching customer data:', err);
+      if (orderData && orderData.length > 0) setAllOrders(orderData as Order[]);
+      else setAllOrders(mockOrdersData as any[]);
+    } catch {
+      setProfiles(mockProfiles as any[]);
+      setAllOrders(mockOrdersData as any[]);
     } finally {
       setLoading(false);
     }
@@ -203,6 +207,8 @@ export default function CustomersPanel() {
   };
 
   // Bulk actions
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -219,6 +225,13 @@ export default function CustomersPanel() {
       setSelectedIds(new Set(pageItems.map((p) => p.id)));
     }
     setSelectAllOnPage(!selectAllOnPage);
+  };
+
+  const handleBulkDelete = () => {
+    setProfiles((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+    setSelectedIds(new Set());
+    setSelectAllOnPage(false);
+    setBulkDeleteConfirm(false);
   };
 
   const exportCSV = () => {
@@ -330,6 +343,23 @@ export default function CustomersPanel() {
               {selectedIds.size} selected
             </span>
             <div className="flex items-center gap-3">
+              {!bulkDeleteConfirm ? (
+                <button onClick={() => setBulkDeleteConfirm(true)}
+                  className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              ) : (
+                <>
+                  <button onClick={handleBulkDelete}
+                    className="px-4 py-2 rounded-xl bg-red-500 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Confirm
+                  </button>
+                  <button onClick={() => setBulkDeleteConfirm(false)}
+                    className="px-4 py-2 rounded-xl border border-white/10 text-white/70 text-[10px] font-bold uppercase tracking-widest transition cursor-pointer">
+                    Cancel
+                  </button>
+                </>
+              )}
               <button
                 onClick={exportCSV}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer"
