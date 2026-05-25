@@ -115,6 +115,7 @@ export interface Catalog {
   image_url?: string;
   subCatalogs: SubCatalog[];
   created_at: string;
+  updated_at?: string;
 }
 
 export interface SubCatalog {

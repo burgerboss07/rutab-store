@@ -74,7 +74,7 @@ export default function ShopPage() {
       products
         .filter(p => p.catalog === selectedCatalog)
         .map(p => p.subCatalog)
-        .filter(Boolean)
+        .filter((sc): sc is string => Boolean(sc))
     )];
     setSubCatalogs(uniqueSubCatalogs);
   }, [selectedCatalog, products]);
@@ -135,7 +135,7 @@ export default function ShopPage() {
       return priceB - priceA;
     });
   } else if (sortBy === 'best-selling') {
-    sortedProducts.sort((a, b) => a.stock - b.stock);
+    sortedProducts.sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
   }
 
   const resetFilters = () => {
@@ -376,7 +376,7 @@ export default function ShopPage() {
                <div className="flex flex-wrap gap-2">
                  {subCatalogs.map((sc) => (
                    <button
-                     key={sc>
+                     key={sc}
                      onClick={() => setSelectedSubCatalog(sc)}
                      className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition uppercase cursor-pointer ${
                        selectedSubCatalog === sc

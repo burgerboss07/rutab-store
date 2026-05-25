@@ -4,13 +4,13 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
 import { Product, Order } from '@/lib/store';
-import { useAdminStore, mockProducts, mockOrders } from '@/lib/admin-store';
+import { useAdminStore, mockProducts, mockOrders, mockCatalogs, Catalog } from '@/lib/admin-store';
 import Image from 'next/image';
 import DataTable from './ui/DataTable';
 import {
   Package, Search, Download, RefreshCw, CheckCircle2,
   ShoppingBag, Plus, Pencil, Trash2, Save, X, ChevronDown, ChevronUp,
-  AlertTriangle
+  AlertTriangle, Edit
 } from 'lucide-react';
 
 function formatKWD(v: number) { return `${v.toFixed(3)} KWD`; }
@@ -26,7 +26,7 @@ interface ProductFormData {
 const emptyForm: ProductFormData = {
   name: '', sku: '', price: '', stock: '0',
   description: '', image_url: '/placeholder.svg', is_featured: false,
-  catalog: '', subCatalog: '',
+  catalog: mockCatalogs[0]?.name || '', subCatalog: mockCatalogs[0]?.subCatalogs?.[0]?.name || '',
   sizes: [], colors: [],
 };
 
@@ -36,7 +36,7 @@ interface BulkEditFormData {
 }
 
 const emptyBulkForm: BulkEditFormData = {
-  price: '', stock: '', catalog: '', subCatalog: '',
+  price: '', stock: '', catalog: mockCatalogs[0]?.name || '', subCatalog: mockCatalogs[0]?.subCatalogs?.[0]?.name || '',
   sizes: [], colors: [],
 };
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -56,9 +56,94 @@ export default function ContentPanel() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductFormData>(emptyForm);
   const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [orderStatusEdit, setOrderStatusEdit] = useState('');
+
+  const [catalogsState, setCatalogsState] = useState<Catalog[]>(mockCatalogs);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryImagePreview, setCategoryImagePreview] = useState('/placeholder.svg');
+  const [subCatalogName, setSubCatalogName] = useState('');
+  const [subCatalogDesc, setSubCatalogDesc] = useState('');
+  const [selectedCategoryForSub, setSelectedCategoryForSub] = useState(mockCatalogs[0]?.name || '');
+  const [sizeEntry, setSizeEntry] = useState('');
+  const [colorEntry, setColorEntry] = useState('');
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+
+  const filteredSubCatalogs = catalogsState.find((c) => c.name === form.catalog)?.subCatalogs || [];
+  const bulkFilteredSubCatalogs = catalogsState.find((c) => c.name === bulkEditForm.catalog)?.subCatalogs || [];
+
+  const handleAddSize = () => {
+    const value = sizeEntry.trim();
+    if (!value || form.sizes.includes(value)) return;
+    setForm((prev) => ({ ...prev, sizes: [...prev.sizes, value] }));
+    setSizeEntry('');
+  };
+
+  const handleAddColor = () => {
+    const value = colorEntry.trim();
+    if (!value || form.colors.includes(value)) return;
+    setForm((prev) => ({ ...prev, colors: [...prev.colors, value] }));
+    setColorEntry('');
+  };
+
+  const handleRemoveSize = (size: string) => setForm((prev) => ({ ...prev, sizes: prev.sizes.filter((s) => s !== size) }));
+  const handleRemoveColor = (color: string) => setForm((prev) => ({ ...prev, colors: prev.colors.filter((c) => c !== color) }));
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProductImageFile(file);
+    setForm((prev) => ({ ...prev, image_url: URL.createObjectURL(file) }));
+  };
+
+  const handleCategoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCategoryImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleAddCatalog = () => {
+    if (!categoryName.trim()) return;
+    const newCatalog: Catalog = {
+      id: uid(),
+      name: categoryName.trim(),
+      description: categoryDescription.trim(),
+      image_url: categoryImagePreview,
+      subCatalogs: [],
+      created_at: new Date().toISOString(),
+    };
+    setCatalogsState((prev) => [newCatalog, ...prev]);
+    setCategoryName('');
+    setCategoryDescription('');
+    setCategoryImagePreview('/placeholder.svg');
+    setSelectedCategoryForSub(newCatalog.name);
+  };
+
+  const handleAddSubCatalog = () => {
+    if (!subCatalogName.trim()) return;
+    setCatalogsState((prev) =>
+      prev.map((cat) =>
+        cat.name === selectedCategoryForSub
+          ? {
+              ...cat,
+              subCatalogs: [
+                ...cat.subCatalogs,
+                {
+                  id: uid(),
+                  name: subCatalogName.trim(),
+                  description: subCatalogDesc.trim(),
+                  catalogId: cat.id,
+                  created_at: new Date().toISOString(),
+                },
+              ],
+            }
+          : cat
+      )
+    );
+    setSubCatalogName('');
+    setSubCatalogDesc('');
+  };
 
   const didFetch = useRef(false);
 
@@ -196,6 +281,8 @@ export default function ContentPanel() {
       price: parseFloat(form.price), stock: parseInt(form.stock) || 0,
       description: form.description, image_url: form.image_url,
       is_featured: form.is_featured,
+      catalog: form.catalog,
+      subCatalog: form.subCatalog,
       sizes: form.sizes,
       colors: form.colors,
       created_at: editingProduct?.created_at || new Date().toISOString(),
@@ -330,25 +417,47 @@ export default function ContentPanel() {
                 <Field label="Stock" value={form.stock} onChange={(v: string) => setForm({ ...form, stock: v })} type="number" placeholder="10" />
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
-                  <select value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value.split(',') })} multiple className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {['S', 'M', 'L', 'XL', 'XXL', 'One Size'].map((size) => (
-                      <option key={size} value={size}>{size}</option>
+                  <div className="flex flex-wrap gap-2">
+                    {form.sizes.map((size) => (
+                      <button key={size} type="button" onClick={() => handleRemoveSize(size)}
+                        className="text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20">
+                        {size} ×
+                      </button>
                     ))}
-                  </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <input value={sizeEntry} onChange={(e) => setSizeEntry(e.target.value)} placeholder="Add size"
+                      className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button type="button" onClick={handleAddSize}
+                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition">
+                      Add
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
-                  <select value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value.split(',') })} multiple className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {['Black', 'White', 'Grey', 'Navy', 'Yellow', 'Blue'].map((color) => (
-                      <option key={color} value={color}>{color}</option>
+                  <div className="flex flex-wrap gap-2">
+                    {form.colors.map((color) => (
+                      <button key={color} type="button" onClick={() => handleRemoveColor(color)}
+                        className="text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20">
+                        {color} ×
+                      </button>
                     ))}
-                  </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <input value={colorEntry} onChange={(e) => setColorEntry(e.target.value)} placeholder="Add color"
+                      className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button type="button" onClick={handleAddColor}
+                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition">
+                      Add
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
                   <select value={form.catalog} onChange={(e) => setForm({ ...form, catalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {catalogs.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -359,16 +468,11 @@ export default function ContentPanel() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
-                  <select value={form.subCatalog} onChange={(e) => setForm({ ...form, subCatalog: e.target.value })}
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {filteredSubCatalogs.map((sc) => <option key={sc} value={sc}>{sc.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL</label>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL / Upload</label>
                   <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..."
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                  <input type="file" accept="image/*" onChange={handleProductImageUpload}
+                    className="w-full text-[10px] text-white file:bg-[#ff0000] file:text-white file:px-3 file:py-2 file:rounded-xl file:border-none" />
                 </div>
                 <div className="sm:col-span-2 lg:col-span-3 space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Description</label>
@@ -393,6 +497,91 @@ export default function ContentPanel() {
           </motion.form>
         )}
       </AnimatePresence>
+
+      {/* Catalog / Sub Catalog Manager */}
+      <div className="p-6 rounded-3xl bg-[#111111] border border-white/5 space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Catalog & Subcategory Manager</h3>
+            <p className="text-[10px] text-[#a1a1a1]">Create new categories, add subcategories, and upload catalog artwork.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Category Name</label>
+              <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="E.g. Hoodies"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Category Description</label>
+              <input value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)} placeholder="Short category description"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Category Image</label>
+              <input type="file" accept="image/*" onChange={handleCategoryImageUpload}
+                className="w-full text-[10px] text-white file:bg-[#ff0000] file:text-white file:px-3 file:py-2 file:rounded-xl file:border-none" />
+              <div className="w-full h-28 rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a]">
+                <img src={categoryImagePreview} alt="Category preview" className="w-full h-full object-cover" />
+              </div>
+            </div>
+            <button type="button" onClick={handleAddCatalog}
+              className="w-full px-4 py-3 rounded-2xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold uppercase tracking-widest transition">
+              Add Category
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Parent Category</label>
+              <select value={selectedCategoryForSub} onChange={(e) => setSelectedCategoryForSub(e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Subcategory Name</label>
+              <input value={subCatalogName} onChange={(e) => setSubCatalogName(e.target.value)} placeholder="E.g. Streetwear"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Subcategory Description</label>
+              <input value={subCatalogDesc} onChange={(e) => setSubCatalogDesc(e.target.value)} placeholder="Short subcategory description"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <button type="button" onClick={handleAddSubCatalog}
+              className="w-full px-4 py-3 rounded-2xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold uppercase tracking-widest transition">
+              Add Subcategory
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {catalogsState.map((cat) => (
+            <div key={cat.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#aaa]">{cat.name}</p>
+                  <p className="text-[10px] text-[#777] mt-1">{cat.description || 'No description yet'}</p>
+                </div>
+                {cat.image_url ? (
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                    <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {cat.subCatalogs.map((sub) => (
+                  <span key={sub.id} className="text-[9px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[#ddd]">
+                    {sub.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Bulk Edit Form */}
       <AnimatePresence>
@@ -423,14 +612,14 @@ export default function ContentPanel() {
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
                   <select value={bulkEditForm.catalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, catalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {catalogs.map((c) => <option key={c} value={c}>{c.name}</option>)}
+                    {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
                   <select value={bulkEditForm.subCatalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, subCatalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {filteredSubCatalogs.map((sc) => <option key={sc} value={sc}>{sc.name}</option>)}
+                    {bulkFilteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-3 pt-2">

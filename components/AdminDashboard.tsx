@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [prodSku, setProdSku] = useState('');
 
   const [prodSizes, setProdSizes] = useState<string[]>([]);
-  const [prodStockPerSize, setProdStockPerSize] = useState<Record<string, string>>({});
+  const [prodStockPerSize, setProdStockPerSize] = useState<Record<string, string | number>>({});
   const [prodType, setProdType] = useState('Shirt');
   const [prodColors, setProdColors] = useState<string[]>([]);
   const [prodBackImg, setProdBackImg] = useState('');
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
 
     const generatedSku = prodSku || generateSku(prodCategory);
 
-    const totalStock = Object.values(prodStockPerSize).reduce((acc, curr) => acc + (parseInt(curr) || 0), 0);
+    const totalStock = Object.values(prodStockPerSize).reduce<number>((acc, curr) => acc + (typeof curr === 'number' ? curr : parseInt(curr) || 0), 0);
 
     const payload = {
       name: prodName,
@@ -202,12 +202,13 @@ export default function AdminDashboard() {
   };
 
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = productSearch.trim() === '' || p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.category.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesSearch = productSearch.trim() === '' || p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.category?.toLowerCase().includes(productSearch.toLowerCase()) || p.catalog?.toLowerCase().includes(productSearch.toLowerCase());
     if (!matchesSearch) return false;
 
     if (productFilter === 'featured') return p.is_featured;
-    if (productFilter === 'low-stock') return p.stock > 0 && p.stock <= 5;
-    if (productFilter === 'out-of-stock') return p.stock <= 0;
+    const stockAmount = p.stock ?? 0;
+    if (productFilter === 'low-stock') return stockAmount > 0 && stockAmount <= 5;
+    if (productFilter === 'out-of-stock') return stockAmount <= 0;
     return true;
   });
 
@@ -609,7 +610,7 @@ export default function AdminDashboard() {
                           <h4 className="font-bold text-xs uppercase text-white truncate max-w-[180px]">{p.name}</h4>
                           <div className="flex items-center gap-3 text-[10px] text-[#a1a1a1] mt-0.5">
                             <span>SKU: {p.sku}</span>
-                            <span>Stock: <strong className={p.stock <= 0 ? 'text-[#ff0000]' : 'text-white'}>{p.stock}</strong></span>
+                            <span>Stock: <strong className={(p.stock ?? 0) <= 0 ? 'text-[#ff0000]' : 'text-white'}>{p.stock ?? 0}</strong></span>
                             <span>{p.is_featured && <span className="text-[#ff0000] font-bold">FEATURED</span>}</span>
                           </div>
                         </div>

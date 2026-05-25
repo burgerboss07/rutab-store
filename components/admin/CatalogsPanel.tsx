@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit, Save, X, Download, RefreshCw } from 'lucide-react';
-import { Catalog } from '../lib/admin-store';
+import { Plus, Trash2, Edit, Save, X, Download, RefreshCw, Search } from 'lucide-react';
+import { Catalog } from '../../lib/admin-store';
 
 export default function CatalogsPanel() {
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
@@ -26,6 +26,7 @@ export default function CatalogsPanel() {
       name: 'Arabic Poetry',
       description: 'Beautiful Arabic calligraphy and poetry designs',
       image_url: '/placeholder.svg',
+      subCatalogs: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     },
@@ -34,6 +35,7 @@ export default function CatalogsPanel() {
       name: 'Cartoons',
       description: 'Fun cartoon and character designs',
       image_url: '/placeholder.svg',
+      subCatalogs: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     },
@@ -42,6 +44,7 @@ export default function CatalogsPanel() {
       name: 'Brand Shirts',
       description: 'Official brand collaboration shirts',
       image_url: '/placeholder.svg',
+      subCatalogs: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -86,6 +89,7 @@ export default function CatalogsPanel() {
       name: form.name,
       description: form.description,
       image_url: form.image_url,
+      subCatalogs: editingCatalog?.subCatalogs || [],
       created_at: editingCatalog?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -181,7 +185,7 @@ export default function CatalogsPanel() {
             <RefreshCw className="w-3.5 h-3.5" /> Sync
           </button>
           <button
-            onClick={() => setSelectAll(false); setSelectedRows(new Set())}
+            onClick={() => { setSelectAll(false); setSelectedRows(new Set()); }}
             className={`px-4 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white/70 hover:text-white transition cursor-pointer ${selectedRows.size > 0 ? 'bg-white/5' : 'bg-transparent'}`}
           >
             {selectedRows.size > 0 ? (
@@ -189,7 +193,9 @@ export default function CatalogsPanel() {
                 <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete Selected ({selectedRows.size})
               </>
             ) : (
-              <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+              <>
+                <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+              </>
             )}
           </button>
         </div>
@@ -265,7 +271,6 @@ export default function CatalogsPanel() {
                     <input
                       type="checkbox"
                       checked={selectAll && filteredCatalogs.length > 0}
-                      indeterminate={selectAll && filteredCatalogs.length > 0 && selectedRows.size !== filteredCatalogs.length}
                       onChange={handleSelectAll}
                       className="w-4 h-4 text-[#ff0000] border-white/30 rounded"
                     />
@@ -282,7 +287,7 @@ export default function CatalogsPanel() {
             <tbody className="divide-y divide-white/5">
               {filteredCatalogs.length === 0 ? (
                 <tr>
-                  <td className="px-6 py-4 text-center text-[10px] text-[#a1a1a1]" colSpan="6">
+                  <td className="px-6 py-4 text-center text-[10px] text-[#a1a1a1]" colSpan={6}>
                     No catalogs found
                   </td>
                 </tr>

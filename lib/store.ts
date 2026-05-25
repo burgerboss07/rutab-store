@@ -7,9 +7,14 @@ export interface Product {
   description: string;
   price: string | number;
   image_url: string;
-  catalog: string;
-  subCatalog: string;
-  stock: number;
+  catalog?: string;
+  subCatalog?: string;
+  category?: string;
+  subcategory?: string;
+  stock?: number;
+  stock_per_size?: Record<string, number> | Record<string, string>;
+  product_type?: string;
+  back_image_url?: string;
   is_featured: boolean;
   created_at: string;
   sku: string;

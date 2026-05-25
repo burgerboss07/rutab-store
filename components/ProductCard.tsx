@@ -12,10 +12,12 @@ interface ProductCardProps {
     description: string;
     price: string | number;
     image_url: string;
-    catalog: string;
-    subCatalog: string;
+    catalog?: string;
+    subCatalog?: string;
+    category?: string;
+    subcategory?: string;
     sku: string;
-    stock: number;
+    stock?: number;
   };
 }
 
@@ -71,8 +73,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     setAddingSize(false);
   };
 
-  // Determine sizes available based on category
-  const sizes = product.category === 'Caps' ? ['One Size'] : ['S', 'M', 'L', 'XL'];
+  // Determine sizes available based on category (or fallback to catalog if needed)
+  const productCategory = product.category || product.catalog;
+  const sizes = productCategory === 'Caps' ? ['One Size'] : ['S', 'M', 'L', 'XL'];
   const secondaryImg = secondaryImages[product.id] || product.image_url;
 
   return (
@@ -122,18 +125,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         </button>
 
         {/* Stock Badge Warning */}
-        {product.stock <= 0 ? (
+        {(product.stock ?? 0) <= 0 ? (
           <span className="absolute top-4 left-4 bg-black/85 text-xs text-stroke-white border border-white/10 uppercase tracking-widest font-heading font-black px-3.5 py-1.5 rounded-full z-10">
             Out of Stock
           </span>
-        ) : product.stock <= 5 ? (
+        ) : (product.stock ?? 0) <= 5 ? (
           <span className="absolute top-4 left-4 bg-[#ff0000] text-white text-[9px] uppercase tracking-widest font-bold px-3 py-1 rounded-full z-10">
             Low Stock
           </span>
         ) : null}
 
         {/* Quick Add Overlay Panel */}
-        {product.stock > 0 && (
+        {(product.stock ?? 0) > 0 && (
           <div className="absolute inset-x-0 bottom-0 p-4 z-10 bg-gradient-to-t from-black via-black/80 to-transparent translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
             {addingSize ? (
               <div className="flex flex-col items-center gap-2">
