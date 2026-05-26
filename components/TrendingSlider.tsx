@@ -21,7 +21,12 @@ export default function TrendingSlider() {
           .eq('is_featured', true);
         
         if (data) {
-          setProducts(data);
+          const mapped = data.map((p: any) => ({
+            ...p,
+            catalog: p.catalog || p.category,
+            subCatalog: p.subCatalog || p.subcategory
+          }));
+          setProducts(mapped);
         }
       } catch (err) {
         console.error('Error fetching trending products:', err);

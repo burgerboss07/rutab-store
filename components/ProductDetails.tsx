@@ -81,7 +81,12 @@ export default function ProductDetails() {
           .eq('id', selectedProductId)
           .single();
         if (data) {
-          setProduct(data);
+          const mapped = {
+            ...data,
+            catalog: data.catalog || data.category,
+            subCatalog: data.subCatalog || data.subcategory
+          };
+          setProduct(mapped);
           setActiveImage(data.image_url);
           // Default size values
           if (data.sizes && data.sizes.length > 0) {

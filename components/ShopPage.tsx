@@ -45,10 +45,15 @@ export default function ShopPage() {
           .select('*')
           .order('created_at', { ascending: false });
         if (data) {
-          setProducts(data);
+          const mappedData = data.map((p: any) => ({
+            ...p,
+            catalog: p.catalog || p.category,
+            subCatalog: p.subCatalog || p.subcategory
+          }));
+          setProducts(mappedData);
 
           // Extract unique catalogs and subCatalogs for filters
-          const uniqueCatalogs = ['All', ...new Set(data.map(p => p.catalog).filter(Boolean))];
+          const uniqueCatalogs = ['All', ...new Set(mappedData.map(p => p.catalog).filter(Boolean))];
           setCatalogs(uniqueCatalogs);
 
           // Initialize subCatalogs to ['All'] - will update when catalog changes

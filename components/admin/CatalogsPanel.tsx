@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit, Save, X, Download, RefreshCw, Search } from 'lucide-react';
 import { Catalog } from '../../lib/admin-store';
+import { getSupabase } from '../../lib/supabase';
 
 export default function CatalogsPanel() {
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
@@ -19,40 +20,32 @@ export default function CatalogsPanel() {
     image_url: ''
   });
 
-  // Mock catalogs data (in production, this would come from Supabase)
-  const mockCatalogs: Catalog[] = [
-    {
-      id: '1',
-      name: 'Arabic Poetry',
-      description: 'Beautiful Arabic calligraphy and poetry designs',
-      image_url: '/placeholder.svg',
-      subCatalogs: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Cartoons',
-      description: 'Fun cartoon and character designs',
-      image_url: '/placeholder.svg',
-      subCatalogs: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: '3',
-      name: 'Brand Shirts',
-      description: 'Official brand collaboration shirts',
-      image_url: '/placeholder.svg',
-      subCatalogs: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+  const fetchCatalogs = async () => {
+    try {
+      const client = getSupabase();
+      const { data, error } = await client
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || '',
+        image_url: c.image_url || '/placeholder.svg',
+        subCatalogs: Array.isArray(c.sub_categories) ? c.sub_categories : [],
+        created_at: c.created_at || new Date().toISOString()
+      }));
+      setCatalogs(mapped);
+    } catch (err) {
+      console.error('Error fetching catalogs:', err);
+      // On error keep existing state rather than replacing with mock data
     }
-  ];
+  };
 
-  // Initialize with mock data
+  // Initialize with Supabase data
   useEffect(() => {
-    setCatalogs(mockCatalogs);
+    fetchCatalogs();
   }, []);
 
   // Filtered catalogs based on search
@@ -80,24 +73,50 @@ export default function CatalogsPanel() {
   };
 
   // Handle save catalog
-  const handleSaveCatalog = (e: React.FormEvent) => {
+  const handleSaveCatalog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name) return;
 
+    const catalogId = editingCatalog?.id || crypto.randomUUID();
     const payload: Catalog = {
-      id: editingCatalog?.id || Math.random().toString(36).substr(2, 9),
+      id: catalogId,
       name: form.name,
       description: form.description,
-      image_url: form.image_url,
+      image_url: form.image_url || '/placeholder.svg',
       subCatalogs: editingCatalog?.subCatalogs || [],
       created_at: editingCatalog?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
-    if (editingCatalog) {
-      setCatalogs(prev => prev.map(c => c.id === editingCatalog.id ? payload : c));
-    } else {
-      setCatalogs([payload, ...catalogs]);
+    try {
+      const client = getSupabase();
+      if (editingCatalog) {
+        const { error } = await client
+          .from('categories')
+          .update({
+            name: payload.name,
+            description: payload.description,
+            image_url: payload.image_url
+          })
+          .eq('id', editingCatalog.id);
+        if (error) throw error;
+        setCatalogs(prev => prev.map(c => c.id === editingCatalog.id ? payload : c));
+      } else {
+        const { error } = await client
+          .from('categories')
+          .insert([{
+            id: payload.id,
+            name: payload.name,
+            description: payload.description,
+            image_url: payload.image_url,
+            sub_categories: []
+          }]);
+        if (error) throw error;
+        setCatalogs([payload, ...catalogs]);
+      }
+    } catch (err) {
+      console.error('Error saving catalog:', err);
+      alert('Failed to save catalog to Supabase');
     }
 
     resetForm();
@@ -129,11 +148,23 @@ export default function CatalogsPanel() {
   };
 
   // Delete selected catalogs
-  const handleDeleteSelected = () => {
-    setCatalogs(prev => prev.filter(c => !selectedRows.has(c.id)));
-    setSelectedRows(new Set());
-    setSelectAll(false);
-    setBulkDeleteConfirm(false);
+  const handleDeleteSelected = async () => {
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('categories')
+        .delete()
+        .in('id', Array.from(selectedRows));
+      if (error) throw error;
+
+      setCatalogs(prev => prev.filter(c => !selectedRows.has(c.id)));
+      setSelectedRows(new Set());
+      setSelectAll(false);
+      setBulkDeleteConfirm(false);
+    } catch (err) {
+      console.error('Error deleting catalogs:', err);
+      alert('Failed to delete selected catalogs from Supabase');
+    }
   };
 
   // Export CSV
@@ -185,7 +216,7 @@ export default function CatalogsPanel() {
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
           <button
-            onClick={() => setCatalogs(mockCatalogs)}
+            onClick={fetchCatalogs}
             className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Sync
@@ -210,7 +241,7 @@ export default function CatalogsPanel() {
           </p>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setBulkDeleteConfirm(false)}
+              onClick={() => { setBulkDeleteConfirm(false); setSelectedRows(new Set()); setSelectAll(false); }}
               className="px-4 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer"
             >
               Cancel

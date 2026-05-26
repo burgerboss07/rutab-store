@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
 import { Product, Order } from '@/lib/store';
-import { useAdminStore, mockProducts, mockOrders, mockCatalogs, Catalog } from '@/lib/admin-store';
+import { useAdminStore, Catalog } from '@/lib/admin-store';
 import Image from 'next/image';
 import DataTable from './ui/DataTable';
 import {
@@ -26,7 +26,7 @@ interface ProductFormData {
 const emptyForm: ProductFormData = {
   name: '', sku: '', price: '', stock: '0',
   description: '', image_url: '/placeholder.svg', is_featured: false,
-  catalog: mockCatalogs[0]?.name || '', subCatalog: mockCatalogs[0]?.subCatalogs?.[0]?.name || '',
+  catalog: '', subCatalog: '',
   sizes: [], colors: [],
 };
 
@@ -36,7 +36,7 @@ interface BulkEditFormData {
 }
 
 const emptyBulkForm: BulkEditFormData = {
-  price: '', stock: '', catalog: mockCatalogs[0]?.name || '', subCatalog: mockCatalogs[0]?.subCatalogs?.[0]?.name || '',
+  price: '', stock: '', catalog: '', subCatalog: '',
   sizes: [], colors: [],
 };
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -59,13 +59,13 @@ export default function ContentPanel() {
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [orderStatusEdit, setOrderStatusEdit] = useState('');
 
-  const [catalogsState, setCatalogsState] = useState<Catalog[]>(mockCatalogs);
+  const [catalogsState, setCatalogsState] = useState<Catalog[]>([]);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryImagePreview, setCategoryImagePreview] = useState('/placeholder.svg');
   const [subCatalogName, setSubCatalogName] = useState('');
   const [subCatalogDesc, setSubCatalogDesc] = useState('');
-  const [selectedCategoryForSub, setSelectedCategoryForSub] = useState(mockCatalogs[0]?.name || '');
+  const [selectedCategoryForSub, setSelectedCategoryForSub] = useState('');
   const [sizeEntry, setSizeEntry] = useState('');
   const [colorEntry, setColorEntry] = useState('');
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
@@ -103,44 +103,76 @@ export default function ContentPanel() {
     setCategoryImagePreview(URL.createObjectURL(file));
   };
 
-  const handleAddCatalog = () => {
+  const handleAddCatalog = async () => {
     if (!categoryName.trim()) return;
+    const newId = crypto.randomUUID();
     const newCatalog: Catalog = {
-      id: uid(),
+      id: newId,
       name: categoryName.trim(),
       description: categoryDescription.trim(),
       image_url: categoryImagePreview,
       subCatalogs: [],
       created_at: new Date().toISOString(),
     };
-    setCatalogsState((prev) => [newCatalog, ...prev]);
+
+    try {
+      const client = getSupabase();
+      const { error } = await client.from('categories').insert([{
+        id: newId,
+        name: newCatalog.name,
+        description: newCatalog.description,
+        image_url: newCatalog.image_url,
+        sub_categories: []
+      }]);
+      if (error) throw error;
+      setCatalogsState((prev) => [newCatalog, ...prev]);
+    } catch (err) {
+      console.error('Error adding catalog to Supabase:', err);
+      alert('Failed to save catalog to Supabase');
+    }
+
     setCategoryName('');
     setCategoryDescription('');
     setCategoryImagePreview('/placeholder.svg');
     setSelectedCategoryForSub(newCatalog.name);
   };
 
-  const handleAddSubCatalog = () => {
+  const handleAddSubCatalog = async () => {
     if (!subCatalogName.trim()) return;
-    setCatalogsState((prev) =>
-      prev.map((cat) =>
-        cat.name === selectedCategoryForSub
-          ? {
-              ...cat,
-              subCatalogs: [
-                ...cat.subCatalogs,
-                {
-                  id: uid(),
-                  name: subCatalogName.trim(),
-                  description: subCatalogDesc.trim(),
-                  catalogId: cat.id,
-                  created_at: new Date().toISOString(),
-                },
-              ],
-            }
-          : cat
-      )
-    );
+    const targetCat = catalogsState.find((c) => c.name === selectedCategoryForSub);
+    if (!targetCat) return;
+
+    const newSub = {
+      id: crypto.randomUUID(),
+      name: subCatalogName.trim(),
+      description: subCatalogDesc.trim(),
+      catalogId: targetCat.id,
+      created_at: new Date().toISOString(),
+    };
+
+    const updatedSubCatalogs = [...targetCat.subCatalogs, newSub];
+
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('categories')
+        .update({ sub_categories: updatedSubCatalogs })
+        .eq('id', targetCat.id);
+      
+      if (error) throw error;
+
+      setCatalogsState((prev) =>
+        prev.map((cat) =>
+          cat.name === selectedCategoryForSub
+            ? { ...cat, subCatalogs: updatedSubCatalogs }
+            : cat
+        )
+      );
+    } catch (err) {
+      console.error('Error adding subcategory to Supabase:', err);
+      alert('Failed to save subcategory to Supabase');
+    }
+
     setSubCatalogName('');
     setSubCatalogDesc('');
   };
@@ -153,23 +185,47 @@ export default function ContentPanel() {
 
   useEffect(() => {
     if (!didFetch.current) { didFetch.current = true; fetchData(); }
-  });
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const client = getSupabase();
-      const [prodRes, ordRes] = await Promise.all([
+      const [prodRes, ordRes, catRes] = await Promise.all([
         client.from('products').select('*').order('created_at', { ascending: false }),
         client.from('orders').select('*').order('created_at', { ascending: false }),
+        client.from('categories').select('*').order('name', { ascending: true })
       ]);
-      if (prodRes.data && prodRes.data.length > 0) setProducts(prodRes.data as Product[]);
-      else setProducts(mockProducts);
-      if (ordRes.data && ordRes.data.length > 0) setOrders(ordRes.data as Order[]);
-      else setOrders(mockOrders);
-    } catch {
-      setProducts(mockProducts);
-      setOrders(mockOrders);
+
+      // Always trust the DB — never fall back to mock data after initial load
+      if (!catRes.error) {
+        const mappedCats = (catRes.data || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description || '',
+          image_url: c.image_url || '/placeholder.svg',
+          subCatalogs: Array.isArray(c.sub_categories) ? c.sub_categories : [],
+          created_at: c.created_at || new Date().toISOString()
+        }));
+        setCatalogsState(mappedCats);
+        // Set default selected category for sub-catalog creation
+        if (mappedCats.length > 0) {
+          setSelectedCategoryForSub(prev => prev || mappedCats[0].name);
+        }
+      }
+
+      if (!prodRes.error) {
+        const mappedProds = (prodRes.data || []).map((p: any) => ({
+          ...p,
+          catalog: p.catalog || p.category,
+          subCatalog: p.subCatalog || p.subcategory
+        }));
+        setProducts(mappedProds);
+      }
+
+      if (!ordRes.error) setOrders((ordRes.data || []) as Order[]);
+    } catch (err) {
+      console.error('Error fetching admin data:', err);
     } finally { setLoading(false); }
   };
 
@@ -207,35 +263,69 @@ export default function ContentPanel() {
   };
 
   // ─── Bulk Delete ───
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedRows.size === 0) return;
-    if (tab === 'products') {
-      setProducts((prev) => prev.filter((p) => !selectedRows.has(p.id)));
-    } else {
-      setOrders((prev) => prev.filter((o) => !selectedRows.has(o.id)));
+    try {
+      const client = getSupabase();
+      if (tab === 'products') {
+        const { error } = await client
+          .from('products')
+          .delete()
+          .in('id', Array.from(selectedRows));
+        if (error) throw error;
+        setProducts((prev) => prev.filter((p) => !selectedRows.has(p.id)));
+      } else {
+        const { error } = await client
+          .from('orders')
+          .delete()
+          .in('id', Array.from(selectedRows));
+        if (error) throw error;
+        setOrders((prev) => prev.filter((o) => !selectedRows.has(o.id)));
+      }
+      setSelectedRows(new Set());
+      setSelectAll(false);
+      setBulkDeleteConfirm(false);
+    } catch (err) {
+      console.error('Error executing bulk delete:', err);
+      alert(`Failed to delete selected ${tab} from Supabase`);
     }
-    setSelectedRows(new Set());
-    setSelectAll(false);
-    setBulkDeleteConfirm(false);
   };
 
   // ─── Product Form ───
-    const resetForm = () => {
-      setForm(emptyForm);
-      setEditingProduct(null);
-      setShowForm(false);
-    };
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingProduct(null);
+    setShowForm(false);
+  };
 
-    const resetBulkForm = () => {
-      setBulkEditForm(emptyBulkForm);
-      setBulkEditMode(false);
-    };
+  const resetBulkForm = () => {
+    setBulkEditForm(emptyBulkForm);
+    setBulkEditMode(false);
+  };
 
-    const handleSaveBulkEdit = () => {
-      if (selectedRows.size === 0 || tab !== 'products') return;
-      
-      const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
-      const stockVal = bulkEditForm.stock ? parseInt(bulkEditForm.stock) : undefined;
+  const handleSaveBulkEdit = async () => {
+    if (selectedRows.size === 0 || tab !== 'products') return;
+    
+    const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
+    const stockVal = bulkEditForm.stock ? parseInt(bulkEditForm.stock) : undefined;
+
+    try {
+      const client = getSupabase();
+      const dbUpdates: any = {};
+      if (priceVal !== undefined) dbUpdates.price = priceVal;
+      if (stockVal !== undefined) dbUpdates.stock = stockVal;
+      if (bulkEditForm.catalog) {
+        dbUpdates.category = bulkEditForm.catalog;
+        dbUpdates.category_id = catalogsState.find(c => c.name === bulkEditForm.catalog)?.id || null;
+      }
+      if (bulkEditForm.subCatalog) dbUpdates.subcategory = bulkEditForm.subCatalog;
+      if (bulkEditForm.sizes && bulkEditForm.sizes.length > 0) dbUpdates.sizes = bulkEditForm.sizes;
+      if (bulkEditForm.colors && bulkEditForm.colors.length > 0) dbUpdates.colors = bulkEditForm.colors;
+
+      const updatePromises = Array.from(selectedRows).map(id =>
+        client.from('products').update(dbUpdates).eq('id', id)
+      );
+      await Promise.all(updatePromises);
       
       setProducts(prev => prev.map(p => {
         if (!selectedRows.has(p.id)) return p;
@@ -250,11 +340,15 @@ export default function ContentPanel() {
           ...(bulkEditForm.colors && bulkEditForm.colors.length > 0 ? { colors: bulkEditForm.colors } : {}),
         };
       }));
-      
-      setSelectedRows(new Set());
-      setSelectAll(false);
-      resetBulkForm();
-    };
+    } catch (err) {
+      console.error('Error during bulk update:', err);
+      alert('Failed to perform bulk update in Supabase');
+    }
+    
+    setSelectedRows(new Set());
+    setSelectAll(false);
+    resetBulkForm();
+  };
 
   const handleEditProduct = (p: Product) => {
     setEditingProduct(p);
@@ -272,11 +366,15 @@ export default function ContentPanel() {
     setShowForm(true);
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.price) return;
+
+    const isNew = !editingProduct;
+    const prodId = editingProduct?.id || crypto.randomUUID();
+
     const payload: Product = {
-      id: editingProduct?.id || uid(),
+      id: prodId,
       name: form.name, sku: form.sku,
       price: parseFloat(form.price), stock: parseInt(form.stock) || 0,
       description: form.description, image_url: form.image_url,
@@ -288,10 +386,36 @@ export default function ContentPanel() {
       created_at: editingProduct?.created_at || new Date().toISOString(),
     };
 
-    if (editingProduct) {
-      setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? payload : p)));
-    } else {
-      setProducts((prev) => [payload, ...prev]);
+    const dbPayload = {
+      id: payload.id,
+      name: payload.name,
+      sku: payload.sku || null,
+      price: payload.price,
+      stock: payload.stock,
+      description: payload.description || null,
+      image_url: payload.image_url || null,
+      category: payload.catalog,
+      subcategory: payload.subCatalog || null,
+      sizes: payload.sizes,
+      colors: payload.colors,
+      is_featured: payload.is_featured,
+      category_id: catalogsState.find(c => c.name === payload.catalog)?.id || null
+    };
+
+    try {
+      const client = getSupabase();
+      if (isNew) {
+        const { error } = await client.from('products').insert([dbPayload]);
+        if (error) throw error;
+        setProducts((prev) => [payload, ...prev]);
+      } else {
+        const { error } = await client.from('products').update(dbPayload).eq('id', editingProduct.id);
+        if (error) throw error;
+        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? payload : p)));
+      }
+    } catch (err) {
+      console.error('Error saving product to Supabase:', err);
+      alert('Failed to save product to Supabase');
     }
 
     resetForm();
@@ -377,7 +501,7 @@ export default function ContentPanel() {
                       className="px-4 py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
                       <AlertTriangle className="w-3.5 h-3.5" /> Confirm Delete
                     </button>
-                    <button onClick={() => setBulkDeleteConfirm(false)}
+                    <button onClick={() => { setBulkDeleteConfirm(false); setSelectedRows(new Set()); setSelectAll(false); }}
                       className="px-4 py-2.5 rounded-xl border border-white/10 text-white/70 text-[10px] font-bold uppercase tracking-widest transition cursor-pointer">
                       Cancel
                     </button>
