@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useStore, Order, OrderItem } from '../lib/store';
+import { useStore, Order, OrderItem, formatPrice } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
@@ -112,6 +112,13 @@ export default function CheckoutForm() {
   const addOrder = useStore((state) => state.addOrder);
   const setActiveView = useStore((state) => state.setActiveView);
   const user = useStore((state) => state.user);
+  const currency = useStore((state) => state.currency);
+  
+  // Promo code states
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [isApplyingPromo, setApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState('');
 
   // Accordion control
   const [activeStep, setActiveStep] = useState<number>(1);
@@ -136,8 +143,67 @@ export default function CheckoutForm() {
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
   const subtotal = getCartTotal();
-  const deliveryFee = deliveryCharges[paymentMethod];
-  const totalAmount = subtotal + deliveryFee;
+  let discountAmount = 0;
+  let deliveryFee = deliveryCharges[paymentMethod];
+
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === 'percentage') {
+      discountAmount = subtotal * (appliedCoupon.discount_value / 100);
+    } else if (appliedCoupon.discount_type === 'fixed_amount') {
+      discountAmount = appliedCoupon.discount_value;
+    } else if (appliedCoupon.discount_type === 'free_shipping') {
+      deliveryFee = 0;
+    }
+  }
+
+  const finalSubtotal = Math.max(0, subtotal - discountAmount);
+  const totalAmount = finalSubtotal + deliveryFee;
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setApplyingPromo(true);
+    setPromoError('');
+    try {
+      const client = getSupabase();
+      const { data, error } = await client
+        .from('coupons')
+        .select('*')
+        .eq('code', promoCode.trim().toUpperCase())
+        .single();
+
+      if (error || !data) {
+        setPromoError('Invalid promo code.');
+        setAppliedCoupon(null);
+      } else {
+        const coupon = data;
+        const now = new Date();
+        const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null;
+
+        if (!coupon.is_active) {
+          setPromoError('This promo code is no longer active.');
+        } else if (expiresAt && now > expiresAt) {
+          setPromoError('This promo code has expired.');
+        } else if (coupon.usage_limit > 0 && coupon.used_count >= coupon.usage_limit) {
+          setPromoError('This promo code has reached its usage limit.');
+        } else if (subtotal < (coupon.min_order_amount || 0)) {
+          setPromoError(`Minimum order amount of ${formatPrice(coupon.min_order_amount, currency)} required.`);
+        } else {
+          setAppliedCoupon(coupon);
+        }
+      }
+    } catch (err) {
+      console.error('Error applying promo code:', err);
+      setPromoError('An error occurred. Please try again.');
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedCoupon(null);
+    setPromoCode('');
+    setPromoError('');
+  };
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +256,14 @@ export default function CheckoutForm() {
 
       if (orderError) throw orderError;
 
+      // Update coupon usage if code applied
+      if (orderData && appliedCoupon) {
+        await client
+          .from('coupons')
+          .update({ used_count: (appliedCoupon.used_count || 0) + 1 })
+          .eq('id', appliedCoupon.id);
+      }
+
       // 2. Insert order items
       if (orderData && cart.length > 0) {
         const orderItemsPayload = cart.map((item) => ({
@@ -240,7 +314,7 @@ export default function CheckoutForm() {
   };
 
   const formatKWD = (value: number) => {
-    return `K.D${value.toFixed(2)}`;
+    return formatPrice(value, currency);
   };
 
   if (cart.length === 0 && !orderSuccess) {
@@ -723,12 +797,57 @@ export default function CheckoutForm() {
           ))}
         </div>
 
+        {/* Promo Code Input */}
+        <div className="border-t border-white/10 pt-4 space-y-2">
+          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Promo Code</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="e.g. WELCOME10"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              disabled={appliedCoupon !== null}
+              className="flex-1 bg-black border border-white/10 rounded-xl py-2 px-3 text-xs outline-none focus:border-[#ff0000] text-white uppercase font-mono placeholder:text-[#555] focus:bg-black"
+            />
+            {appliedCoupon ? (
+              <button
+                type="button"
+                onClick={handleRemovePromo}
+                className="px-4 py-2 border border-[#ff0000] text-[#ff0000] hover:bg-[#ff0000]/10 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                Remove
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleApplyPromo}
+                disabled={isApplyingPromo || !promoCode.trim()}
+                className="px-4 py-2 bg-white text-black hover:bg-[#ff0000] hover:text-white disabled:bg-zinc-700 disabled:text-zinc-500 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                {isApplyingPromo ? '...' : 'Apply'}
+              </button>
+            )}
+          </div>
+          {promoError && <p className="text-[10px] text-[#ff0000] font-bold mt-1">{promoError}</p>}
+          {appliedCoupon && (
+            <p className="text-[10px] text-green-400 font-bold mt-1">
+              ✓ Applied ({appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}% off` : appliedCoupon.discount_type === 'fixed_amount' ? `${appliedCoupon.discount_value} KWD off` : 'Free Shipping'})
+            </p>
+          )}
+        </div>
+
         {/* Pricing Subtotals */}
         <div className="border-t border-white/10 pt-4 space-y-3 text-xs">
           <div className="flex justify-between text-[#a1a1a1]">
             <span>Subtotal</span>
             <span className="text-white font-semibold">{formatKWD(subtotal)}</span>
           </div>
+          {appliedCoupon && discountAmount > 0 && (
+            <div className="flex justify-between text-[#a1a1a1]">
+              <span>Discount</span>
+              <span className="text-green-400 font-semibold">-{formatKWD(discountAmount)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-[#a1a1a1]">
             <span>Delivery Fee</span>
             <span className={`font-bold ${deliveryFee === 0 ? 'text-green-400' : 'text-white'}`}>

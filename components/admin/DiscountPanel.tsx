@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
+import { getSupabase } from '../../lib/supabase';
 import {
   Percent, Plus, Search, RefreshCw, Pencil, Trash2, CheckCircle2,
   X, Save, Calendar, AlertTriangle
@@ -18,16 +19,9 @@ interface Coupon {
   usage_limit: number;
   used_count: number;
   is_active: boolean;
-  expires_at: string;
+  expires_at?: string;
   created_at: string;
 }
-
-const mockCoupons: Coupon[] = [
-  { id: '1', code: 'WELCOME10', description: '10% off for new customers', discount_type: 'percentage', discount_value: 10, min_order_amount: 0, usage_limit: 100, used_count: 23, is_active: true, expires_at: '2026-12-31', created_at: '2026-01-01' },
-  { id: '2', code: 'RAMADAN5', description: '5 KWD off orders over 50 KWD', discount_type: 'fixed_amount', discount_value: 5, min_order_amount: 50, usage_limit: 50, used_count: 12, is_active: true, expires_at: '2026-04-30', created_at: '2026-03-01' },
-  { id: '3', code: 'FREESHIP', description: 'Free shipping on all orders', discount_type: 'free_shipping', discount_value: 0, min_order_amount: 0, usage_limit: 200, used_count: 45, is_active: true, expires_at: '2026-12-31', created_at: '2026-01-15' },
-  { id: '4', code: 'VIP20', description: '20% off for VIP members', discount_type: 'percentage', discount_value: 20, min_order_amount: 100, usage_limit: 10, used_count: 10, is_active: false, expires_at: '2026-06-01', created_at: '2026-02-01' },
-];
 
 export default function DiscountPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
@@ -39,7 +33,8 @@ export default function DiscountPanel() {
     ]);
   }, [setBreadcrumbs]);
 
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
@@ -52,6 +47,30 @@ export default function DiscountPanel() {
   const [minAmount, setMinAmount] = useState('');
   const [usageLimit, setUsageLimit] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+
+  // Fetch Coupons from Database
+  const fetchCoupons = async () => {
+    setLoading(true);
+    try {
+      const client = getSupabase();
+      const { data, error } = await client
+        .from('coupons')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (data) {
+        setCoupons(data as Coupon[]);
+      }
+    } catch (err) {
+      console.error('Error fetching coupons from DB:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
 
   const filtered = coupons.filter((c) =>
     !search.trim() || c.code.toLowerCase().includes(search.toLowerCase()) || c.description?.toLowerCase().includes(search.toLowerCase())
@@ -66,40 +85,90 @@ export default function DiscountPanel() {
     setEditing(c); setCode(c.code); setDesc(c.description || '');
     setDiscountType(c.discount_type); setDiscountValue(c.discount_value.toString());
     setMinAmount(c.min_order_amount.toString()); setUsageLimit(c.usage_limit.toString());
-    setExpiresAt(c.expires_at); setShowForm(true);
+    setExpiresAt(c.expires_at ? c.expires_at.split('T')[0] : ''); setShowForm(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code || !discountValue) return;
-    const payload: Coupon = {
-      id: editing?.id || Date.now().toString(),
-      code: code.toUpperCase(),
-      description: desc,
+    if (!code || (discountType !== 'free_shipping' && !discountValue)) return;
+    
+    const payload = {
+      code: code.toUpperCase().trim(),
+      description: desc.trim(),
       discount_type: discountType,
-      discount_value: parseFloat(discountValue),
+      discount_value: discountType === 'free_shipping' ? 0 : parseFloat(discountValue) || 0,
       min_order_amount: parseFloat(minAmount) || 0,
       usage_limit: parseInt(usageLimit) || 0,
-      used_count: editing?.used_count || 0,
-      is_active: true,
-      expires_at: expiresAt || '2026-12-31',
-      created_at: editing?.created_at || new Date().toISOString(),
+      is_active: editing ? editing.is_active : true,
+      expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
     };
-    if (editing) {
-      setCoupons((prev) => prev.map((c) => (c.id === editing.id ? payload : c)));
-    } else {
-      setCoupons((prev) => [payload, ...prev]);
+
+    try {
+      const client = getSupabase();
+      if (editing) {
+        const { data, error } = await client
+          .from('coupons')
+          .update(payload)
+          .eq('id', editing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        if (data) {
+          setCoupons((prev) => prev.map((c) => (c.id === editing.id ? (data as Coupon) : c)));
+        }
+      } else {
+        const { data, error } = await client
+          .from('coupons')
+          .insert({
+            ...payload,
+            used_count: 0,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        if (data) {
+          setCoupons((prev) => [data as Coupon, ...prev]);
+        }
+      }
+      resetForm();
+    } catch (err) {
+      console.error('Error saving coupon to DB:', err);
+      alert('An error occurred while saving the coupon. Please try again.');
     }
-    resetForm();
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm('Delete this coupon?')) return;
-    setCoupons((prev) => prev.filter((c) => c.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this coupon?')) return;
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('coupons')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      setCoupons((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error('Error deleting coupon from DB:', err);
+      alert('Failed to delete coupon.');
+    }
   };
 
-  const toggleActive = (id: string) => {
-    setCoupons((prev) => prev.map((c) => c.id === id ? { ...c, is_active: !c.is_active } : c));
+  const toggleActive = async (id: string) => {
+    const coupon = coupons.find((c) => c.id === id);
+    if (!coupon) return;
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('coupons')
+        .update({ is_active: !coupon.is_active })
+        .eq('id', id);
+      if (error) throw error;
+      setCoupons((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, is_active: !c.is_active } : c))
+      );
+    } catch (err) {
+      console.error('Error toggling coupon status in DB:', err);
+    }
   };
 
   return (
@@ -143,7 +212,7 @@ export default function DiscountPanel() {
                     ))}
                   </div>
                 </div>
-                <Field label={discountType === 'percentage' ? 'Discount %' : discountType === 'fixed_amount' ? 'Discount (KWD)' : 'N/A'} value={discountValue} onChange={setDiscountValue} type="number" placeholder="10" required={discountType !== 'free_shipping'} />
+                <Field label={discountType === 'percentage' ? 'Discount %' : discountType === 'fixed_amount' ? 'Discount (KWD)' : 'N/A'} value={discountValue} onChange={setDiscountValue} type="number" placeholder="10" required={discountType !== 'free_shipping'} disabled={discountType === 'free_shipping'} />
                 <Field label="Min Order (KWD)" value={minAmount} onChange={setMinAmount} type="number" placeholder="0" />
                 <Field label="Usage Limit" value={usageLimit} onChange={setUsageLimit} type="number" placeholder="100" />
                 <Field label="Expires At" value={expiresAt} onChange={setExpiresAt} type="date" />
@@ -162,7 +231,12 @@ export default function DiscountPanel() {
       </AnimatePresence>
 
       {/* Coupon List */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="h-[30vh] flex flex-col items-center justify-center text-[#a1a1a1]">
+          <RefreshCw className="w-8 h-8 text-[#ff0000] animate-spin mb-3" />
+          <p className="text-xs uppercase tracking-widest font-bold">Loading Coupons...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="h-[30vh] flex flex-col items-center justify-center text-[#a1a1a1]">
           <Percent className="w-10 h-10 mb-3 opacity-40" />
           <p className="text-xs uppercase tracking-widest font-bold">No coupons found</p>

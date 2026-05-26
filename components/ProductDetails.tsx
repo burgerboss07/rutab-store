@@ -1,6 +1,6 @@
 'use client';
 
-import { useStore, Product } from '../lib/store';
+import { useStore, Product, formatPrice } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { X, Heart, ShoppingBag, Ruler, Check, ChevronDown, RefreshCw } from 'lucide-react';
@@ -47,6 +47,38 @@ const secondaryImages: Record<string, string[]> = {
   ],
 };
 
+const getColorHex = (colorName: string) => {
+  const normalized = colorName.trim().toLowerCase();
+  const colorsMap: Record<string, string> = {
+    black: '#0a0a0a',
+    white: '#ffffff',
+    wash: '#374151',
+    grey: '#6b7280',
+    gray: '#6b7280',
+    charcoal: '#1f2937',
+    red: '#dc2626',
+    blue: '#2563eb',
+    navy: '#1e3a8a',
+    green: '#16a34a',
+    olive: '#556b2f',
+    brown: '#78350f',
+    beige: '#f5f5dc',
+    cream: '#fffdd0',
+    tan: '#d2b48c',
+    yellow: '#eab308',
+    purple: '#7c3aed',
+    pink: '#db2777',
+    orange: '#ea580c',
+    sand: '#c2b280',
+  };
+
+  if (colorName.startsWith('#') || colorName.startsWith('rgb') || colorName.startsWith('hsl')) {
+    return colorName;
+  }
+
+  return colorsMap[normalized] || '#ff0000';
+};
+
 export default function ProductDetails() {
   const selectedProductId = useStore((state) => state.selectedProductId);
   const setSelectedProductId = useStore((state) => state.setSelectedProductId);
@@ -57,6 +89,7 @@ export default function ProductDetails() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const currency = useStore((state) => state.currency);
   
   // Custom states
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -258,41 +291,44 @@ export default function ProductDetails() {
 
                   {/* Price */}
                   <div className="text-3xl font-black text-white border-y border-white/5 py-4">
-                    {priceVal.toFixed(3)} <span className="text-sm font-normal text-[#a1a1a1]">KWD</span>
+                    {formatPrice(priceVal, currency)}
                   </div>
 
-                  {/* Color selector */}
+                  {/* Upgraded Color selector */}
                   <div className="space-y-3">
                     <span className="text-xs uppercase font-bold tracking-widest text-[#a1a1a1] block">
                       Color: <strong className="text-white">{selectedColor}</strong>
                     </span>
-                    <div className="flex gap-2">
-                      {colors.map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => setSelectedColor(c)}
-                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition cursor-pointer relative ${
-                            selectedColor === c ? 'border-[#ff0000]' : 'border-white/10 hover:border-white/30'
-                          }`}
-                        >
-                          <span
-                            className={`w-6 h-6 rounded-full inline-block ${
-                              c.toLowerCase() === 'black'
-                                ? 'bg-black'
-                                : c.toLowerCase() === 'white'
-                                ? 'bg-white border border-gray-300'
-                                : c.toLowerCase() === 'grey' || c.toLowerCase() === 'wash'
-                                ? 'bg-zinc-500'
-                                : c.toLowerCase() === 'brown'
-                                ? 'bg-[#5c4033]'
-                                : 'bg-[#ff0000]'
-                            }`}
-                          />
-                          {selectedColor === c && (
-                            <Check className="w-3 h-3 absolute text-white drop-shadow" />
-                          )}
-                        </button>
-                      ))}
+                    <div className="flex gap-3">
+                      {colors.map((c) => {
+                        const hex = getColorHex(c);
+                        const isSelected = selectedColor === c;
+                        return (
+                          <button
+                            key={c}
+                            onClick={() => setSelectedColor(c)}
+                            title={c}
+                            className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 cursor-pointer relative hover:scale-110 active:scale-95"
+                            style={{
+                              borderColor: isSelected ? hex : 'rgba(255,255,255,0.1)',
+                              boxShadow: isSelected ? `0 0 15px ${hex}60` : 'none',
+                            }}
+                          >
+                            <span
+                              className="w-7 h-7 rounded-full inline-block transition-transform duration-300 border border-white/5"
+                              style={{ 
+                                backgroundColor: hex,
+                                transform: isSelected ? 'scale(0.85)' : 'scale(1)' 
+                              }}
+                            />
+                            {isSelected && (
+                              <Check className={`w-3.5 h-3.5 absolute drop-shadow-md ${
+                                c.toLowerCase() === 'white' ? 'text-black' : 'text-white'
+                              }`} />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 

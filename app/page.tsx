@@ -4,7 +4,6 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 
-import FeaturedCategories from '@/components/FeaturedCategories';
 import TrendingSlider from '@/components/TrendingSlider';
 import SocialFeed from '@/components/SocialFeed';
 import Footer from '@/components/Footer';
@@ -30,7 +29,6 @@ export default function Home() {
           <>
             <Hero />
 
-            <FeaturedCategories />
             <TrendingSlider />
             <SocialFeed />
             <Footer />

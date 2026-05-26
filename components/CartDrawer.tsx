@@ -1,6 +1,6 @@
 'use client';
 
-import { useStore, Product } from '../lib/store';
+import { useStore, Product, formatPrice } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ export default function CartDrawer() {
   const addToCart = useStore((state) => state.addToCart);
 
   const [upsellItem, setUpsellItem] = useState<Product | null>(null);
+  const currency = useStore((state) => state.currency);
 
   // Fetch a potential upsell item (e.g. from Caps category)
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function CartDrawer() {
 
   // Format currency
   const formatKWD = (value: number) => {
-    return `${value.toFixed(3)} KWD`;
+    return formatPrice(value, currency);
   };
 
   const handleCheckout = () => {

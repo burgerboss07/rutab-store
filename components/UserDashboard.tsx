@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useStore, Product } from '../lib/store';
+import { useStore, Product, formatPrice } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { createClient } from '@/lib/supabase-browser';
 import {
@@ -25,6 +25,7 @@ export default function UserDashboard() {
   const wishlist = useStore((s) => s.wishlist);
   const toggleWishlist = useStore((s) => s.toggleWishlist);
   const addToCart = useStore((s) => s.addToCart);
+  const currency = useStore((s) => s.currency);
 
   const supabase = typeof window !== 'undefined' ? createClient() : null;
 
@@ -247,7 +248,7 @@ export default function UserDashboard() {
     }
   };
 
-  const formatKWD = (v: number) => `${v.toFixed(3)} KWD`;
+  const formatKWD = (v: number) => formatPrice(v, currency);
 
   // Auth Portal
   if (!user) {

@@ -1,6 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export const CURRENCY_CONFIG: Record<string, { rate: number; symbol: string; decimals: number; suffix?: boolean }> = {
+  'KWD (K.D)': { rate: 1.0, symbol: 'K.D', decimals: 3, suffix: true },
+  'USD ($)': { rate: 3.25, symbol: '$', decimals: 2, suffix: false },
+  'PKR (Rs)': { rate: 900.0, symbol: 'Rs', decimals: 0, suffix: false },
+  'AED (AED)': { rate: 12.0, symbol: 'AED', decimals: 2, suffix: true },
+  'EUR (€)': { rate: 3.0, symbol: '€', decimals: 2, suffix: false }
+};
+
+export function formatPrice(value: number, currentCurrency: string = 'KWD (K.D)') {
+  const config = CURRENCY_CONFIG[currentCurrency] || CURRENCY_CONFIG['KWD (K.D)'];
+  const converted = value * config.rate;
+  if (isNaN(converted)) return '0.00';
+  const formatted = converted.toLocaleString(undefined, {
+    minimumFractionDigits: config.decimals,
+    maximumFractionDigits: config.decimals
+  });
+  return config.suffix ? `${formatted} ${config.symbol}` : `${config.symbol}${formatted}`;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -198,6 +217,7 @@ export const useStore = create<StoreState>()(
     {
       name: 'rutab-store-storage',
       partialize: (state) => ({
+        currency: state.currency,
         cart: state.cart,
         wishlist: state.wishlist,
         user: state.user,

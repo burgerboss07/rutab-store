@@ -1,6 +1,6 @@
 'use client';
 
-import { useStore } from '../lib/store';
+import { useStore, formatPrice } from '../lib/store';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -39,6 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const addToCart = useStore((state) => state.addToCart);
   const toggleWishlist = useStore((state) => state.toggleWishlist);
   const wishlist = useStore((state) => state.wishlist);
+  const currency = useStore((state) => state.currency);
 
   const [hovered, setHovered] = useState(false);
   const [addingSize, setAddingSize] = useState(false);
@@ -191,7 +192,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
           <span className="text-lg font-black text-white">
-            {priceVal.toFixed(3)} <span className="text-xs font-normal text-[#a1a1a1]">KWD</span>
+            {formatPrice(priceVal, currency)}
           </span>
           
           <button
