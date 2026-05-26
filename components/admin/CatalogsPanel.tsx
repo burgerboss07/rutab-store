@@ -160,18 +160,24 @@ export default function CatalogsPanel() {
 
       {/* Search + Bulk Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <input
             type="text"
             placeholder="Search catalogs..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-xs sm:w-auto bg-white/5 border border-white/10 rounded-2xl py-3 pl-6 pr-4 text-sm outline-none focus:border-[#ff0000] transition duration-300"
+            className="w-full max-w-xs sm:w-auto bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none focus:border-[#ff0000] transition duration-300"
           />
           <Search className="w-4 h-4 text-[#a1a1a1] absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-3 rounded-xl bg-[#ff0000] border border-transparent hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Catalog
+          </button>
           <button
             onClick={exportCSV}
             className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer"
@@ -185,18 +191,12 @@ export default function CatalogsPanel() {
             <RefreshCw className="w-3.5 h-3.5" /> Sync
           </button>
           <button
-            onClick={() => { setSelectAll(false); setSelectedRows(new Set()); }}
-            className={`px-4 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white/70 hover:text-white transition cursor-pointer ${selectedRows.size > 0 ? 'bg-white/5' : 'bg-transparent'}`}
+            onClick={() => setBulkDeleteConfirm(true)}
+            disabled={selectedRows.size === 0}
+            className={`px-4 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest transition cursor-pointer ${selectedRows.size > 0 ? 'bg-white/5 text-white hover:text-white' : 'bg-white/5 text-white/40 cursor-not-allowed'}`}
           >
-            {selectedRows.size > 0 ? (
-              <>
-                <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete Selected ({selectedRows.size})
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-3.5 h-3.5" /> Delete Selected
-              </>
-            )}
+            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete Selected
+            {selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
           </button>
         </div>
       </div>
