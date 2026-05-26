@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAdminStore } from '@/lib/admin-store';
 import {
   LayoutDashboard, Users, Package, BarChart3, Settings, Shield,
-  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent, Image, Folder
+  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent
 } from 'lucide-react';
 
 const navItems = [

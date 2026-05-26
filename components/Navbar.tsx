@@ -1,6 +1,6 @@
 'use client';
 
-import { useStore, StoreView } from '../lib/store';
+import { useStore, StoreView, CURRENCY_CONFIG } from '../lib/store';
 import { ShoppingBag, Heart, User, Search, ChevronDown } from 'lucide-react';
 import { useSyncExternalStore, useState, useRef, useEffect } from 'react';
 
@@ -118,12 +118,13 @@ export default function Navbar() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
-              className="text-white text-sm font-bold flex items-center gap-1 cursor-pointer hover:text-[#a1a1a1] transition"
+              className="text-white text-sm font-bold flex items-center gap-1.5 cursor-pointer hover:text-[#a1a1a1] transition px-2 py-1 rounded-lg hover:bg-white/5"
             >
-              {currency ? currency.split(' ')[0] : 'K.D'}
+              <span className="text-xs">{CURRENCY_CONFIG[currency]?.symbol || 'K.D'}</span>
+              <span className="text-[10px] text-[#a1a1a1]">{currency.split(' ')[0]}</span>
             </button>
             {isCurrencyDropdownOpen && (
-              <div className="absolute top-full right-0 mt-6 w-36 bg-[#0a0a0a] border border-white/10 rounded-lg py-2 shadow-xl">
+              <div className="absolute top-full right-0 mt-2 w-40 bg-[#0f0f0f] border border-white/15 rounded-2xl py-2 shadow-2xl z-50 backdrop-blur-xl">
                 {currencies.map(c => (
                   <button
                     key={c}
@@ -131,10 +132,12 @@ export default function Navbar() {
                       setCurrency(c);
                       setIsCurrencyDropdownOpen(false);
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition flex items-center gap-2 cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 text-xs text-white hover:bg-white/5 transition flex items-center gap-3 cursor-pointer"
                   >
-                    {currency === c ? <div className="w-1.5 h-1.5 rounded-full bg-white" /> : <div className="w-1.5 h-1.5" />}
-                    {c}
+                    <div className={`w-1.5 h-1.5 rounded-full transition ${currency === c ? 'bg-[#ff0000]' : 'bg-transparent'}`} />
+                    <span className="font-mono text-[#ff0000] font-bold w-6 text-center">{CURRENCY_CONFIG[c]?.symbol}</span>
+                    <span className="text-[#a1a1a1] text-[10px] uppercase tracking-wider">{c.split(' ')[0]}</span>
+                    {currency === c && <span className="ml-auto text-[#ff0000] text-[9px] font-black">✓</span>}
                   </button>
                 ))}
               </div>

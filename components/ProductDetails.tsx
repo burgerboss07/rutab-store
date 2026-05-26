@@ -150,9 +150,13 @@ export default function ProductDetails() {
   const isWishlisted = product ? wishlist.includes(product.id) : false;
   const priceVal = product ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0;
   
-  // Custom image thumbnails: always include main image first
+  // Custom image thumbnails: always include main image first, then DB images, then mock fallbacks
   const gallery = product 
-    ? Array.from(new Set([product.image_url, ...(secondaryImages[product.id] || [])]))
+    ? Array.from(new Set([
+        product.image_url, 
+        ...(product.images || []), 
+        ...(secondaryImages[product.id] || [])
+      ]))
     : [];
 
   const handleAddToCart = () => {

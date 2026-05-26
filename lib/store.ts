@@ -39,6 +39,7 @@ export interface Product {
   sku: string;
   sizes: string[];
   colors: string[];
+  images?: string[];
 }
 
 export interface Catalog {

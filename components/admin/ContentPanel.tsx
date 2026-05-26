@@ -21,6 +21,7 @@ interface ProductFormData {
   description: string; image_url: string; is_featured: boolean;
   catalog: string; subCatalog: string;
   sizes: string[]; colors: string[];
+  images: string[];
 }
 
 const emptyForm: ProductFormData = {
@@ -28,6 +29,7 @@ const emptyForm: ProductFormData = {
   description: '', image_url: '/placeholder.svg', is_featured: false,
   catalog: '', subCatalog: '',
   sizes: [], colors: [],
+  images: [],
 };
 
 interface BulkEditFormData {
@@ -67,8 +69,34 @@ export default function ContentPanel() {
   const [subCatalogDesc, setSubCatalogDesc] = useState('');
   const [selectedCategoryForSub, setSelectedCategoryForSub] = useState('');
   const [sizeEntry, setSizeEntry] = useState('');
-  const [colorEntry, setColorEntry] = useState('');
+  const [colorEntry, setColorEntry] = useState('#000000');
+  const [colorLabelEntry, setColorLabelEntry] = useState('');
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [secondaryImageEntry, setSecondaryImageEntry] = useState('');
+
+  // Premium color swatches for quick selection
+  const PRESET_COLORS = [
+    { name: 'Black', hex: '#0a0a0a' },
+    { name: 'White', hex: '#ffffff' },
+    { name: 'Charcoal', hex: '#374151' },
+    { name: 'Grey', hex: '#6b7280' },
+    { name: 'Red', hex: '#dc2626' },
+    { name: 'Crimson', hex: '#991b1b' },
+    { name: 'Blue', hex: '#2563eb' },
+    { name: 'Navy', hex: '#1e3a8a' },
+    { name: 'Green', hex: '#16a34a' },
+    { name: 'Olive', hex: '#556b2f' },
+    { name: 'Brown', hex: '#78350f' },
+    { name: 'Beige', hex: '#f5f5dc' },
+    { name: 'Cream', hex: '#fffdd0' },
+    { name: 'Tan', hex: '#d2b48c' },
+    { name: 'Yellow', hex: '#eab308' },
+    { name: 'Purple', hex: '#7c3aed' },
+    { name: 'Pink', hex: '#db2777' },
+    { name: 'Orange', hex: '#ea580c' },
+    { name: 'Sand', hex: '#c2b280' },
+    { name: 'Wash', hex: '#4b5563' },
+  ];
 
   const filteredSubCatalogs = catalogsState.find((c) => c.name === form.catalog)?.subCatalogs || [];
   const bulkFilteredSubCatalogs = catalogsState.find((c) => c.name === bulkEditForm.catalog)?.subCatalogs || [];
@@ -80,11 +108,20 @@ export default function ContentPanel() {
     setSizeEntry('');
   };
 
-  const handleAddColor = () => {
-    const value = colorEntry.trim();
+  const handleAddColor = (nameOrHex?: string) => {
+    const value = (nameOrHex || colorLabelEntry || colorEntry).trim();
     if (!value || form.colors.includes(value)) return;
     setForm((prev) => ({ ...prev, colors: [...prev.colors, value] }));
-    setColorEntry('');
+    setColorLabelEntry('');
+    setColorEntry('#000000');
+  };
+
+  const handleAddPresetColor = (name: string) => {
+    if (form.colors.includes(name)) {
+      setForm((prev) => ({ ...prev, colors: prev.colors.filter((c) => c !== name) }));
+    } else {
+      setForm((prev) => ({ ...prev, colors: [...prev.colors, name] }));
+    }
   };
 
   const handleRemoveSize = (size: string) => setForm((prev) => ({ ...prev, sizes: prev.sizes.filter((s) => s !== size) }));
@@ -95,6 +132,24 @@ export default function ContentPanel() {
     if (!file) return;
     setProductImageFile(file);
     setForm((prev) => ({ ...prev, image_url: URL.createObjectURL(file) }));
+  };
+
+  const handleAddSecondaryImage = () => {
+    const value = secondaryImageEntry.trim();
+    if (!value || form.images.includes(value)) return;
+    setForm((prev) => ({ ...prev, images: [...prev.images, value] }));
+    setSecondaryImageEntry('');
+  };
+
+  const handleRemoveSecondaryImage = (img: string) => {
+    setForm((prev) => ({ ...prev, images: prev.images.filter((i) => i !== img) }));
+  };
+
+  const handleSecondaryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+    setForm((prev) => ({ ...prev, images: [...prev.images, ...newImages] }));
   };
 
   const handleCategoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -362,6 +417,7 @@ export default function ContentPanel() {
       subCatalog: p.subCatalog || '',
       sizes: p.sizes || [],
       colors: p.colors || [],
+      images: p.images || [],
     });
     setShowForm(true);
   };
@@ -383,6 +439,7 @@ export default function ContentPanel() {
       subCatalog: form.subCatalog,
       sizes: form.sizes,
       colors: form.colors,
+      images: form.images || [],
       created_at: editingProduct?.created_at || new Date().toISOString(),
     };
 
@@ -398,6 +455,7 @@ export default function ContentPanel() {
       subcategory: payload.subCatalog || null,
       sizes: payload.sizes,
       colors: payload.colors,
+      images: payload.images || [],
       is_featured: payload.is_featured,
       category_id: catalogsState.find(c => c.name === payload.catalog)?.id || null
     };
@@ -558,21 +616,67 @@ export default function ContentPanel() {
                     </button>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
-                  <div className="flex flex-wrap gap-2">
-                    {form.colors.map((color) => (
-                      <button key={color} type="button" onClick={() => handleRemoveColor(color)}
-                        className="text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20">
-                        {color} ×
-                      </button>
-                    ))}
+                  {/* Selected Color Tags */}
+                  {form.colors.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {form.colors.map((color) => {
+                        const preset = PRESET_COLORS.find(p => p.name === color);
+                        const hex = preset?.hex || (color.startsWith('#') ? color : undefined);
+                        return (
+                          <button key={color} type="button" onClick={() => handleRemoveColor(color)}
+                            title={`Remove ${color}`}
+                            className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20 hover:border-[#ff0000]/30">
+                            {hex && <span className="w-3 h-3 rounded-full border border-white/20 inline-block shrink-0" style={{ backgroundColor: hex }} />}
+                            {color} ×
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Preset Color Swatches */}
+                  <div className="flex flex-wrap gap-1.5 p-3 bg-black rounded-xl border border-white/10">
+                    {PRESET_COLORS.map((c) => {
+                      const isSelected = form.colors.includes(c.name);
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => handleAddPresetColor(c.name)}
+                          title={c.name}
+                          className={`w-7 h-7 rounded-full transition-all duration-200 cursor-pointer relative hover:scale-110 ${
+                            isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-black scale-105' : 'ring-1 ring-white/10'
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        >
+                          {isSelected && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <svg viewBox="0 0 10 10" className="w-3 h-3">
+                                <path d="M2 5l2.5 2.5L8 3" stroke={c.hex === '#ffffff' || c.hex === '#fffdd0' || c.hex === '#f5f5dc' ? '#000' : '#fff'} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                              </svg>
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="flex gap-2">
-                    <input value={colorEntry} onChange={(e) => setColorEntry(e.target.value)} placeholder="Add color"
-                      className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button type="button" onClick={handleAddColor}
-                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition">
+                  {/* Custom Color Input */}
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={colorEntry}
+                      onChange={(e) => setColorEntry(e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-white/10 bg-black cursor-pointer shrink-0"
+                    />
+                    <input
+                      value={colorLabelEntry}
+                      onChange={(e) => setColorLabelEntry(e.target.value)}
+                      placeholder="Custom color name (e.g. Ash Blue)"
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddColor(); }}}
+                      className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button type="button" onClick={() => handleAddColor()}
+                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition shrink-0">
                       Add
                     </button>
                   </div>
@@ -603,6 +707,45 @@ export default function ContentPanel() {
                   <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Product description..."
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
                 </div>
+                {/* Additional Images */}
+                <div className="sm:col-span-2 lg:col-span-3 space-y-2">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Additional Images (Gallery)</label>
+                  {form.images.length > 0 && (
+                    <div className="flex flex-wrap gap-3 p-3 bg-black/30 rounded-xl border border-white/5">
+                      {form.images.map((img, i) => (
+                        <div key={i} className="relative group">
+                          <div className="w-20 h-24 rounded-xl overflow-hidden border border-white/10 bg-black">
+                            <img src={img} alt={`img-${i}`} className="w-full h-full object-cover" />
+                          </div>
+                          <button type="button" onClick={() => handleRemoveSecondaryImage(img)}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ff0000] text-white flex items-center justify-center text-[9px] font-bold opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input value={secondaryImageEntry} onChange={(e) => setSecondaryImageEntry(e.target.value)}
+                      placeholder="Paste image URL and press Add..."
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSecondaryImage(); }}}
+                      className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button type="button" onClick={handleAddSecondaryImage}
+                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] uppercase font-bold tracking-widest transition shrink-0">
+                      Add URL
+                    </button>
+                  </div>
+                  <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-white/20 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition cursor-pointer group">
+                    <div className="w-8 h-8 rounded-lg bg-[#ff0000]/10 flex items-center justify-center group-hover:bg-[#ff0000]/20 transition">
+                      <Plus className="w-4 h-4 text-[#ff0000]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-white">Upload Multiple Images</p>
+                      <p className="text-[9px] text-[#555]">Click to select multiple files (JPG, PNG, WebP)</p>
+                    </div>
+                    <input type="file" accept="image/*" multiple onChange={handleSecondaryImageUpload} className="hidden" />
+                  </label>
+                </div>
                 <div className="flex items-center gap-3">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Featured</label>
                   <button type="button" onClick={() => setForm({ ...form, is_featured: !form.is_featured })}
@@ -622,90 +765,7 @@ export default function ContentPanel() {
         )}
       </AnimatePresence>
 
-      {/* Catalog / Sub Catalog Manager */}
-      <div className="p-6 rounded-3xl bg-[#111111] border border-white/5 space-y-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Catalog & Subcategory Manager</h3>
-            <p className="text-[10px] text-[#a1a1a1]">Create new categories, add subcategories, and upload catalog artwork.</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Category Name</label>
-              <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="E.g. Hoodies"
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Category Description</label>
-              <input value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)} placeholder="Short category description"
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Category Image</label>
-              <input type="file" accept="image/*" onChange={handleCategoryImageUpload}
-                className="w-full text-[10px] text-white file:bg-[#ff0000] file:text-white file:px-3 file:py-2 file:rounded-xl file:border-none" />
-              <div className="w-full h-28 rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a]">
-                <img src={categoryImagePreview} alt="Category preview" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <button type="button" onClick={handleAddCatalog}
-              className="w-full px-4 py-3 rounded-2xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold uppercase tracking-widest transition">
-              Add Category
-            </button>
-          </div>
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Parent Category</label>
-              <select value={selectedCategoryForSub} onChange={(e) => setSelectedCategoryForSub(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Subcategory Name</label>
-              <input value={subCatalogName} onChange={(e) => setSubCatalogName(e.target.value)} placeholder="E.g. Streetwear"
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Subcategory Description</label>
-              <input value={subCatalogDesc} onChange={(e) => setSubCatalogDesc(e.target.value)} placeholder="Short subcategory description"
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <button type="button" onClick={handleAddSubCatalog}
-              className="w-full px-4 py-3 rounded-2xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold uppercase tracking-widest transition">
-              Add Subcategory
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {catalogsState.map((cat) => (
-            <div key={cat.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-[#aaa]">{cat.name}</p>
-                  <p className="text-[10px] text-[#777] mt-1">{cat.description || 'No description yet'}</p>
-                </div>
-                {cat.image_url ? (
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/5 border border-white/10">
-                    <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
-                  </div>
-                ) : null}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {cat.subCatalogs.map((sub) => (
-                  <span key={sub.id} className="text-[9px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[#ddd]">
-                    {sub.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Bulk Edit Form */}
       <AnimatePresence>
