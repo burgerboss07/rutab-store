@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/lib/admin-store';
 import {
   Settings, Globe, Mail, CreditCard, Search, ToggleLeft,
-  Save, AlertTriangle, ImageIcon
+  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw
 } from 'lucide-react';
 
 const sections = [
@@ -13,12 +13,49 @@ const sections = [
   { id: 'payment', label: 'Payment', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'seo', label: 'SEO', icon: <Search className="w-4 h-4" /> },
   { id: 'maintenance', label: 'Maintenance', icon: <ToggleLeft className="w-4 h-4" /> },
+  { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
 export default function SettingsPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   const [activeSection, setActiveSection] = useState('general');
   const [saved, setSaved] = useState(false);
+  const [confirmReset, setConfirmReset] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
+
+  const handleExecuteReset = async (actionId: string) => {
+    setResetting(actionId);
+    try {
+      const res = await fetch('/api/admin/reset-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: actionId === 'revenue' ? 'revenue_orders' : actionId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Reset execution successful for action: "${actionId}"`);
+      } else {
+        alert(`Error executing reset: ${data.error}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`Network error executing reset: ${err.message || err}`);
+    } finally {
+      setResetting(null);
+      setConfirmReset(null);
+    }
+  };
+
+  const dangerActions = [
+    { id: 'revenue', label: 'Reset All Revenue', desc: 'Clears all revenue data and financial records. Cannot be undone.', icon: <RefreshCw className="w-4 h-4" /> },
+    { id: 'orders', label: 'Reset All Orders', desc: 'Permanently deletes all order history from the database.', icon: <Trash2 className="w-4 h-4" /> },
+    { id: 'customers', label: 'Reset All Customers', desc: 'Removes all customer profiles and data.', icon: <Trash2 className="w-4 h-4" /> },
+    { id: 'products', label: 'Reset All Products', desc: 'Deletes all products and associated inventory.', icon: <Trash2 className="w-4 h-4" /> },
+    { id: 'analytics', label: 'Reset Analytics Data', desc: 'Clears all analytics, traffic, and performance data.', icon: <RefreshCw className="w-4 h-4" /> },
+    { id: 'all', label: 'Full Store Reset', desc: 'Wipes ALL store data including orders, products, customers, revenue, and settings. This is irreversible.', icon: <AlertTriangle className="w-4 h-4" /> },
+  ];
 
   useEffect(() => {
     setBreadcrumbs([
@@ -45,7 +82,9 @@ export default function SettingsPanel() {
           {sections.map((sec) => (
             <button key={sec.id} onClick={() => setActiveSection(sec.id)}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[10px] uppercase font-bold tracking-wider transition cursor-pointer ${
-                activeSection === sec.id ? 'bg-[#ff0000] text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+                activeSection === sec.id
+                  ? sec.id === 'danger' ? 'bg-red-600 text-white' : 'bg-[#ff0000] text-white'
+                  : sec.id === 'danger' ? 'bg-red-900/20 text-red-400 hover:bg-red-900/30 border border-red-900/40' : 'bg-white/5 text-white/70 hover:bg-white/10'
               }`}>
               {sec.icon} {sec.label}
             </button>
@@ -121,12 +160,65 @@ export default function SettingsPanel() {
             </>
           )}
 
+          {activeSection === 'danger' && (
+            <>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-900/20 border border-red-500/30">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+                <p className="text-xs text-red-300">Actions in this zone are <strong>irreversible</strong>. Data will be permanently deleted and cannot be recovered. Proceed with extreme caution.</p>
+              </div>
+              <div className="space-y-3">
+                {dangerActions.map((action) => (
+                  <div key={action.id} className="flex items-center justify-between p-4 rounded-xl bg-black/40 border border-red-900/30">
+                    <div className="flex-1 min-w-0 mr-4">
+                      <p className="text-sm font-bold text-white">{action.label}</p>
+                      <p className="text-[10px] text-[#a1a1a1] mt-0.5">{action.desc}</p>
+                    </div>
+                    {confirmReset === action.id ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => setConfirmReset(null)}
+                          className="px-3 py-1.5 rounded-lg border border-white/10 text-white/70 text-[9px] font-bold uppercase tracking-wider transition cursor-pointer hover:bg-white/5">
+                          Cancel
+                        </button>
+                        <button
+                          disabled={resetting !== null}
+                          onClick={() => handleExecuteReset(action.id)}
+                          className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[9px] font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 disabled:opacity-50">
+                          {resetting === action.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" /> Resetting...
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="w-3 h-3" /> Confirm Reset
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmReset(action.id)}
+                        className={`px-4 py-1.5 rounded-lg border text-[9px] font-bold uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                          action.id === 'all' ? 'bg-red-900/40 border-red-500/50 text-red-400 hover:bg-red-900/60' : 'bg-transparent border-red-900/50 text-red-400 hover:bg-red-900/20'
+                        }`}>
+                        {action.icon && <span className="inline-flex mr-1.5">{action.icon}</span>}
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {activeSection !== 'danger' && (
           <div className="flex items-center gap-3 pt-4 border-t border-white/5">
             <button onClick={handleSave}
               className="px-6 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer">
               <Save className="w-4 h-4" /> {saved ? 'Saved!' : 'Save Changes'}
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

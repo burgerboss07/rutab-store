@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
+import { useStore, formatPrice } from '@/lib/store';
 import { BarChart3, TrendingUp, Download, Calendar, Globe, MousePointer, Users } from 'lucide-react';
 
 function LineChart({ data, color = '#ff0000' }: { data: number[]; color?: string }) {
@@ -28,6 +29,8 @@ const dateRanges = ['7D', '30D', '90D', '1Y', 'All'];
 export default function AnalyticsPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   const [range, setRange] = useState('30D');
+  const currency = useStore((s) => s.currency);
+  const formatKWD = (v: number) => formatPrice(v, currency);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -105,10 +108,10 @@ export default function AnalyticsPanel() {
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Top Performing Products</h3>
         <div className="space-y-3">
           {[
-            { name: 'Travis Scott', sales: 142, revenue: '2,284.2', growth: '+24%' },
-            { name: 'Kuwait Hoodie', sales: 98, revenue: '1,578.2', growth: '+18%' },
-            { name: 'Arabic Poetry Tee', sales: 76, revenue: '1,223.6', growth: '+32%' },
-            { name: 'Cartoon Classics Cap', sales: 54, revenue: '869.4', growth: '+11%' },
+            { name: 'Travis Scott', sales: 142, revenue: 2284.2, growth: '+24%' },
+            { name: 'Kuwait Hoodie', sales: 98, revenue: 1578.2, growth: '+18%' },
+            { name: 'Arabic Poetry Tee', sales: 76, revenue: 1223.6, growth: '+32%' },
+            { name: 'Cartoon Classics Cap', sales: 54, revenue: 869.4, growth: '+11%' },
           ].map((p, i) => (
             <div key={p.name} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
               <div className="flex items-center gap-3">
@@ -117,7 +120,7 @@ export default function AnalyticsPanel() {
               </div>
               <div className="flex items-center gap-6">
                 <span className="text-[10px] text-[#a1a1a1]">{p.sales} sales</span>
-                <span className="text-[10px] font-bold text-white">{p.revenue} KWD</span>
+                <span className="text-[10px] font-bold text-white">{formatKWD(p.revenue)}</span>
                 <span className="text-[10px] font-bold text-emerald-400">{p.growth}</span>
               </div>
             </div>

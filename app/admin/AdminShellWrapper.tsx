@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Key, Mail, Lock } from 'lucide-react';
 import AdminShell from '@/components/admin/AdminShell';
+import { getSupabase } from '@/lib/supabase';
+import { useStore } from '@/lib/store';
 
 const AUTH_KEY = 'rutab-admin-auth';
 
@@ -30,8 +32,9 @@ export default function AdminShellWrapper({
     if (isAuthenticated) {
       localStorage.setItem(AUTH_KEY, 'true');
     }
+
     setHydrated(true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

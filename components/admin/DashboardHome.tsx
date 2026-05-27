@@ -8,6 +8,7 @@ import type {
   SocialPlatform, ShippingStats, LiveActivity, SEOMetric, PayoutRecord,
 } from '@/lib/admin-store';
 import KpiCard from './ui/KpiCard';
+import { useStore, formatPrice } from '@/lib/store';
 import {
   DollarSign, ShoppingBag, Users, Activity, Package, TrendingUp,
   Plus, Download, FileText, Box, BarChart3, Target, Camera,
@@ -81,6 +82,9 @@ export default function DashboardHome() {
   const activities = useAdminStore((s) => s.activities);
   const d = dashboardMock;
 
+  const currency = useStore((s) => s.currency);
+  const formatKWD = (v: number) => formatPrice(v, currency);
+
   useEffect(() => {
     setBreadcrumbs([{ label: 'Dashboard', href: '/admin/dashboard' }]);
   }, [setBreadcrumbs]);
@@ -98,7 +102,7 @@ export default function DashboardHome() {
 
       {/* ═══ KPI Widgets ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total Revenue" value="12,847.500 KWD" icon={<DollarSign className="w-4 h-4" />} trend={{ value: '12.5%', positive: true }} subtitle="vs last month" />
+        <KpiCard label="Total Revenue" value={formatKWD(12847.5)} icon={<DollarSign className="w-4 h-4" />} trend={{ value: '12.5%', positive: true }} subtitle="vs last month" />
         <KpiCard label="New Users" value="48" icon={<Users className="w-4 h-4" />} trend={{ value: '8.2%', positive: true }} subtitle="this week" />
         <KpiCard label="Pending Orders" value="12" icon={<Package className="w-4 h-4" />} trend={{ value: '3', positive: false }} subtitle="needs fulfilment" />
         <KpiCard label="Conversion Rate" value="4.8%" icon={<TrendingUp className="w-4 h-4" />} trend={{ value: '1.2%', positive: true }} subtitle="above target" />
@@ -167,7 +171,7 @@ export default function DashboardHome() {
                   <span className="text-xs font-bold text-white">{p.name}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-bold text-white">{p.revenue.toFixed(1)} KWD</span>
+                  <span className="text-[10px] font-bold text-white">{formatKWD(p.revenue)}</span>
                   <span className="text-[10px] font-bold text-emerald-400">{p.growth}</span>
                 </div>
               </div>
@@ -196,11 +200,11 @@ export default function DashboardHome() {
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
                 <span className="text-[11px] text-[#a1a1a1]">Avg. Order Value</span>
-                <span className="text-sm font-black text-white">48.50 KWD</span>
+                <span className="text-sm font-black text-white">{formatKWD(48.50)}</span>
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
                 <span className="text-[11px] text-[#a1a1a1]">Avg. Lifetime Value</span>
-                <span className="text-sm font-black text-white">284.00 KWD</span>
+                <span className="text-sm font-black text-white">{formatKWD(284.00)}</span>
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
                 <span className="text-[11px] text-[#a1a1a1]">Churn Rate (30d)</span>
@@ -381,12 +385,12 @@ export default function DashboardHome() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="flex flex-col items-center p-5 rounded-2xl bg-[#0a0a0a] border border-white/5">
             <CreditCard className="w-5 h-5 text-emerald-400 mb-1" />
-            <span className="text-xl font-black text-white">7,471.25 KWD</span>
+            <span className="text-xl font-black text-white">{formatKWD(7471.25)}</span>
             <span className="text-[9px] text-[#a1a1a1] uppercase tracking-wider">Pending Payouts</span>
           </div>
           <div className="flex flex-col items-center p-5 rounded-2xl bg-[#0a0a0a] border border-white/5">
             <DollarSign className="w-5 h-5 text-[#ff0000] mb-1" />
-            <span className="text-xl font-black text-white">13,050.50 KWD</span>
+            <span className="text-xl font-black text-white">{formatKWD(13050.50)}</span>
             <span className="text-[9px] text-[#a1a1a1] uppercase tracking-wider">Completed (MTD)</span>
           </div>
           <div className="flex flex-col items-center p-5 rounded-2xl bg-[#0a0a0a] border border-white/5">
@@ -406,7 +410,7 @@ export default function DashboardHome() {
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <span className="text-[11px] text-[#a1a1a1]">{p.method}</span>
-                  <span className="text-xs font-bold text-white">{p.amount.toFixed(3)} KWD</span>
+                  <span className="text-xs font-bold text-white">{formatKWD(p.amount)}</span>
                   <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full ${
                     p.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>{p.status}</span>

@@ -490,7 +490,7 @@ export default function ContentPanel() {
     const data = tab === 'products' ? filteredProds : filteredOrders;
     const rows = selectedRows.size > 0 ? data.filter((d) => selectedRows.has(d.id)) : data;
       const headers = tab === 'products'
-      ? ['Name', 'SKU', 'Catalog', 'Sub Catalog', 'Price', 'Stock', 'Sizes', 'Colors', 'Featured']
+      ? ['Name', 'SKU', 'Catalog', 'Sub Catalog', 'Price', 'Stock', 'Size', 'Colors', 'Featured']
       : ['ID', 'Total', 'Status', 'Payment', 'Date', 'Phone'];
     const csv = [
       headers.join(','),
@@ -569,6 +569,24 @@ export default function ContentPanel() {
             )}
           </AnimatePresence>
           {tab === 'products' && (
+            <button
+              onClick={() => {
+                const allIds = filteredProds.map((p) => p.id);
+                if (selectedRows.size === filteredProds.length && filteredProds.length > 0) {
+                  setSelectedRows(new Set());
+                  setSelectAll(false);
+                } else {
+                  setSelectedRows(new Set(allIds));
+                  setSelectAll(true);
+                }
+              }}
+              className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {selectedRows.size === filteredProds.length && filteredProds.length > 0 ? 'Deselect All' : 'Select All'}
+            </button>
+          )}
+          {tab === 'products' && (
             <button onClick={() => { resetForm(); setShowForm(true); }}
               className="px-4 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
               <Plus className="w-3.5 h-3.5" /> Add Product
@@ -598,7 +616,7 @@ export default function ContentPanel() {
                 <Field label="Price (KWD)" value={form.price} onChange={(v: string) => setForm({ ...form, price: v })} type="number" step="0.001" placeholder="45.000" required />
                 <Field label="Stock" value={form.stock} onChange={(v: string) => setForm({ ...form, stock: v })} type="number" placeholder="10" />
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Size</label>
                   <div className="flex flex-wrap gap-2">
                     {form.sizes.map((size) => (
                       <button key={size} type="button" onClick={() => handleRemoveSize(size)}
@@ -875,7 +893,7 @@ export default function ContentPanel() {
                     {p.stock ?? 0}
                   </span>
                 )},
-                { key: 'sizes', label: 'Sizes', render: (p: Product) => (
+                { key: 'sizes', label: 'Size', render: (p: Product) => (
                   <span className="text-[10px] text-[#a1a1a1]">{p.sizes?.join(', ') || '-'}</span>
                 )},
                 { key: 'colors', label: 'Colors', render: (p: Product) => (

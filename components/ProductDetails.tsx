@@ -205,7 +205,7 @@ export default function ProductDetails() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.95 }}
           transition={{ type: 'spring', damping: 25 }}
-          className="relative w-full max-w-6xl max-h-[90vh] bg-[#0a0a0a] border border-white/10 rounded-[40px] shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col md:grid md:grid-cols-2 min-h-[80vh]"
+          className="relative w-full max-w-6xl max-h-[90vh] bg-[#0a0a0a] border border-white/10 rounded-[40px] shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col md:grid md:grid-cols-2 min-h-[80vh] md:overflow-visible"
         >
           {/* Close Button */}
           <button
@@ -280,7 +280,7 @@ export default function ProductDetails() {
               </div>
 
               {/* RIGHT COLUMN: Info, selectors, action buttons */}
-              <div className="p-6 md:p-10 flex flex-col justify-between overflow-y-auto no-scrollbar max-h-[85vh] md:max-h-[90vh]">
+              <div className="p-6 md:p-10 flex flex-col justify-between overflow-y-auto no-scrollbar" style={{ maxHeight: '90vh' }} data-lenis-prevent>
                 <div className="space-y-6 pt-10 md:pt-0">
                   {/* Category & Title */}
                   <div>

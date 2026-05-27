@@ -154,7 +154,25 @@ export const useStore = create<StoreState>()(
 
       // Cart Actions
       currency: 'KWD (K.D)',
-      setCurrency: (currency) => set({ currency }),
+      setCurrency: (currency) => {
+        set({ currency });
+        if (typeof window !== 'undefined') {
+          import('./supabase').then(async ({ getSupabase }) => {
+            try {
+              const client = getSupabase();
+              const { data: { session } } = await client.auth.getSession();
+              if (session?.user) {
+                await client
+                  .from('profiles')
+                  .update({ preferred_currency: currency })
+                  .eq('id', session.user.id);
+              }
+            } catch (err) {
+              console.error('Failed to save preferred currency to profile:', err);
+            }
+          });
+        }
+      },
       cart: [],
       addToCart: (item, quantity = 1) => {
         const currentCart = get().cart;

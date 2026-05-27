@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
 import {
-  Shield, ShieldCheck, Fingerprint, Clock, Globe, AlertTriangle,
+  Shield, ShieldCheck, Clock, Globe, AlertTriangle,
   CheckCircle2, XCircle
 } from 'lucide-react';
 import DataTable from './ui/DataTable';
@@ -28,7 +28,7 @@ const loginHistory = [
 
 export default function SecurityPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
-  const [tab, setTab] = useState<'audit' | 'logins' | '2fa'>('audit');
+  const [tab, setTab] = useState<'audit' | 'logins'>('audit');
 
   useEffect(() => {
     setBreadcrumbs([
@@ -41,15 +41,14 @@ export default function SecurityPanel() {
     <div className="space-y-6 pt-4 animate-fade-in-up">
       <div>
         <h1 className="text-3xl font-black uppercase tracking-wider">Security & Logs</h1>
-        <p className="text-sm text-[#a1a1a1] mt-1">Audit logs, login history, and 2FA configuration.</p>
+        <p className="text-sm text-[#a1a1a1] mt-1">Audit logs and login history.</p>
       </div>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-white/5 pb-3">
-        {([
+      {([
           { id: 'audit' as const, label: 'Audit Logs', icon: <Shield className="w-3.5 h-3.5" /> },
           { id: 'logins' as const, label: 'Login History', icon: <Globe className="w-3.5 h-3.5" /> },
-          { id: '2fa' as const, label: 'Two-Factor Auth', icon: <Fingerprint className="w-3.5 h-3.5" /> },
         ]).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] uppercase font-bold tracking-[0.25em] transition cursor-pointer ${
@@ -120,23 +119,6 @@ export default function SecurityPanel() {
         </div>
       )}
 
-      {tab === '2fa' && (
-        <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 space-y-6">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <Fingerprint className="w-4 h-4 text-[#ff0000]" /> Two-Factor Authentication
-          </h3>
-          <div className="flex items-center gap-4 p-5 rounded-2xl bg-black/50 border border-white/5">
-            <ShieldCheck className="w-10 h-10 text-emerald-400" />
-            <div>
-              <p className="text-sm font-bold text-white">2FA is currently disabled</p>
-              <p className="text-[10px] text-[#a1a1a1]">Add an extra layer of security to your admin account using an authenticator app.</p>
-            </div>
-          </div>
-          <button className="px-6 py-3 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer">
-            Enable Two-Factor Auth
-          </button>
-        </div>
-      )}
     </div>
   );
 }
