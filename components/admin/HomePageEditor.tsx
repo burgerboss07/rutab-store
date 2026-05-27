@@ -30,6 +30,37 @@ const SECTION_LABELS: Record<string, { name: string; desc: string }> = {
   footer: { name: 'Footer Information', desc: 'Bottom contact links, newsletter, and copyright' }
 };
 
+const DEFAULT_FEEDS = [
+  {
+    username: '@cyber_rutab',
+    views: '18.4K',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600',
+    productId: '550e8400-e29b-41d4-a716-446655440102',
+    productName: 'Neo-Noir Acid Wash Hoodie',
+  },
+  {
+    username: '@yousef_fits',
+    views: '34.2K',
+    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600',
+    productId: '550e8400-e29b-41d4-a716-446655440107',
+    productName: 'Technical Cargo Trousers',
+  },
+  {
+    username: '@sara.style',
+    views: '11.1K',
+    image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=600',
+    productId: '550e8400-e29b-41d4-a716-446655440104',
+    productName: 'Ghost-Shell Oversized Tee',
+  },
+  {
+    username: '@gcc_dripper',
+    views: '56.9K',
+    image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=600',
+    productId: '550e8400-e29b-41d4-a716-446655440109',
+    productName: 'Cyber-Luxe Strapback Cap',
+  },
+];
+
 export default function HomePageEditor() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   
@@ -42,6 +73,7 @@ export default function HomePageEditor() {
   // State matching database structure
   const [layout, setLayout] = useState<string[]>([]);
   const [sections, setSections] = useState<Record<string, SectionConfig>>({});
+  const [dbProducts, setDbProducts] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -49,7 +81,23 @@ export default function HomePageEditor() {
       { label: 'Home Page Editor' },
     ]);
     loadSettings();
+    fetchProducts();
   }, [setBreadcrumbs]);
+
+  const fetchProducts = async () => {
+    try {
+      const client = getSupabase();
+      const { data } = await client
+        .from('products')
+        .select('id, name')
+        .order('name', { ascending: true });
+      if (data) {
+        setDbProducts(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch products for editor:', err);
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -380,6 +428,72 @@ export default function HomePageEditor() {
                     value={sections.feed?.description || 'Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.'}
                     onChange={(val) => handleTextChange('feed', 'description', val)}
                   />
+
+                  {/* Edit Feed Cards */}
+                  <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                      {((sections.feed as any)?.feeds || DEFAULT_FEEDS).map((feed: any, idx: number) => (
+                        <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
+                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <Field
+                              label="Username"
+                              value={feed.username}
+                              onChange={(val) => {
+                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                                newFeeds[idx] = { ...newFeeds[idx], username: val };
+                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                              }}
+                            />
+                            <Field
+                              label="Views Count"
+                              value={feed.views}
+                              onChange={(val) => {
+                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                                newFeeds[idx] = { ...newFeeds[idx], views: val };
+                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                              }}
+                            />
+                            <Field
+                              label="Image URL"
+                              value={feed.image}
+                              onChange={(val) => {
+                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                                newFeeds[idx] = { ...newFeeds[idx], image: val };
+                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Product Selection */}
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">
+                              Linked Product
+                            </label>
+                            <select
+                              value={feed.productId || ''}
+                              onChange={(e) => {
+                                const prodId = e.target.value;
+                                const prodName = dbProducts.find(p => p.id === prodId)?.name || '';
+                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                                newFeeds[idx] = { ...newFeeds[idx], productId: prodId, productName: prodName };
+                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                              }}
+                              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-[#ff0000]/40 transition cursor-pointer"
+                            >
+                              <option value="">Select a product...</option>
+                              {dbProducts.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -509,6 +623,7 @@ export default function HomePageEditor() {
                 }
 
                 if (secId === 'feed') {
+                  const feedItems = (config as any).feeds || DEFAULT_FEEDS;
                   return (
                     <div key="preview-feed" className="p-4 bg-[#0a0a0a] border border-white/5 rounded-2xl space-y-2">
                       <div>
@@ -519,9 +634,9 @@ export default function HomePageEditor() {
                         {config.description || 'Tag @RutabStore...'}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
-                        {[1, 2].map((f) => (
-                          <div key={f} className="h-24 bg-white/5 border border-white/5 rounded-xl flex items-end p-2 relative overflow-hidden">
-                            <span className="text-[7px] font-bold text-white relative z-10">@member_fit{f}</span>
+                        {feedItems.slice(0, 2).map((f: any, i: number) => (
+                          <div key={i} className="h-24 bg-white/5 border border-white/5 rounded-xl flex items-end p-2 relative overflow-hidden">
+                            <span className="text-[7px] font-bold text-white relative z-10">{f.username}</span>
                           </div>
                         ))}
                       </div>

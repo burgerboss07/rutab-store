@@ -168,6 +168,7 @@ export default function Home() {
               title={sectionConfig.title}
               subtitle={sectionConfig.subtitle}
               description={sectionConfig.description}
+              feeds={sectionConfig.feeds}
             />
           );
         case 'footer':

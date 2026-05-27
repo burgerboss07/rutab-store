@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/admin-store';
 import { Search, Bell, User, LogOut, ChevronDown, CheckCheck, Settings, Menu } from 'lucide-react';
 
 export default function AdminHeader({ onLock }: { onLock?: () => void }) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -131,16 +133,16 @@ export default function AdminHeader({ onLock }: { onLock?: () => void }) {
                   Settings
                 </div>
               </Link>
-              <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  window.location.href = '/';
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-400 hover:bg-white/5 transition border-t border-white/5 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                Back to Store
-              </button>
+                <button
+                  onClick={() => {
+                    if (onLock) onLock();
+                    router.push('/');
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-400 hover:bg-white/5 transition border-t border-white/5 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
             </div>
           )}
         </div>

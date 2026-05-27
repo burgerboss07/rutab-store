@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore, Order, OrderItem, formatPrice } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
@@ -137,6 +137,45 @@ export default function CheckoutForm() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  const [activePaymentOptions, setActivePaymentOptions] = useState<PaymentMethod[]>([
+    'Cash on Delivery',
+    'Pickup',
+    'Wamd',
+    'Binance',
+    'PayPal',
+    'Skrill',
+    'EasyPaisa',
+    'Meezan Bank',
+  ]);
+
+  useEffect(() => {
+    async function loadActiveGateways() {
+      try {
+        const client = getSupabase();
+        const { data } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'payment_gateways')
+          .maybeSingle();
+        if (data && data.value) {
+          const loadedOptions = Object.entries(data.value)
+            .filter(([_, enabled]) => enabled === true)
+            .map(([name]) => name as PaymentMethod);
+          if (loadedOptions.length > 0) {
+            setActivePaymentOptions(loadedOptions);
+            // set default payment method to the first active one if current is inactive
+            if (!loadedOptions.includes(paymentMethod)) {
+              setPaymentMethod(loadedOptions[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load active gateways for checkout:', err);
+      }
+    }
+    loadActiveGateways();
+  }, [paymentMethod]);
 
   // Checkout flow control
   const [isSubmitting, setSubmitting] = useState(false);
@@ -556,7 +595,7 @@ export default function CheckoutForm() {
 
                 {dropdownOpen && (
                   <div className="absolute z-20 top-[calc(100%+6px)] left-0 w-full bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                    {paymentOptions.map((method) => (
+                    {activePaymentOptions.map((method) => (
                       <button
                         key={method}
                         onClick={() => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useStore, StoreView, CURRENCY_CONFIG } from '../lib/store';
+import ThemeToggle from '@/components/ThemeToggle';
 import { ShoppingBag, Heart, User, Search, ChevronDown } from 'lucide-react';
 import { useSyncExternalStore, useState, useRef, useEffect } from 'react';
 
@@ -92,7 +93,7 @@ export default function Navbar() {
           >
             <Search className="w-5 h-5" />
           </button>
-
+          
           {/* Wishlist Link */}
           <button
             onClick={() => setActiveView('account')}
@@ -113,6 +114,9 @@ export default function Navbar() {
           >
             <User className="w-5 h-5" />
           </button>
+          
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Currency Dropdown */}
           <div className="relative" ref={dropdownRef}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
+import { getSupabase } from '@/lib/supabase';
 import {
   Shield, ShieldCheck, Clock, Globe, AlertTriangle,
   CheckCircle2, XCircle
@@ -29,12 +30,26 @@ const loginHistory = [
 export default function SecurityPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   const [tab, setTab] = useState<'audit' | 'logins'>('audit');
+  const [hasData, setHasData] = useState(true);
 
   useEffect(() => {
     setBreadcrumbs([
       { label: 'Dashboard', href: '/admin/dashboard' },
       { label: 'Security' },
     ]);
+
+    async function checkData() {
+      try {
+        const client = getSupabase();
+        const { count } = await client
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+        setHasData((count || 0) > 0);
+      } catch (e) {
+        setHasData(true);
+      }
+    }
+    checkData();
   }, [setBreadcrumbs]);
 
   return (
@@ -85,7 +100,7 @@ export default function SecurityPanel() {
                 <Shield className="w-3.5 h-3.5 text-blue-400" />
               )},
             ]}
-            data={auditLogs}
+            data={hasData ? auditLogs : []}
             keyExtractor={(r) => r.id}
           />
         </div>
@@ -113,7 +128,7 @@ export default function SecurityPanel() {
                 }`}>{r.status}</span>
               )},
             ]}
-            data={loginHistory}
+            data={hasData ? loginHistory : []}
             keyExtractor={(r) => r.id}
           />
         </div>

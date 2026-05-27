@@ -733,7 +733,7 @@ export default function ContentPanel() {
                       {form.images.map((img, i) => (
                         <div key={i} className="relative group">
                           <div className="w-20 h-24 rounded-xl overflow-hidden border border-white/10 bg-black">
-                            <img src={img} alt={`img-${i}`} className="w-full h-full object-cover" />
+                            <Image src={img} alt={`img-${i}`} width={80} height={96} className="w-full h-full object-cover" />
                           </div>
                           <button type="button" onClick={() => handleRemoveSecondaryImage(img)}
                             className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ff0000] text-white flex items-center justify-center text-[9px] font-bold opacity-0 group-hover:opacity-100 transition cursor-pointer">

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/lib/admin-store';
+import { useStore, CURRENCY_CONFIG } from '@/lib/store';
+import { getSupabase } from '@/lib/supabase';
 import {
   Settings, Globe, Mail, CreditCard, Search, ToggleLeft,
-  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw
+  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2
 } from 'lucide-react';
 
 const sections = [
@@ -20,8 +22,22 @@ export default function SettingsPanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   const [activeSection, setActiveSection] = useState('general');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
   const [resetting, setResetting] = useState<string | null>(null);
+
+  const { currency, setCurrency } = useStore();
+
+  const [gateways, setGateways] = useState<Record<string, boolean>>({
+    'Cash on Delivery': true,
+    'Pickup': true,
+    'Wamd': true,
+    'Binance': true,
+    'PayPal': true,
+    'Skrill': true,
+    'EasyPaisa': true,
+    'Meezan Bank': true
+  });
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -62,11 +78,41 @@ export default function SettingsPanel() {
       { label: 'Dashboard', href: '/admin/dashboard' },
       { label: 'Settings' },
     ]);
+
+    async function loadSettings() {
+      try {
+        const client = getSupabase();
+        const { data } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'payment_gateways')
+          .maybeSingle();
+        if (data && data.value) {
+          setGateways(data.value);
+        }
+      } catch (e) {
+        console.error('Failed to load gateways settings:', e);
+      }
+    }
+    loadSettings();
   }, [setBreadcrumbs]);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('settings')
+        .upsert({ key: 'payment_gateways', value: gateways }, { onConflict: 'key' });
+      if (error) throw error;
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      alert('Failed to save settings to the database.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -100,7 +146,20 @@ export default function SettingsPanel() {
                 <Field label="Store Name" value="RUTAB 2.0" />
                 <Field label="Default Language" value="English" />
                 <Field label="Timezone" value="Asia/Kuwait (UTC+3)" />
-                <Field label="Currency" value="KWD (K.D)" />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition cursor-pointer"
+                  >
+                    {Object.keys(CURRENCY_CONFIG).map((c) => (
+                      <option key={c} value={c} className="bg-[#0a0a0a]">
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Store Logo</label>
@@ -130,10 +189,19 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Payment Gateways</h3>
               <div className="space-y-4">
-                <GatewayCard name="Stripe" enabled />
-                <GatewayCard name="KNET" enabled />
-                <GatewayCard name="Tabby (BNPL)" enabled={false} />
-                <GatewayCard name="Cash on Delivery" enabled />
+                {Object.entries(gateways).map(([name, enabled]) => (
+                  <GatewayCard
+                    key={name}
+                    name={name}
+                    enabled={enabled}
+                    onToggle={() => {
+                      setGateways((prev) => ({
+                        ...prev,
+                        [name]: !prev[name],
+                      }));
+                    }}
+                  />
+                ))}
               </div>
             </>
           )}
@@ -213,9 +281,10 @@ export default function SettingsPanel() {
 
           {activeSection !== 'danger' && (
           <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-            <button onClick={handleSave}
-              className="px-6 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer">
-              <Save className="w-4 h-4" /> {saved ? 'Saved!' : 'Save Changes'}
+            <button onClick={handleSave} disabled={saving}
+              className="px-6 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
           )}
@@ -248,16 +317,24 @@ function Toggle({ label, enabled }: { label: string; enabled: boolean }) {
   );
 }
 
-function GatewayCard({ name, enabled }: { name: string; enabled: boolean }) {
+function GatewayCard({ name, enabled, onToggle }: { name: string; enabled: boolean; onToggle: () => void }) {
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
       <div className="flex items-center gap-3">
         <CreditCard className="w-4 h-4 text-[#a1a1a1]" />
         <span className="text-xs font-bold text-white">{name}</span>
       </div>
-      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${
-        enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
-      }`}>{enabled ? 'Active' : 'Inactive'}</span>
+      <div className="flex items-center gap-4">
+        <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${
+          enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+        }`}>{enabled ? 'Active' : 'Inactive'}</span>
+        <button
+          onClick={onToggle}
+          className={`w-9 h-5 rounded-full transition cursor-pointer relative shrink-0 ${enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}
+        >
+          <div className={`w-3.5 h-3.5 rounded-full bg-white transition absolute top-[3px] ${enabled ? 'left-[18px]' : 'left-1'}`} />
+        </button>
+      </div>
     </div>
   );
 }

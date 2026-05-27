@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
 import { useStore, formatPrice } from '@/lib/store';
+import { getSupabase } from '@/lib/supabase';
 import { BarChart3, TrendingUp, Download, Calendar, Globe, MousePointer, Users } from 'lucide-react';
 
 function LineChart({ data, color = '#ff0000' }: { data: number[]; color?: string }) {
@@ -31,16 +32,41 @@ export default function AnalyticsPanel() {
   const [range, setRange] = useState('30D');
   const currency = useStore((s) => s.currency);
   const formatKWD = (v: number) => formatPrice(v, currency);
+  const [hasData, setHasData] = useState(true);
 
   useEffect(() => {
     setBreadcrumbs([
       { label: 'Dashboard', href: '/admin/dashboard' },
       { label: 'Analytics' },
     ]);
+
+    async function checkData() {
+      try {
+        const client = getSupabase();
+        const { count } = await client
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+        setHasData((count || 0) > 0);
+      } catch (e) {
+        setHasData(true);
+      }
+    }
+    checkData();
   }, [setBreadcrumbs]);
 
-  const salesData = [42, 38, 55, 48, 62, 58, 71, 65, 78, 72, 85, 80, 92];
-  const trafficData = [1200, 1400, 1100, 1600, 1500, 1800, 1700, 2100, 1900, 2300, 2200, 2500, 2400];
+  const salesData = hasData 
+    ? [42, 38, 55, 48, 62, 58, 71, 65, 78, 72, 85, 80, 92] 
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const trafficData = hasData 
+    ? [1200, 1400, 1100, 1600, 1500, 1800, 1700, 2100, 1900, 2300, 2200, 2500, 2400] 
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  const topProducts = hasData ? [
+    { name: 'Travis Scott', sales: 142, revenue: 2284.2, growth: '+24%' },
+    { name: 'Kuwait Hoodie', sales: 98, revenue: 1578.2, growth: '+18%' },
+    { name: 'Arabic Poetry Tee', sales: 76, revenue: 1223.6, growth: '+32%' },
+    { name: 'Cartoon Classics Cap', sales: 54, revenue: 869.4, growth: '+11%' },
+  ] : [];
 
   return (
     <div className="space-y-8 pt-4 animate-fade-in-up">
@@ -68,10 +94,10 @@ export default function AnalyticsPanel() {
       {/* Metric Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Page Views', value: '24.5K', icon: <Globe className="w-4 h-4" />, trend: '+8.2%' },
-          { label: 'Unique Visitors', value: '8.2K', icon: <Users className="w-4 h-4" />, trend: '+12.1%' },
-          { label: 'Bounce Rate', value: '32.1%', icon: <MousePointer className="w-4 h-4" />, trend: '-2.4%', up: false },
-          { label: 'Conversion', value: '4.8%', icon: <TrendingUp className="w-4 h-4" />, trend: '+0.6%' },
+          { label: 'Page Views', value: hasData ? '24.5K' : '0', icon: <Globe className="w-4 h-4" />, trend: hasData ? '+8.2%' : '0%' },
+          { label: 'Unique Visitors', value: hasData ? '8.2K' : '0', icon: <Users className="w-4 h-4" />, trend: hasData ? '+12.1%' : '0%' },
+          { label: 'Bounce Rate', value: hasData ? '32.1%' : '0%', icon: <MousePointer className="w-4 h-4" />, trend: hasData ? '-2.4%' : '0%', up: false },
+          { label: 'Conversion', value: hasData ? '4.8%' : '0.0%', icon: <TrendingUp className="w-4 h-4" />, trend: hasData ? '+0.6%' : '0%' },
         ].map((m) => (
           <motion.div key={m.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-2xl bg-[#0a0a0a] border border-white/5 p-5 space-y-2">
@@ -107,24 +133,23 @@ export default function AnalyticsPanel() {
       <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 space-y-4">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Top Performing Products</h3>
         <div className="space-y-3">
-          {[
-            { name: 'Travis Scott', sales: 142, revenue: 2284.2, growth: '+24%' },
-            { name: 'Kuwait Hoodie', sales: 98, revenue: 1578.2, growth: '+18%' },
-            { name: 'Arabic Poetry Tee', sales: 76, revenue: 1223.6, growth: '+32%' },
-            { name: 'Cartoon Classics Cap', sales: 54, revenue: 869.4, growth: '+11%' },
-          ].map((p, i) => (
-            <div key={p.name} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-[#555] font-mono w-4">#{i + 1}</span>
-                <span className="text-xs font-bold text-white">{p.name}</span>
+          {topProducts.length > 0 ? (
+            topProducts.map((p, i) => (
+              <div key={p.name} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-[#555] font-mono w-4">#{i + 1}</span>
+                  <span className="text-xs font-bold text-white">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <span className="text-[10px] text-[#a1a1a1]">{p.sales} sales</span>
+                  <span className="text-[10px] font-bold text-white">{formatKWD(p.revenue)}</span>
+                  <span className="text-[10px] font-bold text-emerald-400">{p.growth}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-6">
-                <span className="text-[10px] text-[#a1a1a1]">{p.sales} sales</span>
-                <span className="text-[10px] font-bold text-white">{formatKWD(p.revenue)}</span>
-                <span className="text-[10px] font-bold text-emerald-400">{p.growth}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-xs text-[#555] uppercase tracking-wider text-center py-4">No product data available</p>
+          )}
         </div>
       </div>
     </div>

@@ -15,22 +15,46 @@ export async function POST(req: Request) {
 
     const client = createClient(supabaseUrl, serviceRoleKey);
 
-    if (action === 'revenue_orders' || action === 'all') {
+    if (action === 'revenue_orders' || action === 'orders' || action === 'all') {
       // Delete order items first to satisfy foreign keys, then orders
-      await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await client.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting order_items:', e);
+      }
+      try {
+        await client.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting orders:', e);
+      }
     }
 
     if (action === 'customers' || action === 'all') {
       // Delete addresses first, then profiles (excluding admin user to avoid locking admin dashboard out)
-      await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await client.from('profiles').delete().neq('email', 'abd@rutab.store');
+      try {
+        await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting addresses:', e);
+      }
+      try {
+        await client.from('profiles').delete().neq('email', 'abd@rutab.store');
+      } catch (e) {
+        console.error('Error deleting profiles:', e);
+      }
     }
 
-    if (action === 'catalog' || action === 'all') {
+    if (action === 'products' || action === 'catalog' || action === 'all') {
       // Deleting catalog requires cleaning up referencing order items first
-      await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await client.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting order_items:', e);
+      }
+      try {
+        await client.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting products:', e);
+      }
     }
 
     return NextResponse.json({ success: true });
