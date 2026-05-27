@@ -43,7 +43,15 @@ const feeds = [
   },
 ];
 
-export default function SocialFeed() {
+export default function SocialFeed({
+  title = "Seen in Rutab",
+  subtitle = "Community Style",
+  description = "Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop."
+}: {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+} = {}) {
   const setSelectedProductId = useStore((state) => state.setSelectedProductId);
 
   const handleShopFit = (productId: string) => {
@@ -55,14 +63,14 @@ export default function SocialFeed() {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
         <div>
           <span className="text-[#ff0000] text-xs font-bold tracking-[0.25em] uppercase block mb-3">
-            Community Style
+            {subtitle}
           </span>
           <h2 className="text-4xl md:text-6xl font-black uppercase">
-            Seen in Rutab
+            {title}
           </h2>
         </div>
         <p className="text-[#a1a1a1] max-w-sm mt-4 md:mt-0 text-sm leading-relaxed">
-          Tag <span className="text-white font-semibold">@RutabStore</span> on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.
+          {description}
         </p>
       </div>
 

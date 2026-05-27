@@ -20,11 +20,21 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
 
     rafId = requestAnimationFrame(raf);
 
+    const resizeObserver = new ResizeObserver(() => {
+      lenis.resize();
+    });
+    
+    if (typeof document !== 'undefined' && document.body) {
+      resizeObserver.observe(document.body);
+    }
+
     return () => {
       cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
       lenis.destroy();
     };
   }, []);
 
   return <>{children}</>;
 }
+

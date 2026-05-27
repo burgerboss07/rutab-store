@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
+import { getSupabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-
+import FeaturedCategories from '@/components/FeaturedCategories';
 import TrendingSlider from '@/components/TrendingSlider';
 import SocialFeed from '@/components/SocialFeed';
 import Footer from '@/components/Footer';
@@ -21,19 +23,95 @@ export default function Home() {
   const toastMessage = useStore((state) => state.toastMessage);
   const selectedProductId = useStore((state) => state.selectedProductId);
 
+  const [homeSettings, setHomeSettings] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadHomeSettings() {
+      try {
+        const client = getSupabase();
+        const { data, error } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'home_settings')
+          .single();
+        if (data && data.value) {
+          setHomeSettings(data.value);
+        }
+      } catch (err) {
+        console.error('Failed to load home page settings:', err);
+      }
+    }
+    loadHomeSettings();
+  }, []);
+
+  const defaultLayout = ['hero', 'collections', 'trending', 'feed', 'footer'];
+  const defaultSections = {
+    hero: { active: true },
+    collections: { active: true },
+    trending: { active: true },
+    feed: { active: true },
+    footer: { active: true }
+  };
+
+  const layout = homeSettings?.layout || defaultLayout;
+  const sections = homeSettings?.sections || defaultSections;
+
+  const renderHomeSections = () => {
+    return layout.map((sectionId: string) => {
+      const sectionConfig = sections[sectionId] || { active: true };
+      if (!sectionConfig.active) return null;
+
+      switch (sectionId) {
+        case 'hero':
+          return (
+            <Hero
+              key="hero"
+              title={sectionConfig.title}
+              subtitle={sectionConfig.subtitle}
+              slogan={sectionConfig.slogan}
+              sloganHighlight={sectionConfig.sloganHighlight}
+              description={sectionConfig.description}
+            />
+          );
+        case 'collections':
+          return (
+            <FeaturedCategories
+              key="collections"
+              title={sectionConfig.title}
+              subtitle={sectionConfig.subtitle}
+              description={sectionConfig.description}
+            />
+          );
+        case 'trending':
+          return (
+            <TrendingSlider
+              key="trending"
+              title={sectionConfig.title}
+              subtitle={sectionConfig.subtitle}
+            />
+          );
+        case 'feed':
+          return (
+            <SocialFeed
+              key="feed"
+              title={sectionConfig.title}
+              subtitle={sectionConfig.subtitle}
+              description={sectionConfig.description}
+            />
+          );
+        case 'footer':
+          return <Footer key="footer" />;
+        default:
+          return null;
+      }
+    });
+  };
+
   // Render view dynamically
   const renderView = () => {
     switch (activeView) {
       case 'home':
-        return (
-          <>
-            <Hero />
-
-            <TrendingSlider />
-            <SocialFeed />
-            <Footer />
-          </>
-        );
+        return <>{renderHomeSections()}</>;
       case 'shop':
         return <ShopPage />;
       case 'checkout':

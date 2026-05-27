@@ -6,7 +6,13 @@ import ProductCard from './ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../lib/store';
 
-export default function TrendingSlider() {
+export default function TrendingSlider({
+  title = "Trending Drops",
+  subtitle = "Hot Right Now"
+}: {
+  title?: string;
+  subtitle?: string;
+} = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -53,10 +59,10 @@ export default function TrendingSlider() {
       <div className="flex items-end justify-between mb-16">
         <div>
           <span className="text-[#ff0000] text-xs font-bold tracking-[0.25em] uppercase block mb-3">
-            Hot Right Now
+            {subtitle}
           </span>
           <h2 className="text-4xl md:text-6xl font-black uppercase">
-            Trending Drops
+            {title}
           </h2>
         </div>
 

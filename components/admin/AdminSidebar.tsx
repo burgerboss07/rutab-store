@@ -5,13 +5,15 @@ import { usePathname } from 'next/navigation';
 import { useAdminStore } from '@/lib/admin-store';
 import {
   LayoutDashboard, Users, Package, BarChart3, Settings, Shield,
-  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent
+  ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent,
+  LayoutTemplate
 } from 'lucide-react';
 
 const navItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Content', href: '/admin/content', icon: Package },
+    { label: 'Home Page', href: '/admin/homepage', icon: LayoutTemplate },
     { label: 'Discounts', href: '/admin/discounts', icon: Percent },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Security', href: '/admin/security', icon: Shield },

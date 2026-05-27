@@ -5,7 +5,15 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { getSupabase } from '../lib/supabase';
 
-export default function FeaturedCategories() {
+export default function FeaturedCategories({
+  title = "Shop by Category",
+  subtitle = "Collections",
+  description = "Premium streetwear essentials designed for oversized silhouettes, technical wear, and bold statements."
+}: {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+} = {}) {
   const setActiveView = useStore((state) => state.setActiveView);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,14 +68,14 @@ export default function FeaturedCategories() {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
         <div>
           <span className="text-[#ff0000] text-xs font-bold tracking-[0.25em] uppercase block mb-3">
-            Collections
+            {subtitle}
           </span>
           <h2 className="text-4xl md:text-6xl font-black uppercase">
-            Shop by Category
+            {title}
           </h2>
         </div>
         <p className="text-[#a1a1a1] max-w-sm mt-4 md:mt-0 text-sm leading-relaxed">
-          Premium streetwear essentials designed for oversized silhouettes, technical wear, and bold statements.
+          {description}
         </p>
       </div>
 

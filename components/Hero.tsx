@@ -6,7 +6,19 @@ import GarmentCanvas from './3D/GarmentCanvas';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 
-export default function Hero() {
+export default function Hero({
+  title = "رُطب",
+  subtitle = "Los Santos · Kuwait Drop",
+  slogan = "FUTURE ARAB STREETWEAR.",
+  sloganHighlight = "BOLD. FRESH STYLE. REAL COMFORT.",
+  description = "RUTAB—YOUR EVERYDAY CHOICE."
+}: {
+  title?: string;
+  subtitle?: string;
+  slogan?: string;
+  sloganHighlight?: string;
+  description?: string;
+} = {}) {
   const setActiveView = useStore((state) => state.setActiveView);
 
   return (
@@ -46,7 +58,7 @@ export default function Hero() {
           >
             <span className="w-2.5 h-2.5 bg-[#ff0000] rounded-full animate-ping" />
             <p className="text-[10px] uppercase font-bold tracking-[0.25em] text-[#e5e5e5]">
-              Los Santos · Kuwait Drop
+              {subtitle}
             </p>
           </motion.div>
 
@@ -58,7 +70,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.1 }}
               className="text-7xl sm:text-8xl md:text-9xl font-black leading-none tracking-tight text-white relative"
             >
-              رُطب
+              {title}
               <span className="absolute left-0 bottom-0 text-stroke-white text-5xl md:text-6xl font-black block tracking-widest translate-y-12">
                 RUTAB
               </span>
@@ -73,9 +85,9 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-2xl sm:text-3xl text-white/90 leading-relaxed font-light"
             >
-              FUTURE ARAB STREETWEAR.
+              {slogan}
               <br />
-              <span className="text-[#ff0000] font-bold">BOLD. FRESH STYLE. REAL COMFORT.</span>
+              <span className="text-[#ff0000] font-bold">{sloganHighlight}</span>
             </motion.p>
           </div>
 
@@ -85,7 +97,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-xs sm:text-sm text-[#a1a1a1] leading-relaxed max-w-md uppercase tracking-wider font-semibold"
           >
-            RUTAB—YOUR EVERYDAY CHOICE.
+            {description}
           </motion.p>
 
           {/* CTAs */}
