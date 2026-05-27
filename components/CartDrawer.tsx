@@ -20,6 +20,14 @@ export default function CartDrawer() {
   const [upsellItem, setUpsellItem] = useState<Product | null>(null);
   const currency = useStore((state) => state.currency);
 
+  // Hydration safety
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const cartItems = mounted ? cart : [];
+
   // Fetch a potential upsell item (e.g. from Caps category)
   useEffect(() => {
     async function fetchUpsell() {
@@ -51,7 +59,7 @@ export default function CartDrawer() {
   };
 
   const isUpsellInCart = upsellItem 
-    ? cart.some(item => item.id === upsellItem.id)
+    ? cartItems.some(item => item.id === upsellItem.id)
     : false;
 
   return (
@@ -91,7 +99,7 @@ export default function CartDrawer() {
 
             {/* Scrollable Cart Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-              {cart.length === 0 ? (
+              {cartItems.length === 0 ? (
                 <div className="h-[300px] flex flex-col items-center justify-center text-center space-y-4">
                   <ShoppingBag className="w-12 h-12 text-white/10" />
                   <p className="text-[#a1a1a1] text-sm">Your shopping cart is empty.</p>
@@ -107,7 +115,7 @@ export default function CartDrawer() {
                 </div>
               ) : (
                 <div className="space-y-5">
-                  {cart.map((item) => (
+                  {cartItems.map((item) => (
                     <div
                       key={`${item.id}-${item.size}-${item.color}`}
                       className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 relative group hover:border-[#ff0000]/20 transition-all duration-300"
@@ -171,7 +179,7 @@ export default function CartDrawer() {
               )}
 
               {/* Upsell Recommendation Section */}
-              {upsellItem && !isUpsellInCart && cart.length > 0 && (
+              {upsellItem && !isUpsellInCart && cartItems.length > 0 && (
                 <div className="pt-6 border-t border-white/10 space-y-4">
                   <h3 className="text-xs uppercase font-bold tracking-widest text-white">Complete the Fit</h3>
                   <div className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-[#ff0000]/10 hover:border-[#ff0000]/30 transition-all duration-300 items-center justify-between">
@@ -213,7 +221,7 @@ export default function CartDrawer() {
             </div>
 
             {/* Footer / Summary Checkout */}
-            {cart.length > 0 && (
+            {cartItems.length > 0 && (
               <div className="p-6 bg-[#050505] border-t border-white/10 space-y-4">
                 <div className="flex items-center justify-between text-sm uppercase tracking-wider text-[#a1a1a1]">
                   <span>Subtotal</span>

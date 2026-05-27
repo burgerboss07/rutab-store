@@ -33,10 +33,14 @@ export default function Navbar() {
 
   const currencies = ['USD ($)', 'PKR (Rs)', 'AED (AED)', 'EUR (€)', 'KWD (K.D)'];
 
-  // Sync count on client side to avoid hydration issues with persisted localstorage
-  const mounted = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
+  // Hydration safety
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cartCount = mounted ? getCartItemCount() : 0;
+  const wishlistCount = mounted ? wishlist.length : 0;
 
   const navLinks: { label: string; view: StoreView }[] = [
     { label: 'Home', view: 'home' },
@@ -100,9 +104,9 @@ export default function Navbar() {
             className="text-[#e5e5e5] hover:text-[#ff0000] transition relative cursor-pointer"
           >
             <Heart className="w-5 h-5" />
-            {wishlist.length > 0 && (
+            {wishlistCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#ff0000] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                {wishlist.length}
+                {wishlistCount}
               </span>
             )}
           </button>

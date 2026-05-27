@@ -29,6 +29,12 @@ export default function UserDashboard() {
 
   const supabase = typeof window !== 'undefined' ? createClient() : null;
 
+  // Hydration safety
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Auth state
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -276,6 +282,14 @@ export default function UserDashboard() {
   };
 
   const formatKWD = (v: number) => formatPrice(v, currency);
+
+  if (!mounted) {
+    return (
+      <div className="pt-24 min-h-screen bg-black text-white px-6 flex items-center justify-center pb-24">
+        <div className="w-16 h-16 rounded-full border border-red-500/30 border-t-red-600 animate-spin" />
+      </div>
+    );
+  }
 
   // Auth Portal
   if (!user) {
