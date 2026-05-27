@@ -31,15 +31,20 @@ export default function Home() {
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
         const client = getSupabase();
-        client.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-          if (!error) {
-            // Clean up query parameters from the URL
+        client.auth.exchangeCodeForSession(code)
+          .then(({ error }) => {
+            if (error) {
+              console.error('Client-side OAuth code exchange failed:', error);
+            }
+          })
+          .catch((err) => {
+            console.error('Error during client-side OAuth exchange:', err);
+          })
+          .finally(() => {
+            // Always clean up query parameters from the URL
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
-          } else {
-            console.error('Client-side OAuth code exchange failed:', error);
-          }
-        });
+          });
       }
     }
 
