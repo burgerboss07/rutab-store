@@ -252,14 +252,14 @@ export default function SettingsPanel() {
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Favicon</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30 overflow-hidden">
+                  <div className="w-14 h-14 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30 overflow-hidden shrink-0">
                     {storeLogo ? (
-                      <img src={storeLogo} alt="logo" className="w-full h-full object-contain" />
+                      <img src={storeLogo} alt="favicon" className="w-full h-full object-contain" />
                     ) : (
-                      <ImageIcon className="w-6 h-6" />
+                      <ImageIcon className="w-5 h-5" />
                     )}
                   </div>
-                  <input type="file" accept="image/*" id="logo-upload" className="hidden"
+                  <input type="file" accept="image/*" id="favicon-upload" className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
@@ -270,16 +270,21 @@ export default function SettingsPanel() {
                       const { data: urlData } = client.storage.from('public').getPublicUrl(path);
                       setStoreLogo(urlData.publicUrl);
                     }} />
-                  <label htmlFor="logo-upload" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer">
+                  <label htmlFor="favicon-upload" className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[9px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer whitespace-nowrap">
                     Upload
                   </label>
                   {storeLogo && (
-                    <button onClick={() => setStoreLogo('')} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider cursor-pointer">
+                    <button onClick={() => setStoreLogo('')} className="text-[9px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap">
                       Remove
                     </button>
                   )}
                 </div>
-                <p className="text-[9px] text-[#555]">Upload a PNG or SVG (recommended size: 512×512). Will be used as favicon.</p>
+                <div className="flex items-center gap-2">
+                  <input value={storeLogo} onChange={(e) => setStoreLogo(e.target.value)}
+                    placeholder="Or paste favicon image URL..."
+                    className="flex-1 bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                </div>
+                <p className="text-[9px] text-[#555]">Upload a PNG or SVG, or paste a URL. Recommended size: 512×512. Used as site favicon.</p>
               </div>
             </>
           )}
