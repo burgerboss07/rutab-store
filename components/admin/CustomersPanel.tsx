@@ -227,34 +227,33 @@ export default function CustomersPanel() {
     setSelectAllOnPage(!selectAllOnPage);
   };
 
-  const handleBulkDelete = async () => {
+  const deleteUsers = async (ids: string[]) => {
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('profiles')
-        .delete()
-        .in('id', Array.from(selectedIds));
-      if (error) throw error;
-      setProfiles((prev) => prev.filter((p) => !selectedIds.has(p.id)));
-    } catch (err) {
+      const res = await fetch('/api/admin/delete-users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Delete failed');
+      }
+      setProfiles((prev) => prev.filter((p) => !ids.includes(p.id)));
+    } catch (err: any) {
       console.error('Error deleting profiles:', err);
-      alert('Failed to delete profiles from Supabase');
+      alert(err.message || 'Failed to delete profiles');
     }
+  };
+
+  const handleBulkDelete = async () => {
+    await deleteUsers(Array.from(selectedIds));
     setSelectedIds(new Set());
     setSelectAllOnPage(false);
     setBulkDeleteConfirm(false);
   };
 
   const handleDeleteSingle = async (id: string) => {
-    try {
-      const client = getSupabase();
-      const { error } = await client.from('profiles').delete().eq('id', id);
-      if (error) throw error;
-      setProfiles((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.error('Error deleting profile:', err);
-      alert('Failed to delete profile from Supabase');
-    }
+    await deleteUsers([id]);
   };
 
   const exportCSV = () => {
