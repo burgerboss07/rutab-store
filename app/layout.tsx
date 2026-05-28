@@ -2,7 +2,7 @@ import './globals.css';
 import LenisProvider from '@/components/LenisProvider';
 
 export const metadata = {
-  title: 'RUTAB 2.0 — Luxury Streetwear Experience',
+  title: 'RUTAB رطب — Luxury Streetwear Experience',
   description: 'A premium, high-performance dark e-commerce destination for GCC youth streetwear drops. Express delivery in Kuwait and Gulf regions.',
 };
 

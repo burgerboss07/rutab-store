@@ -143,7 +143,7 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">General Settings</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Store Name" value="RUTAB 2.0" />
+                <Field label="Store Name" value="RUTAB رطب" />
                 <Field label="Default Language" value="English" />
                 <Field label="Timezone" value="Asia/Kuwait (UTC+3)" />
                 <div className="space-y-1.5">
@@ -210,7 +210,7 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">SEO & Analytics</h3>
               <div className="grid grid-cols-1 gap-4">
-                <Field label="Default Meta Title" value="RUTAB 2.0 — Luxury Streetwear Kuwait" />
+                <Field label="Default Meta Title" value="RUTAB رطب — Luxury Streetwear Kuwait" />
                 <Field label="Default Meta Description" value="Premium streetwear for the GCC..." />
                 <Field label="Google Analytics ID" value="G-XXXXXXXXXX" />
               </div>
