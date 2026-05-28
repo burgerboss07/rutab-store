@@ -443,7 +443,21 @@ export default function CustomersPanel() {
       ) : (
         <>
           {/* Customer Cards */}
-          <div className="space-y-3">
+          <div className="space-y-2">
+            {/* Select All header */}
+            <div className="flex items-center gap-4 px-1 py-2">
+              <button onClick={toggleSelectAll}
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition cursor-pointer ${
+                  selectAllOnPage
+                    ? 'bg-[#ff0000] border-[#ff0000]'
+                    : 'border-white/20 hover:border-white/40'
+                }`}>
+                {selectAllOnPage && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+              </button>
+              <span className="text-[10px] uppercase tracking-widest text-[#a1a1a1] font-bold">
+                {selectAllOnPage ? `${pageItems.length} selected on this page` : 'Select all on this page'}
+              </span>
+            </div>
             <AnimatePresence mode="popLayout">
               {pageItems.map((profile, index) => {
                 const status = profile.status || inferStatus(profile.id) || 'inactive';
