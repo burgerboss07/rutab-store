@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/store';
-import { mockProfiles, mockOrders as mockOrdersData } from '@/lib/admin-store';
+import { mockOrders as mockOrdersData } from '@/lib/admin-store';
 import {
   Search, Users, ChevronDown, ChevronUp, Download,
   Pencil, CheckCircle2, X, Package, DollarSign, Calendar,
@@ -95,27 +95,11 @@ export default function CustomersPanel() {
     try {
       const client = getSupabase();
 
-      let { data: profileData } = await client
+      const { data: profileData } = await client
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      // Seed mock profiles into Supabase if the table is empty so deletes persist
-      if (!profileData || profileData.length === 0) {
-        const { error: seedErr } = await client.from('profiles').insert(
-          (mockProfiles as any[]).map((p: any) => ({ ...p, created_at: new Date(p.created_at).toISOString() }))
-        );
-        if (!seedErr) {
-          const { data } = await client.from('profiles').select('*').order('created_at', { ascending: false });
-          profileData = data;
-        }
-      }
-
-      if (profileData && profileData.length > 0) {
-        setProfiles(profileData as Profile[]);
-      } else {
-        setProfiles(mockProfiles as any[]);
-      }
+      if (profileData && profileData.length > 0) setProfiles(profileData as Profile[]);
 
       let { data: orderData } = await client
         .from('orders')
@@ -135,7 +119,6 @@ export default function CustomersPanel() {
       if (orderData && orderData.length > 0) setAllOrders(orderData as Order[]);
       else setAllOrders(mockOrdersData as any[]);
     } catch {
-      setProfiles(mockProfiles as any[]);
       setAllOrders(mockOrdersData as any[]);
     } finally {
       setLoading(false);
