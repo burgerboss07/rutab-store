@@ -1,6 +1,34 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export const KUWAIT_AREAS = [
+  // Capital (Al-Asimah)
+  'Sharq', 'Salhiya', 'Dasman', 'Bneid Al-Gar', 'Kuwait City', 'Qibla', 'Mirqab',
+  'Dasma', 'Mansouriya', 'Faiha', 'Nuzha', 'Shamiya', 'Rawda', 'Adiliya', 'Kaifan',
+  'Yarmouk', 'Surra', 'Shuhada', 'Shuwaikh', 'Shuwaikh Industrial',
+  // Hawally
+  'Hawally', 'Salmiya', 'Rumaithiya', 'Jabriya', 'Bayan', 'Salwa', 'Hadiya',
+  'Zahra', 'Mubarak Al-Abdullah', 'Shaab', 'Anjafa', 'Siddeeq', 'Nuqra',
+  // Farwaniya
+  'Farwaniya', 'Rehab', 'Andalus', 'Khaitan', 'Riggae', 'Ferdous',
+  'Jleeb Al-Shuyoukh', 'Abdullah Al-Mubarak', 'Ardhiya', 'Sabah Al-Nasser',
+  'Ishbiliya', 'Abbasia', 'Omariya', 'Rabiya',
+  // Ahmadi
+  'Ahmadi', 'Fahaheel', 'Abu Halifa', 'Fintas', 'Mangaf', 'Mahboula', 'Egaila',
+  'Riqqa', 'Sabahiya', 'Wafra', 'Shuaiba', 'Zour', 'Khairan', 'Sabriya',
+  'Subiya', 'Nuwaiseeb', 'Abdali',
+  // Jahra
+  'Jahra', 'Sulaibiya', 'Oyoun', 'Taima', 'Qasr', 'Saad Al-Abdullah', 'Naeem',
+  'Waha', 'Sabah Al-Ahmad', 'Kabd', 'Mutla',
+  // Mubarak Al-Kabeer
+  'Mubarak Al-Kabeer', 'Sabah Al-Salem', 'Messila', 'Abu Al-Hasaniya', 'Qurain',
+  'Funaitis', 'Qusur', 'Wusta', 'Sulaibikhat',
+].sort();
+
+export const KUWAIT_GOVERNORATES = [
+  'Al-Asimah (Capital)', 'Hawally', 'Farwaniya', 'Ahmadi', 'Jahra', 'Mubarak Al-Kabeer',
+];
+
 export const CURRENCY_CONFIG: Record<string, { rate: number; symbol: string; decimals: number; suffix?: boolean }> = {
   'KWD (K.D)': { rate: 1.0, symbol: 'K.D', decimals: 3, suffix: true },
   'USD ($)': { rate: 3.25, symbol: '$', decimals: 2, suffix: false },

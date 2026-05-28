@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useStore, Product, formatPrice } from '../lib/store';
+import { useStore, Product, formatPrice, KUWAIT_AREAS } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { createClient } from '@/lib/supabase-browser';
 import {
@@ -482,7 +482,16 @@ export default function UserDashboard() {
               <form onSubmit={handleSaveAddress} className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 animate-fade-in-up">
                 <Input label="Address Title" type="text" required value={newAddrTitle} onChange={(e) => setNewAddrTitle(e.target.value)} placeholder="e.g. Home, Office" />
                 <Input label="Full Address" type="text" required value={newAddrLine} onChange={(e) => setNewAddrLine(e.target.value)} placeholder="Street, building, apartment" />
-                <Input label="Area / District" type="text" value={newAddrArea} onChange={(e) => setNewAddrArea(e.target.value)} placeholder="Salmiya" />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Area / District</label>
+                  <select value={newAddrArea} onChange={(e) => setNewAddrArea(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    <option value="">Select area...</option>
+                    {KUWAIT_AREAS.map((ar) => (
+                      <option key={ar} value={ar}>{ar}</option>
+                    ))}
+                  </select>
+                </div>
                 {addressError && <p className="text-[10px] text-red-400 uppercase tracking-wider font-bold">{addressError}</p>}
                 <button type="submit" disabled={addressSaving}
                   className="px-6 py-2.5 bg-white text-black hover:bg-[#ff0000] hover:text-white rounded-xl text-xs font-bold uppercase transition disabled:opacity-50 disabled:cursor-not-allowed">

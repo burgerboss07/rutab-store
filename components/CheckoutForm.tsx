@@ -1,22 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useStore, Order, OrderItem, formatPrice } from '../lib/store';
+import { useStore, Order, OrderItem, formatPrice, KUWAIT_AREAS } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
-const kuwaitAreas = [
-  'Sharq',
-  'Salmiya',
-  'Hawally',
-  'Jabriya',
-  'Kaifan',
-  'Khaldiya',
-  'Shuwaikh',
-  'Bneid Al-Gar',
-  'Fahaheel',
-];
+
 
 type PaymentMethod =
   | 'Cash on Delivery'
@@ -504,7 +494,7 @@ export default function CheckoutForm() {
                     onChange={(e) => setArea(e.target.value)}
                     className="w-full bg-black border border-white/10 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-[#ff0000] text-white"
                   >
-                    {kuwaitAreas.map((ar) => (
+                    {KUWAIT_AREAS.map((ar) => (
                       <option key={ar} value={ar}>{ar}</option>
                     ))}
                   </select>
