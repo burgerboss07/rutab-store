@@ -72,9 +72,10 @@ export default function SettingsPanel() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Reset execution successful for action: "${actionId}"`);
+        alert(`Reset successful for "${actionId}". Reloading...`);
+        window.location.reload();
       } else {
-        alert(`Error executing reset: ${data.error}`);
+        alert(`Reset failed: ${data.error}`);
       }
     } catch (err: any) {
       console.error(err);

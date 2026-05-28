@@ -10,51 +10,43 @@ export async function POST(req: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json({ error: 'Supabase service key not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'Supabase service key not configured. Set SUPABASE_SERVICE_ROLE_KEY in Vercel env.' }, { status: 500 });
     }
 
     const client = createClient(supabaseUrl, serviceRoleKey);
+    const errors: string[] = [];
 
     if (action === 'revenue_orders' || action === 'orders' || action === 'all') {
-      // Delete order items first to satisfy foreign keys, then orders
-      try {
-        await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.error('Error deleting order_items:', e);
-      }
-      try {
-        await client.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.error('Error deleting orders:', e);
-      }
+      const { error: itemsErr } = await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (itemsErr) errors.push(`order_items: ${itemsErr.message}`);
+
+      const { error: ordersErr } = await client.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (ordersErr) errors.push(`orders: ${ordersErr.message}`);
     }
 
     if (action === 'customers' || action === 'all') {
-      // Delete addresses first, then profiles (excluding admin user to avoid locking admin dashboard out)
-      try {
-        await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.error('Error deleting addresses:', e);
-      }
-      try {
-        await client.from('profiles').delete().neq('email', 'abd@rutab.store');
-      } catch (e) {
-        console.error('Error deleting profiles:', e);
-      }
+      const { error: addrErr } = await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (addrErr) errors.push(`addresses: ${addrErr.message}`);
+
+      const { error: profErr } = await client.from('profiles').delete().neq('email', 'abd@rutab.store');
+      if (profErr) errors.push(`profiles: ${profErr.message}`);
     }
 
-    if (action === 'products' || action === 'catalog' || action === 'all') {
-      // Deleting catalog requires cleaning up referencing order items first
-      try {
-        await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.error('Error deleting order_items:', e);
-      }
-      try {
-        await client.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.error('Error deleting products:', e);
-      }
+    if (action === 'products' || action === 'all') {
+      const { error: piErr } = await client.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (piErr) errors.push(`order_items (products): ${piErr.message}`);
+
+      const { error: prodErr } = await client.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (prodErr) errors.push(`products: ${prodErr.message}`);
+    }
+
+    if (action === 'analytics') {
+      const { error: revErr } = await client.from('revenue').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (revErr) errors.push(`revenue: ${revErr.message}`);
+    }
+
+    if (errors.length > 0) {
+      return NextResponse.json({ success: false, error: errors.join('; ') });
     }
 
     return NextResponse.json({ success: true });
