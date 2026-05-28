@@ -25,9 +25,6 @@ export async function POST(req: Request) {
     }
 
     if (action === 'customers' || action === 'all') {
-      const { error: addrErr } = await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (addrErr) errors.push(`addresses: ${addrErr.message}`);
-
       const { error: profErr } = await client.from('profiles').delete().neq('email', 'abd@rutab.store');
       if (profErr) errors.push(`profiles: ${profErr.message}`);
     }
@@ -41,8 +38,7 @@ export async function POST(req: Request) {
     }
 
     if (action === 'analytics') {
-      const { error: revErr } = await client.from('revenue').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (revErr) errors.push(`revenue: ${revErr.message}`);
+      // No analytics-specific table yet; add when one exists
     }
 
     if (errors.length > 0) {
