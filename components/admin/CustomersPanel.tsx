@@ -78,9 +78,6 @@ export default function CustomersPanel() {
   // Expanded customer (order history)
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Track mock-profile IDs the user has deleted so re-fetches don't bring them back
-  const deletedMockIdsRef = useRef<Set<string>>(new Set());
-
   // Edit modal
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
@@ -98,21 +95,47 @@ export default function CustomersPanel() {
     try {
       const client = getSupabase();
 
-      const { data: profileData } = await client
+      let { data: profileData } = await client
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-      if (profileData && profileData.length > 0) setProfiles(profileData as Profile[]);
-      else setProfiles((mockProfiles as any[]).filter((p: any) => !deletedMockIdsRef.current.has(p.id)));
+      
+      // Seed mock profiles into Supabase if the table is empty so deletes persist
+      if (!profileData || profileData.length === 0) {
+        const { error: seedErr } = await client.from('profiles').insert(
+          (mockProfiles as any[]).map((p: any) => ({ ...p, created_at: new Date(p.created_at).toISOString() }))
+        );
+        if (!seedErr) {
+          const { data } = await client.from('profiles').select('*').order('created_at', { ascending: false });
+          profileData = data;
+        }
+      }
 
-      const { data: orderData } = await client
+      if (profileData && profileData.length > 0) {
+        setProfiles(profileData as Profile[]);
+      } else {
+        setProfiles(mockProfiles as any[]);
+      }
+
+      let { data: orderData } = await client
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (!orderData || orderData.length === 0) {
+        const { error: seedErr } = await client.from('orders').insert(
+          (mockOrdersData as any[]).map((o: any) => ({ ...o, created_at: new Date(o.created_at).toISOString() }))
+        );
+        if (!seedErr) {
+          const { data } = await client.from('orders').select('*').order('created_at', { ascending: false });
+          orderData = data;
+        }
+      }
+
       if (orderData && orderData.length > 0) setAllOrders(orderData as Order[]);
       else setAllOrders(mockOrdersData as any[]);
     } catch {
-      setProfiles((mockProfiles as any[]).filter((p: any) => !deletedMockIdsRef.current.has(p.id)));
+      setProfiles(mockProfiles as any[]);
       setAllOrders(mockOrdersData as any[]);
     } finally {
       setLoading(false);
@@ -240,10 +263,6 @@ export default function CustomersPanel() {
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Delete failed');
-      }
-      // Track mock IDs so re-fetches don't re-add them
-      for (const id of ids) {
-        if (!/^[0-9a-f-]+$/i.test(id)) deletedMockIdsRef.current.add(id);
       }
       setProfiles((prev) => prev.filter((p) => !ids.includes(p.id)));
     } catch (err: any) {
