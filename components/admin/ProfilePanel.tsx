@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/lib/admin-store';
 import {
-  User, Camera, Save, Lock, Moon, Sun, Eye, EyeOff,
+  User, Camera, Save, Lock, Eye, EyeOff,
   ShieldCheck
 } from 'lucide-react';
 
 export default function ProfilePanel() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
-  const darkMode = useAdminStore((s) => s.darkMode);
-  const setDarkMode = useAdminStore((s) => s.setDarkMode);
   const [tab, setTab] = useState<'profile' | 'password'>('profile');
   const [showPass, setShowPass] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -73,21 +71,6 @@ export default function ProfilePanel() {
               <Field label="Email" value="abd@rutab.store" />
               <Field label="Phone" value="+965 9000 0000" />
               <Field label="Timezone" value="Asia/Kuwait (UTC+3)" />
-            </div>
-
-            {/* Dark Mode Toggle */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
-              <div className="flex items-center gap-3">
-                {darkMode ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-amber-400" />}
-                <div>
-                  <p className="text-xs font-bold text-white">Dark Mode</p>
-                  <p className="text-[9px] text-[#a1a1a1]">Toggle dark/light theme for the admin panel</p>
-                </div>
-              </div>
-              <button onClick={() => setDarkMode(!darkMode)}
-                className={`w-10 h-6 rounded-full transition cursor-pointer ${darkMode ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white transition mt-1 ${darkMode ? 'ml-[22px]' : 'ml-1'}`} />
-              </button>
             </div>
 
             <button onClick={handleSave}
