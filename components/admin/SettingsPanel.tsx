@@ -52,6 +52,7 @@ export default function SettingsPanel() {
   const [timezone, setTimezone] = useState('Asia/Kuwait (UTC+3)');
   const [metaTitle, setMetaTitle] = useState('RUTAB رطب — Luxury Streetwear Kuwait');
   const [metaDesc, setMetaDesc] = useState('Premium streetwear for the GCC...');
+  const [storeLogo, setStoreLogo] = useState('');
   const [smtpHost, setSmtpHost] = useState('smtp.sendgrid.net');
   const [smtpPort, setSmtpPort] = useState('587');
   const [fromName, setFromName] = useState('RUTAB Store');
@@ -138,6 +139,7 @@ export default function SettingsPanel() {
         timezone,
         meta_title: metaTitle,
         meta_description: metaDesc,
+        store_logo: storeLogo,
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         from_name: fromName,
@@ -175,6 +177,7 @@ export default function SettingsPanel() {
           if (v.timezone) setTimezone(v.timezone);
           if (v.meta_title) setMetaTitle(v.meta_title);
           if (v.meta_description) setMetaDesc(v.meta_description);
+          if (v.store_logo) setStoreLogo(v.store_logo);
           if (v.smtp_host) setSmtpHost(v.smtp_host);
           if (v.smtp_port) setSmtpPort(v.smtp_port);
           if (v.from_name) setFromName(v.from_name);
@@ -247,13 +250,36 @@ export default function SettingsPanel() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Store Logo</label>
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Store Logo / Favicon</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30">
-                    <ImageIcon className="w-6 h-6" />
+                  <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30 overflow-hidden">
+                    {storeLogo ? (
+                      <img src={storeLogo} alt="logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6" />
+                    )}
                   </div>
-                  <button className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer">Upload</button>
+                  <input type="file" accept="image/*" id="logo-upload" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const client = getSupabase();
+                      const path = `logos/${Date.now()}-${file.name}`;
+                      const { error: uploadErr } = await client.storage.from('public').upload(path, file);
+                      if (uploadErr) { alert('Upload failed: ' + uploadErr.message); return; }
+                      const { data: urlData } = client.storage.from('public').getPublicUrl(path);
+                      setStoreLogo(urlData.publicUrl);
+                    }} />
+                  <label htmlFor="logo-upload" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer">
+                    Upload
+                  </label>
+                  {storeLogo && (
+                    <button onClick={() => setStoreLogo('')} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider cursor-pointer">
+                      Remove
+                    </button>
+                  )}
                 </div>
+                <p className="text-[9px] text-[#555]">Upload a PNG or SVG (recommended size: 512×512). Will be used as favicon.</p>
               </div>
             </>
           )}
