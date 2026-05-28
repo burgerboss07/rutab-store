@@ -5,7 +5,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import { useStore, CURRENCY_CONFIG } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import {
-  Settings, Globe, Mail, CreditCard, Search, ToggleLeft,
+  Settings, Globe, Mail, CreditCard, Search,
   Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown
 } from 'lucide-react';
 
@@ -14,7 +14,6 @@ const sections = [
   { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
   { id: 'payment', label: 'Payment', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'seo', label: 'SEO', icon: <Search className="w-4 h-4" /> },
-  { id: 'maintenance', label: 'Maintenance', icon: <ToggleLeft className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
@@ -58,7 +57,7 @@ export default function SettingsPanel() {
   const [smtpPort, setSmtpPort] = useState('587');
   const [fromName, setFromName] = useState('RUTAB Store');
   const [fromEmail, setFromEmail] = useState('noreply@rutab.store');
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -145,7 +144,6 @@ export default function SettingsPanel() {
         smtp_port: smtpPort,
         from_name: fromName,
         from_email: fromEmail,
-        maintenance_mode: maintenanceMode,
         payment_gateways: gateways,
       };
       const { error } = await client
@@ -184,7 +182,6 @@ export default function SettingsPanel() {
           if (v.smtp_port) setSmtpPort(v.smtp_port);
           if (v.from_name) setFromName(v.from_name);
           if (v.from_email) setFromEmail(v.from_email);
-          if (v.maintenance_mode !== undefined) setMaintenanceMode(v.maintenance_mode);
           if (v.payment_gateways) {
             const pg = v.payment_gateways;
             const first = Object.values(pg)[0] as any;
@@ -338,17 +335,6 @@ export default function SettingsPanel() {
             </>
           )}
 
-          {activeSection === 'maintenance' && (
-            <>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Maintenance Mode</h3>
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                <p className="text-xs text-amber-200">When enabled, visitors will see a 503 maintenance page. Admins can still access the panel.</p>
-              </div>
-              <Toggle label="Maintenance Mode" enabled={maintenanceMode} onToggle={setMaintenanceMode} />
-            </>
-          )}
-
           {activeSection === 'danger' && (
             <>
               <div className="flex items-center gap-3 p-4 rounded-xl bg-red-900/20 border border-red-500/30">
@@ -421,18 +407,6 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
       <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">{label}</label>
       <input value={value} onChange={(e) => onChange?.(e.target.value)}
         className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition" />
-    </div>
-  );
-}
-
-function Toggle({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle?: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs text-white font-bold">{label}</span>
-      <button onClick={() => onToggle?.(!enabled)}
-        className={`w-9 h-5 rounded-full transition cursor-pointer ${enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
-        <div className={`w-3.5 h-3.5 rounded-full bg-white transition mt-0.5 ${enabled ? 'ml-[18px]' : 'ml-1'}`} />
-      </button>
     </div>
   );
 }
