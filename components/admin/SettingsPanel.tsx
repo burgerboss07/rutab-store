@@ -250,7 +250,7 @@ export default function SettingsPanel() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Store Logo / Favicon</label>
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Favicon</label>
                 <div className="flex items-center gap-3">
                   <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30 overflow-hidden">
                     {storeLogo ? (
