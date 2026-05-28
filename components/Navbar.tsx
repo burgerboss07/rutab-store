@@ -3,7 +3,7 @@
 import { useStore, StoreView, CURRENCY_CONFIG } from '../lib/store';
 import { ShoppingBag, Heart, User, Search, ChevronDown, LogOut } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { createClient } from '@/lib/supabase-browser';
+import { getSupabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
@@ -46,13 +46,13 @@ export default function Navbar() {
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
     try {
-      const client = createClient();
+      const client = getSupabase();
       await client.auth.signOut();
     } catch (err) {
       console.error('Logout error:', err);
     }
     setUser(null);
-    router.push('/');
+    router.replace('/');
   };
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'R';

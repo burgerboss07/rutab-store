@@ -46,6 +46,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (err) {
           console.error('AuthProvider: failed to sync user session:', err);
+          setUser({
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'Rutab Member',
+            phone: session.user.user_metadata?.phone || '+965 9999 8888',
+            address: '',
+            area: '',
+          });
         }
       } else {
         setUser(null);
