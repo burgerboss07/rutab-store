@@ -6,12 +6,13 @@ import { useAdminStore } from '@/lib/admin-store';
 import {
   LayoutDashboard, Users, Package, BarChart3, Settings, Shield,
   ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent,
-  LayoutTemplate
+  LayoutTemplate, ClipboardList
 } from 'lucide-react';
 
 const navItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Orders', href: '/admin/orders', icon: ClipboardList },
     { label: 'Content', href: '/admin/content', icon: Package },
     { label: 'Home Page', href: '/admin/homepage', icon: LayoutTemplate },
     { label: 'Discounts', href: '/admin/discounts', icon: Percent },
