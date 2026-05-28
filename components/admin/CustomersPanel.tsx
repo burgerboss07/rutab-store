@@ -283,9 +283,9 @@ export default function CustomersPanel() {
     URL.revokeObjectURL(url);
   };
 
-  const handleProfileUpdated = () => {
+  const handleProfileUpdated = (updated: Profile) => {
+    setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     setEditingProfile(null);
-    void fetchData();
   };
 
   return (

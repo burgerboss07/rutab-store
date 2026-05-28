@@ -8,7 +8,7 @@ import { Profile } from './CustomersPanel';
 interface Props {
   profile: Profile;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (updated: Profile) => void;
 }
 
 const statusOptions = [
@@ -49,7 +49,7 @@ export default function EditCustomerModal({ profile, onClose, onSaved }: Props) 
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Update failed');
-      onSaved();
+      onSaved({ ...profile, full_name: fullName, email, phone, address, area, notes, status });
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
     } finally {
