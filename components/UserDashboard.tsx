@@ -200,13 +200,18 @@ export default function UserDashboard() {
     setAuthError('');
     try {
       const client = supabase || getSupabase();
-      const { error } = await client.auth.signInWithOAuth({
+      const { data, error } = await client.auth.signInWithOAuth({
         provider,
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
     } catch (err: any) {
       setAuthError(err.message || 'Social authentication failed.');
+    } finally {
       setLoggingIn(false);
     }
   };
@@ -413,7 +418,7 @@ export default function UserDashboard() {
               <p className="text-[8px] text-amber-400/60">{loyaltyPoints} pts</p>
             </div>
           </div>
-          <button onClick={handleLogout}
+          <button type="button" onClick={handleLogout}
             className="w-full py-2.5 rounded-xl border border-white/10 hover:border-red-500/30 hover:bg-red-500/10 text-white/60 hover:text-white transition text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer">
             <LogOut className="w-3.5 h-3.5" /> Logout
           </button>
@@ -427,7 +432,7 @@ export default function UserDashboard() {
             { id: 'wishlist' as const, label: 'Wishlist', icon: <Heart className="w-4 h-4" />, count: wishlist.length },
             { id: 'profile' as const, label: 'Profile', icon: <User className="w-4 h-4" />, count: undefined },
           ].map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full py-3.5 px-4 rounded-2xl flex items-center gap-3 text-xs uppercase font-bold tracking-wider transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[#ff0000] text-white' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
               {tab.icon} {tab.label} {tab.count !== undefined && <span className="text-[9px] opacity-60">({tab.count})</span>}
             </button>
@@ -475,7 +480,7 @@ export default function UserDashboard() {
           <div className="space-y-6">
             <div className="flex justify-between items-center pb-4 border-b border-white/5">
               <h2 className="text-3xl font-black uppercase tracking-wider">Saved Addresses</h2>
-              <button onClick={() => setShowAddAddress(!showAddAddress)}
+              <button type="button" onClick={() => setShowAddAddress(!showAddAddress)}
                 className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ff0000] hover:text-white border border-white/10 flex items-center justify-center transition cursor-pointer"><Plus className="w-4 h-4" /></button>
             </div>
             {showAddAddress && (
@@ -514,10 +519,10 @@ export default function UserDashboard() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {!addr.is_default && (
-                        <button onClick={() => handleSetDefaultAddress(addr.id)}
+                        <button type="button" onClick={() => handleSetDefaultAddress(addr.id)}
                           className="p-2 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition cursor-pointer" title="Set as default"><Star className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => handleDeleteAddress(addr.id)}
+                      <button type="button" onClick={() => handleDeleteAddress(addr.id)}
                         className="p-2 text-white/40 hover:text-[#ff0000] hover:bg-white/5 rounded-lg transition cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
@@ -548,7 +553,7 @@ export default function UserDashboard() {
                         <p className="text-[10px] text-[#ff0000] font-bold mt-0.5">{formatKWD(typeof p.price === 'string' ? parseFloat(p.price) : p.price)}</p>
                       </div>
                     </div>
-                    <button onClick={() => addToCart({ id: p.id, name: p.name, price: typeof p.price === 'string' ? parseFloat(p.price) : p.price, image_url: p.image_url, size: 'M', color: 'Black' }, 1)}
+                    <button type="button" onClick={() => addToCart({ id: p.id, name: p.name, price: typeof p.price === 'string' ? parseFloat(p.price) : p.price, image_url: p.image_url, size: 'M', color: 'Black' }, 1)}
                       className="p-2.5 rounded-xl bg-white text-black hover:bg-[#ff0000] hover:text-white transition cursor-pointer"><ShoppingBag className="w-3.5 h-3.5" /></button>
                   </div>
                 ))}
@@ -568,10 +573,10 @@ export default function UserDashboard() {
                 <Input label="Phone" type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
                 <Input label="Email" type="email" value={user.email} onChange={() => {}} disabled />
                 <div className="flex items-center gap-3 pt-2">
-                  <button onClick={handleUpdateProfile} className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+                  <button type="button" onClick={handleUpdateProfile} className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
                     <Save className="w-3.5 h-3.5" /> Save Changes
                   </button>
-                  <button onClick={() => setEditing(false)} className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                  <button type="button" onClick={() => setEditing(false)} className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                     <X className="w-3.5 h-3.5 inline mr-1" /> Cancel
                   </button>
                 </div>
@@ -593,7 +598,7 @@ export default function UserDashboard() {
                       <span className="text-[9px] text-[#a1a1a1]">{loyaltyPoints} points</span>
                     </div>
                   </div>
-                  <button onClick={() => setEditing(true)} className="p-3 rounded-xl border border-white/10 hover:border-white/30 text-white/60 hover:text-white transition cursor-pointer">
+                  <button type="button" onClick={() => setEditing(true)} className="p-3 rounded-xl border border-white/10 hover:border-white/30 text-white/60 hover:text-white transition cursor-pointer">
                     <Pencil className="w-4 h-4" />
                   </button>
                 </div>

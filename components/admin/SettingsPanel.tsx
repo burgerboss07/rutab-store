@@ -126,7 +126,7 @@ export default function SettingsPanel() {
         {/* Section Nav */}
         <div className="flex md:flex-col gap-2">
           {sections.map((sec) => (
-            <button key={sec.id} onClick={() => setActiveSection(sec.id)}
+            <button type="button" key={sec.id} onClick={() => setActiveSection(sec.id)}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[10px] uppercase font-bold tracking-wider transition cursor-pointer ${
                 activeSection === sec.id
                   ? sec.id === 'danger' ? 'bg-red-600 text-white' : 'bg-[#ff0000] text-white'
@@ -167,7 +167,7 @@ export default function SettingsPanel() {
                   <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center text-white/30">
                     <ImageIcon className="w-6 h-6" />
                   </div>
-                  <button className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer">Upload</button>
+                  <button type="button" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition cursor-pointer">Upload</button>
                 </div>
               </div>
             </>
@@ -243,12 +243,12 @@ export default function SettingsPanel() {
                     </div>
                     {confirmReset === action.id ? (
                       <div className="flex items-center gap-2 shrink-0">
-                        <button
+                        <button type="button"
                           onClick={() => setConfirmReset(null)}
                           className="px-3 py-1.5 rounded-lg border border-white/10 text-white/70 text-[9px] font-bold uppercase tracking-wider transition cursor-pointer hover:bg-white/5">
                           Cancel
                         </button>
-                        <button
+                        <button type="button"
                           disabled={resetting !== null}
                           onClick={() => handleExecuteReset(action.id)}
                           className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[9px] font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 disabled:opacity-50">
@@ -264,7 +264,7 @@ export default function SettingsPanel() {
                         </button>
                       </div>
                     ) : (
-                      <button
+                      <button type="button"
                         onClick={() => setConfirmReset(action.id)}
                         className={`px-4 py-1.5 rounded-lg border text-[9px] font-bold uppercase tracking-wider transition cursor-pointer shrink-0 ${
                           action.id === 'all' ? 'bg-red-900/40 border-red-500/50 text-red-400 hover:bg-red-900/60' : 'bg-transparent border-red-900/50 text-red-400 hover:bg-red-900/20'
@@ -281,7 +281,7 @@ export default function SettingsPanel() {
 
           {activeSection !== 'danger' && (
           <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-            <button onClick={handleSave} disabled={saving}
+            <button type="button" onClick={handleSave} disabled={saving}
               className="px-6 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
@@ -309,7 +309,7 @@ function Toggle({ label, enabled }: { label: string; enabled: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-white font-bold">{label}</span>
-      <button onClick={() => setOn(!on)}
+      <button type="button" onClick={() => setOn(!on)}
         className={`w-9 h-5 rounded-full transition cursor-pointer ${on ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
         <div className={`w-3.5 h-3.5 rounded-full bg-white transition mt-0.5 ${on ? 'ml-[18px]' : 'ml-1'}`} />
       </button>
@@ -328,7 +328,7 @@ function GatewayCard({ name, enabled, onToggle }: { name: string; enabled: boole
         <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${
           enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
         }`}>{enabled ? 'Active' : 'Inactive'}</span>
-        <button
+        <button type="button"
           onClick={onToggle}
           className={`w-9 h-5 rounded-full transition cursor-pointer relative shrink-0 ${enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}
         >

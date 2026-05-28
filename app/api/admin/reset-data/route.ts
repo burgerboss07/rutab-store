@@ -30,16 +30,30 @@ export async function POST(req: Request) {
     }
 
     if (action === 'customers' || action === 'all') {
-      // Delete addresses first, then profiles (excluding admin user to avoid locking admin dashboard out)
+      // Delete addresses first, wishlist and user profiles (excluding admin user to avoid locking admin dashboard out)
       try {
         await client.from('addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       } catch (e) {
         console.error('Error deleting addresses:', e);
       }
       try {
+        await client.from('wishlist_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting wishlist_items:', e);
+      }
+      try {
         await client.from('profiles').delete().neq('email', 'abd@rutab.store');
       } catch (e) {
         console.error('Error deleting profiles:', e);
+      }
+    }
+
+    if (action === 'analytics' || action === 'all') {
+      // No dedicated analytics table exists; reset linked performance data sources
+      try {
+        await client.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.error('Error deleting audit_logs:', e);
       }
     }
 

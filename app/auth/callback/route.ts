@@ -10,16 +10,21 @@ export async function GET(request: NextRequest) {
     // Create the redirect response first
     const response = NextResponse.redirect(`${origin}${next}`);
 
-    const supabase = createServerClient(
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseKey) {
+    console.error('Supabase key is not configured for auth callback.');
+    return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_misconfigured`);
+  }
+
+  const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseKey,
       {
         cookies: {
           getAll() {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            // Set cookies on BOTH request and the final response
             cookiesToSet.forEach(({ name, value, options }) => {
               request.cookies.set(name, value);
               response.cookies.set(name, value, options);
