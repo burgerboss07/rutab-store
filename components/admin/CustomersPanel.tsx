@@ -227,11 +227,34 @@ export default function CustomersPanel() {
     setSelectAllOnPage(!selectAllOnPage);
   };
 
-  const handleBulkDelete = () => {
-    setProfiles((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+  const handleBulkDelete = async () => {
+    try {
+      const client = getSupabase();
+      const { error } = await client
+        .from('profiles')
+        .delete()
+        .in('id', Array.from(selectedIds));
+      if (error) throw error;
+      setProfiles((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+    } catch (err) {
+      console.error('Error deleting profiles:', err);
+      alert('Failed to delete profiles from Supabase');
+    }
     setSelectedIds(new Set());
     setSelectAllOnPage(false);
     setBulkDeleteConfirm(false);
+  };
+
+  const handleDeleteSingle = async (id: string) => {
+    try {
+      const client = getSupabase();
+      const { error } = await client.from('profiles').delete().eq('id', id);
+      if (error) throw error;
+      setProfiles((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error('Error deleting profile:', err);
+      alert('Failed to delete profile from Supabase');
+    }
   };
 
   const exportCSV = () => {
@@ -502,6 +525,12 @@ export default function CustomersPanel() {
                           className="w-8 h-8 rounded-lg border border-white/10 hover:border-white/30 flex items-center justify-center text-[#a1a1a1] hover:text-white transition cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => { if (confirm('Delete this user?')) handleDeleteSingle(profile.id); }}
+                          className="w-8 h-8 rounded-lg border border-white/10 hover:border-red-500/30 hover:bg-red-500/10 flex items-center justify-center text-[#a1a1a1] hover:text-red-400 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : profile.id)}
