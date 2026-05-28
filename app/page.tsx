@@ -26,26 +26,6 @@ export default function Home() {
   const [homeSettings, setHomeSettings] = useState<any>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const code = new URLSearchParams(window.location.search).get('code');
-      if (code) {
-        const client = getSupabase();
-        client.auth.exchangeCodeForSession(code)
-          .then(({ error }) => {
-            if (error) {
-              console.error('Client-side OAuth code exchange failed:', error);
-            }
-          })
-          .catch((err) => {
-            console.error('Error during client-side OAuth exchange:', err);
-          })
-          .finally(() => {
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
-          });
-      }
-    }
-
     async function loadHomeSettings() {
       try {
         const client = getSupabase();

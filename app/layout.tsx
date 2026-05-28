@@ -1,6 +1,5 @@
 import './globals.css';
 import LenisProvider from '@/components/LenisProvider';
-import AuthProvider from '@/components/AuthProvider';
 
 export const metadata = {
   title: 'RUTAB 2.0 — Luxury Streetwear Experience',
@@ -15,9 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <LenisProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          {children}
         </LenisProvider>
       </body>
     </html>
