@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getSupabase } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase-browser';
 import {
   Mail, Lock, User, Phone, Key, Eye, EyeOff, Loader2, ArrowLeft,
@@ -14,7 +15,9 @@ interface AuthFormProps {
 
 export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
-  const supabase = createClient();
+  const getClient = () => {
+    try { return getSupabase(); } catch { return createClient(); }
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,12 +36,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await getClient().auth.signInWithPassword({ email, password });
         if (error) throw error;
         router.push('/');
         router.refresh();
       } else if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await getClient().auth.signUp({
           email, password,
           options: {
             data: { full_name: name, phone },
@@ -46,7 +49,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         });
         if (error) throw error;
         if (data.session) {
-          await supabase.from('profiles').insert({
+          await getClient().from('profiles').insert({
             id: data.user!.id, email, full_name: name, phone,
           });
           router.push('/');
@@ -55,7 +58,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           setSuccess('Account created! Check your email to verify.');
         }
       } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await getClient().auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
         });
         if (error) throw error;
