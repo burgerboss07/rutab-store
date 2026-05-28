@@ -6,7 +6,7 @@ import { useStore, CURRENCY_CONFIG } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import {
   Settings, Globe, Mail, CreditCard, Search, ToggleLeft,
-  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2
+  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown
 } from 'lucide-react';
 
 const sections = [
@@ -28,16 +28,27 @@ export default function SettingsPanel() {
 
   const { currency, setCurrency } = useStore();
 
-  const [gateways, setGateways] = useState<Record<string, boolean>>({
-    'Cash on Delivery': true,
-    'Pickup': true,
-    'Wamd': true,
-    'Binance': true,
-    'PayPal': true,
-    'Skrill': true,
-    'EasyPaisa': true,
-    'Meezan Bank': true
-  });
+  interface GatewayConfig {
+    enabled: boolean;
+    apiKey: string;
+    secretKey: string;
+    merchantId: string;
+  }
+
+  const defaultGateways: Record<string, GatewayConfig> = {
+    'Cash on Delivery': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Pickup': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Wamd': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Binance': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'PayPal': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Skrill': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'EasyPaisa': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Meezan Bank': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+  };
+
+  const [gateways, setGateways] = useState<Record<string, GatewayConfig>>(defaultGateways);
+  const [newGatewayName, setNewGatewayName] = useState('');
+  const [expandedGateway, setExpandedGateway] = useState<string | null>(null);
 
   const [storeName, setStoreName] = useState('RUTAB رطب');
   const [defaultLang, setDefaultLang] = useState('English');
@@ -100,7 +111,18 @@ export default function SettingsPanel() {
           .eq('key', 'payment_gateways')
           .maybeSingle();
         if (data && data.value) {
-          setGateways(data.value);
+          const val = data.value;
+          // Handle old format (Record<string, boolean>) migration
+          const first = Object.values(val)[0];
+          if (typeof first === 'boolean') {
+            const migrated: Record<string, GatewayConfig> = {};
+            for (const [k, v] of Object.entries(val)) {
+              migrated[k] = { enabled: v as boolean, apiKey: '', secretKey: '', merchantId: '' };
+            }
+            setGateways(migrated);
+          } else {
+            setGateways(val);
+          }
         }
       } catch (e) {
         console.error('Failed to load gateways settings:', e);
@@ -164,7 +186,19 @@ export default function SettingsPanel() {
           if (v.from_name) setFromName(v.from_name);
           if (v.from_email) setFromEmail(v.from_email);
           if (v.maintenance_mode !== undefined) setMaintenanceMode(v.maintenance_mode);
-          if (v.payment_gateways) setGateways(v.payment_gateways);
+          if (v.payment_gateways) {
+            const pg = v.payment_gateways;
+            const first = Object.values(pg)[0] as any;
+            if (typeof first === 'boolean') {
+              const migrated: Record<string, GatewayConfig> = {};
+              for (const [k, val] of Object.entries(pg)) {
+                migrated[k] = { enabled: val as boolean, apiKey: '', secretKey: '', merchantId: '' };
+              }
+              setGateways(migrated);
+            } else {
+              setGateways(pg);
+            }
+          }
         }
       } catch (e) {
         console.error('Failed to load settings:', e);
@@ -245,21 +279,51 @@ export default function SettingsPanel() {
 
           {activeSection === 'payment' && (
             <>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Payment Gateways</h3>
-              <div className="space-y-4">
-                {Object.entries(gateways).map(([name, enabled]) => (
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Payment Gateways</h3>
+              </div>
+              <div className="space-y-3">
+                {Object.entries(gateways).map(([name, config]) => (
                   <GatewayCard
                     key={name}
                     name={name}
-                    enabled={enabled}
+                    config={config}
+                    isExpanded={expandedGateway === name}
+                    onToggleExpand={() => setExpandedGateway(expandedGateway === name ? null : name)}
                     onToggle={() => {
                       setGateways((prev) => ({
                         ...prev,
-                        [name]: !prev[name],
+                        [name]: { ...prev[name], enabled: !prev[name].enabled },
                       }));
+                    }}
+                    onUpdate={(field, value) => {
+                      setGateways((prev) => ({
+                        ...prev,
+                        [name]: { ...prev[name], [field]: value },
+                      }));
+                    }}
+                    onRemove={() => {
+                      const next = { ...gateways };
+                      delete next[name];
+                      setGateways(next);
                     }}
                   />
                 ))}
+              </div>
+              {/* Add new gateway */}
+              <div className="flex items-center gap-2 pt-2">
+                <input value={newGatewayName} onChange={(e) => setNewGatewayName(e.target.value)}
+                  placeholder="New gateway name..."
+                  className="flex-1 bg-black border border-white/10 rounded-xl py-2 px-3.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                <button onClick={() => {
+                  const trimmed = newGatewayName.trim();
+                  if (!trimmed || gateways[trimmed]) return;
+                  setGateways((prev) => ({ ...prev, [trimmed]: { enabled: true, apiKey: '', secretKey: '', merchantId: '' } }));
+                  setNewGatewayName('');
+                }}
+                  className="px-4 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer">
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
               </div>
             </>
           )}
@@ -374,24 +438,55 @@ function Toggle({ label, enabled, onToggle }: { label: string; enabled: boolean;
   );
 }
 
-function GatewayCard({ name, enabled, onToggle }: { name: string; enabled: boolean; onToggle: () => void }) {
+function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpdate, onRemove }: {
+  name: string; config: { enabled: boolean; apiKey: string; secretKey: string; merchantId: string };
+  isExpanded: boolean; onToggleExpand: () => void; onToggle: () => void;
+  onUpdate: (field: string, value: string) => void; onRemove: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl bg-black/50 border border-white/5">
-      <div className="flex items-center gap-3">
-        <CreditCard className="w-4 h-4 text-[#a1a1a1]" />
-        <span className="text-xs font-bold text-white">{name}</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${
-          enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
-        }`}>{enabled ? 'Active' : 'Inactive'}</span>
-        <button
-          onClick={onToggle}
-          className={`w-9 h-5 rounded-full transition cursor-pointer relative shrink-0 ${enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}
-        >
-          <div className={`w-3.5 h-3.5 rounded-full bg-white transition absolute top-[3px] ${enabled ? 'left-[18px]' : 'left-1'}`} />
+    <div className="rounded-xl bg-black/50 border border-white/5 overflow-hidden">
+      <div className="flex items-center justify-between p-4">
+        <button onClick={onToggleExpand} className="flex items-center gap-3 flex-1 text-left cursor-pointer">
+          <CreditCard className="w-4 h-4 text-[#a1a1a1]" />
+          <span className="text-xs font-bold text-white">{name}</span>
         </button>
+        <div className="flex items-center gap-3">
+          <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${
+            config.enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+          }`}>{config.enabled ? 'Active' : 'Inactive'}</span>
+          <button onClick={onToggle}
+            className={`w-9 h-5 rounded-full transition cursor-pointer relative shrink-0 ${config.enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
+            <div className={`w-3.5 h-3.5 rounded-full bg-white transition absolute top-[3px] ${config.enabled ? 'left-[18px]' : 'left-1'}`} />
+          </button>
+          <button onClick={onToggleExpand} className="cursor-pointer text-[#a1a1a1] hover:text-white transition">
+            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          <button onClick={onRemove} className="cursor-pointer text-[#a1a1a1] hover:text-red-400 transition">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-0 space-y-2 border-t border-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3">
+            <div className="space-y-1">
+              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">API Key</label>
+              <input value={config.apiKey} onChange={(e) => onUpdate('apiKey', e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">Secret Key</label>
+              <input value={config.secretKey} onChange={(e) => onUpdate('secretKey', e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">Merchant ID</label>
+              <input value={config.merchantId} onChange={(e) => onUpdate('merchantId', e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
