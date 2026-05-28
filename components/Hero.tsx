@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 export default function Hero({
   title = "رُطب",
-  subtitle = "Los Santos · Kuwait Drop",
+  subtitle = "Worldwide Delivery",
   slogan = "FUTURE ARAB STREETWEAR.",
   sloganHighlight = "BOLD. FRESH STYLE. REAL COMFORT.",
   description = "RUTAB—YOUR EVERYDAY CHOICE."

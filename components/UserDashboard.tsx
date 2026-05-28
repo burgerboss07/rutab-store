@@ -59,6 +59,8 @@ export default function UserDashboard() {
   const [newAddrArea, setNewAddrArea] = useState('');
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [addressError, setAddressError] = useState('');
 
   // Profile editing
   const [editing, setEditing] = useState(false);
@@ -211,32 +213,64 @@ export default function UserDashboard() {
 
   const handleLogout = async () => {
     const client = getSupabase();
-    await client.auth.signOut();
-    setUser(null);
+    try {
+      const { error } = await client.auth.signOut();
+      if (error) {
+        console.error('Logout failed:', error);
+      }
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+      }
+    }
   };
 
   // Address handlers (DB-backed)
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAddrTitle || !newAddrLine) return;
+    setAddressError('');
+    if (!newAddrTitle || !newAddrLine) {
+      setAddressError('Please fill in the address title and full address.');
+      return;
+    }
+
+    setAddressSaving(true);
     try {
-      const { data: { user: authUser } } = await (supabase || getSupabase()).auth.getUser();
-      if (!authUser) return;
       const client = supabase || getSupabase();
+      const userResponse = await client.auth.getUser();
+      const authUser = userResponse.data?.user;
+      if (!authUser) {
+        setAddressError('Unable to save address without a signed-in user. Please log in again.');
+        return;
+      }
+
       const { data, error } = await client.from('addresses').insert({
         user_id: authUser.id,
         title: newAddrTitle,
         address_line1: newAddrLine,
-        area: newAddrArea || null,
+        area: newAddrArea || undefined,
       }).select().single();
-      if (error) throw error;
-      if (data) setAddresses((prev) => [...prev, data as Address]);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setAddresses((prev) => [...prev, data as Address]);
+      }
+
       setNewAddrTitle('');
       setNewAddrLine('');
       setNewAddrArea('');
       setShowAddAddress(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save address:', err);
+      setAddressError(err?.message || 'Failed to save address. Please try again.');
+    } finally {
+      setAddressSaving(false);
     }
   };
 
@@ -449,7 +483,11 @@ export default function UserDashboard() {
                 <Input label="Address Title" type="text" required value={newAddrTitle} onChange={(e) => setNewAddrTitle(e.target.value)} placeholder="e.g. Home, Office" />
                 <Input label="Full Address" type="text" required value={newAddrLine} onChange={(e) => setNewAddrLine(e.target.value)} placeholder="Street, building, apartment" />
                 <Input label="Area / District" type="text" value={newAddrArea} onChange={(e) => setNewAddrArea(e.target.value)} placeholder="Salmiya" />
-                <button type="submit" className="px-6 py-2.5 bg-white text-black hover:bg-[#ff0000] hover:text-white rounded-xl text-xs font-bold uppercase transition cursor-pointer">Save Address</button>
+                {addressError && <p className="text-[10px] text-red-400 uppercase tracking-wider font-bold">{addressError}</p>}
+                <button type="submit" disabled={addressSaving}
+                  className="px-6 py-2.5 bg-white text-black hover:bg-[#ff0000] hover:text-white rounded-xl text-xs font-bold uppercase transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  {addressSaving ? 'Saving...' : 'Save Address'}
+                </button>
               </form>
             )}
             {loadingAddresses ? (
