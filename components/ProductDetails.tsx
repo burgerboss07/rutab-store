@@ -227,12 +227,12 @@ export default function ProductDetails() {
           ) : (
             <>
               {/* LEFT COLUMN: Gallery with Zoom */}
-              <div className="p-6 md:p-10 flex flex-col gap-6 border-r border-white/5">
+              <div className="p-6 md:p-8 flex flex-col gap-4 border-r border-white/5">
                 {/* Main Zoom Display */}
                 <div
                   onMouseMove={handleMouseMove}
                   onMouseLeave={handleMouseLeave}
-                  className="relative aspect-[3/4] rounded-3xl overflow-hidden border border-white/10 bg-black cursor-zoom-in"
+                  className="relative aspect-[1/1] rounded-3xl overflow-hidden border border-white/10 bg-black cursor-zoom-in"
                   style={{
                     backgroundImage: `url(${activeImage})`,
                     backgroundSize: '100%',
@@ -269,11 +269,11 @@ export default function ProductDetails() {
                     <button
                       key={index}
                       onClick={() => setActiveImage(imgUrl)}
-                      className={`relative w-20 h-24 rounded-2xl overflow-hidden border transition cursor-pointer bg-black ${
+                      className={`relative w-14 h-16 rounded-xl overflow-hidden border transition cursor-pointer bg-black ${
                         activeImage === imgUrl ? 'border-[#ff0000]' : 'border-white/10 hover:border-white/30'
                       }`}
                     >
-                    <Image src={imgUrl} alt="thumb" fill sizes="80px" className="object-cover" unoptimized />
+                    <Image src={imgUrl} alt="thumb" fill sizes="56px" className="object-cover" unoptimized />
                     </button>
                   ))}
                 </div>
