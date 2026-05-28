@@ -52,7 +52,6 @@ export default function SettingsPanel() {
   const [timezone, setTimezone] = useState('Asia/Kuwait (UTC+3)');
   const [metaTitle, setMetaTitle] = useState('RUTAB رطب — Luxury Streetwear Kuwait');
   const [metaDesc, setMetaDesc] = useState('Premium streetwear for the GCC...');
-  const [gaId, setGaId] = useState('G-XXXXXXXXXX');
   const [smtpHost, setSmtpHost] = useState('smtp.sendgrid.net');
   const [smtpPort, setSmtpPort] = useState('587');
   const [fromName, setFromName] = useState('RUTAB Store');
@@ -139,7 +138,6 @@ export default function SettingsPanel() {
         timezone,
         meta_title: metaTitle,
         meta_description: metaDesc,
-        google_analytics_id: gaId,
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         from_name: fromName,
@@ -177,7 +175,6 @@ export default function SettingsPanel() {
           if (v.timezone) setTimezone(v.timezone);
           if (v.meta_title) setMetaTitle(v.meta_title);
           if (v.meta_description) setMetaDesc(v.meta_description);
-          if (v.google_analytics_id) setGaId(v.google_analytics_id);
           if (v.smtp_host) setSmtpHost(v.smtp_host);
           if (v.smtp_port) setSmtpPort(v.smtp_port);
           if (v.from_name) setFromName(v.from_name);
@@ -330,7 +327,6 @@ export default function SettingsPanel() {
               <div className="grid grid-cols-1 gap-4">
                 <Field label="Default Meta Title" value={metaTitle} onChange={setMetaTitle} />
                 <Field label="Default Meta Description" value={metaDesc} onChange={setMetaDesc} />
-                <Field label="Google Analytics ID" value={gaId} onChange={setGaId} />
               </div>
             </>
           )}
