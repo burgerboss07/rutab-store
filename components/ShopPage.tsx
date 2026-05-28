@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getSupabase } from '../lib/supabase';
 import ProductCard from './ProductCard';
-import { Product } from '../lib/store';
+import { Product, useStore, CURRENCY_CONFIG } from '../lib/store';
 import { SlidersHorizontal, Search, RotateCcw, X } from 'lucide-react';
 
 export default function ShopPage() {
@@ -21,19 +21,27 @@ export default function ShopPage() {
   // Mobile filter drawer state
   const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  const currency = useStore((s) => s.currency);
+
   // Catalogs list (will be populated from products)
   const [catalogs, setCatalogs] = useState<string[]>(['All']);
   // SubCatalogs list (will be populated based on selected catalog)
   const [subCatalogs, setSubCatalogs] = useState<string[]>(['All']);
   // Sizes list
   const sizes = ['All', 'S', 'M', 'L', 'XL', 'One Size'];
-  // Price ranges list
-  const priceRanges = [
+  // Price ranges list — reacts to currency changes
+  const currencyConfig = CURRENCY_CONFIG[currency] || CURRENCY_CONFIG['KWD (K.D)'];
+  const fmt = (v: number) => {
+    const converted = v * currencyConfig.rate;
+    const formatted = converted.toLocaleString(undefined, { minimumFractionDigits: currencyConfig.decimals, maximumFractionDigits: currencyConfig.decimals });
+    return currencyConfig.suffix ? `${formatted} ${currencyConfig.symbol}` : `${currencyConfig.symbol}${formatted}`;
+  };
+  const priceRanges = useMemo(() => [
     { label: 'All Prices', value: 'All' },
-    { label: 'Under 15 KWD', value: 'under-15' },
-    { label: '15 - 25 KWD', value: '15-25' },
-    { label: 'Over 25 KWD', value: 'over-25' },
-  ];
+    { label: `Under ${fmt(15)}`, value: 'under-15' },
+    { label: `${fmt(15)} - ${fmt(25)}`, value: '15-25' },
+    { label: `Over ${fmt(25)}`, value: 'over-25' },
+  ], [currency]);
 
   // Fetch products and set filter options
   useEffect(() => {
