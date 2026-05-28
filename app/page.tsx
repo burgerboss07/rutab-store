@@ -16,6 +16,7 @@ import ProductDetails from '@/components/ProductDetails';
 import CartDrawer from '@/components/CartDrawer';
 import CheckoutForm from '@/components/CheckoutForm';
 import UserDashboard from '@/components/UserDashboard';
+import WishlistPage from '@/components/WishlistPage';
 import AdminDashboard from '@/components/AdminDashboard';
 
 export default function Home() {
@@ -118,6 +119,8 @@ export default function Home() {
         return <ShopPage />;
       case 'checkout':
         return <CheckoutForm />;
+      case 'wishlist':
+        return <WishlistPage />;
       case 'account':
         return <UserDashboard />;
       default:

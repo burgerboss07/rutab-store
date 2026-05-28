@@ -6,6 +6,7 @@ import { useStore, formatPrice } from '../lib/store';
 export default function UserDashboard() {
   const orders = useStore((s) => s.orders);
   const wishlist = useStore((s) => s.wishlist);
+  const setActiveView = useStore((s) => s.setActiveView);
 
   const formatKWD = (v: number) => formatPrice(v, 'KWD (K.D)');
 
@@ -24,11 +25,11 @@ export default function UserDashboard() {
             <p className="text-lg font-black text-white">{orders.length}</p>
             <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Orders</p>
           </div>
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+          <button onClick={() => setActiveView('wishlist')} className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1 hover:bg-white/10 transition cursor-pointer text-center w-full">
             <Heart className="w-4 h-4 text-white/50 mx-auto" />
             <p className="text-lg font-black text-white">{wishlist.length}</p>
             <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Wishlist</p>
-          </div>
+          </button>
         </div>
       </div>
     </div>

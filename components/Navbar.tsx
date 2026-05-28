@@ -94,10 +94,10 @@ export default function Navbar() {
           
           {/* Wishlist Link */}
           <button
-            onClick={() => setActiveView('account')}
+            onClick={() => setActiveView('wishlist')}
             className="text-[#e5e5e5] hover:text-[#ff0000] transition relative cursor-pointer"
           >
-            <Heart className="w-5 h-5" />
+            <Heart className={`w-5 h-5 ${activeView === 'wishlist' ? 'text-[#ff0000] fill-[#ff0000]' : ''}`} />
             {wishlistCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#ff0000] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
                 {wishlistCount}

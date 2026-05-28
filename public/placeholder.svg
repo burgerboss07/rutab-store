@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" fill="none">
+  <rect width="800" height="1000" fill="#0a0a0a"/>
+  <rect x="100" y="350" width="600" height="300" rx="30" stroke="#ff000020" stroke-width="2" fill="none"/>
+  <path d="M300 420L400 520L450 470L520 540L580 480L700 600H100L200 500L300 420Z" fill="#ff000010"/>
+  <circle cx="400" cy="500" r="60" stroke="#ff000015" stroke-width="1" fill="none"/>
+  <circle cx="300" cy="450" r="40" stroke="#ff000010" stroke-width="1" fill="none"/>
+  <circle cx="520" cy="460" r="50" stroke="#ff000010" stroke-width="1" fill="none"/>
+  <text x="400" y="720" text-anchor="middle" fill="#555" font-family="system-ui" font-size="24" font-weight="700" letter-spacing="3">NO IMAGE</text>
+  <text x="400" y="750" text-anchor="middle" fill="#333" font-family="system-ui" font-size="14" letter-spacing="2">RUTAB</text>
+</svg>

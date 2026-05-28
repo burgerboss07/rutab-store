@@ -125,7 +125,7 @@ export interface Order {
   items: OrderItem[];
 }
 
-export type StoreView = 'home' | 'shop' | 'checkout' | 'account' | 'admin';
+export type StoreView = 'home' | 'shop' | 'checkout' | 'account' | 'wishlist' | 'admin';
 
 interface StoreState {
   // Navigation & UI state

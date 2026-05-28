@@ -43,6 +43,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const [hovered, setHovered] = useState(false);
   const [addingSize, setAddingSize] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [secondaryImgError, setSecondaryImgError] = useState(false);
 
   const isWishlisted = wishlist.includes(product.id);
   const priceVal = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
@@ -94,28 +96,40 @@ export default function ProductCard({ product }: ProductCardProps) {
         className="relative aspect-[3/4] overflow-hidden cursor-pointer bg-black"
       >
         {/* Main Image */}
-        <Image
-          src={product.image_url}
-          alt={product.name}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className={`object-cover transition-all duration-700 ${
-            hovered ? 'scale-105 opacity-0' : 'scale-100 opacity-100'
-          }`}
-          unoptimized
-        />
+        {imgError ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
+            <div className="text-center">
+              <svg className="w-12 h-12 mx-auto mb-2 text-[#333]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+          </div>
+        ) : (
+          <Image
+            src={product.image_url || '/placeholder.svg'}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className={`object-cover transition-all duration-700 ${
+              hovered ? 'scale-105 opacity-0' : 'scale-100 opacity-100'
+            }`}
+            onError={() => setImgError(true)}
+            unoptimized
+          />
+        )}
         
         {/* Secondary Detail Image on Hover */}
-        <Image
-          src={secondaryImg}
-          alt={`${product.name} detail`}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className={`object-cover transition-all duration-700 ${
-            hovered ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          }`}
-          unoptimized
-        />
+        {!secondaryImgError && !imgError && (
+          <Image
+            src={secondaryImg}
+            alt={`${product.name} detail`}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className={`object-cover transition-all duration-700 ${
+              hovered ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
+            onError={() => setSecondaryImgError(true)}
+            unoptimized
+          />
+        )}
 
         {/* Wishlist Button */}
         <button
