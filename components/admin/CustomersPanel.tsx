@@ -78,6 +78,9 @@ export default function CustomersPanel() {
   // Expanded customer (order history)
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Track mock-profile IDs the user has deleted so re-fetches don't bring them back
+  const deletedMockIdsRef = useRef<Set<string>>(new Set());
+
   // Edit modal
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
@@ -100,7 +103,7 @@ export default function CustomersPanel() {
         .select('*')
         .order('created_at', { ascending: false });
       if (profileData && profileData.length > 0) setProfiles(profileData as Profile[]);
-      else setProfiles(mockProfiles as any[]);
+      else setProfiles((mockProfiles as any[]).filter((p: any) => !deletedMockIdsRef.current.has(p.id)));
 
       const { data: orderData } = await client
         .from('orders')
@@ -109,7 +112,7 @@ export default function CustomersPanel() {
       if (orderData && orderData.length > 0) setAllOrders(orderData as Order[]);
       else setAllOrders(mockOrdersData as any[]);
     } catch {
-      setProfiles(mockProfiles as any[]);
+      setProfiles((mockProfiles as any[]).filter((p: any) => !deletedMockIdsRef.current.has(p.id)));
       setAllOrders(mockOrdersData as any[]);
     } finally {
       setLoading(false);
@@ -237,6 +240,10 @@ export default function CustomersPanel() {
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Delete failed');
+      }
+      // Track mock IDs so re-fetches don't re-add them
+      for (const id of ids) {
+        if (!/^[0-9a-f-]+$/i.test(id)) deletedMockIdsRef.current.add(id);
       }
       setProfiles((prev) => prev.filter((p) => !ids.includes(p.id)));
     } catch (err: any) {
