@@ -306,7 +306,7 @@ export default function ShopPage() {
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div
                   key={n}
-                  className="aspect-[1/1] rounded-[30px] bg-[#0a0a0a] border border-white/5 animate-pulse"
+                  className="aspect-[3/4] h-[380px] rounded-[30px] bg-[#0a0a0a] border border-white/5 animate-pulse"
                 />
               ))}
             </div>

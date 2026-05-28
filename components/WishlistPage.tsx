@@ -92,7 +92,7 @@ export default function WishlistPage() {
               return (
                 <div key={product.id} className="bg-[#0a0a0a] border border-white/5 rounded-[30px] overflow-hidden group hover:border-[#ff0000]/30 transition-all duration-500">
                   {/* Image */}
-                  <div className="relative aspect-[1/1] bg-black overflow-hidden">
+                  <div className="relative aspect-[3/4] bg-black overflow-hidden">
                     <Image
                       src={product.image_url || '/placeholder.svg'}
                       alt={product.name}

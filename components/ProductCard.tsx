@@ -93,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Image Gallery Wrapper */}
       <div 
         onClick={handleCardClick}
-        className="relative aspect-[1/1] overflow-hidden cursor-pointer bg-black"
+        className="relative aspect-[3/4] overflow-hidden cursor-pointer bg-black"
       >
         {/* Main Image */}
         {imgError || !product.image_url ? (
@@ -183,33 +183,34 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
        {/* Info Details */}
-       <div className="p-4 flex-1 flex flex-col justify-between gap-2">
-         <div onClick={handleCardClick} className="cursor-pointer space-y-1">
-           <div className="flex items-center gap-1.5">
-             <span className="text-[8px] text-[#ff0000] uppercase font-bold tracking-wider">
+       <div className="p-6 flex-1 flex flex-col justify-between">
+         <div onClick={handleCardClick} className="cursor-pointer">
+           <div className="flex items-center gap-2 mb-1">
+             <span className="text-[9px] text-[#ff0000] uppercase font-bold tracking-wider">
                {product.catalog}
              </span>
              {product.subCatalog && (
-               <span className="text-[7px] text-[#a1a1a1] uppercase tracking-wider font-light">
+               <span className="text-[8px] text-[#a1a1a1] uppercase tracking-wider font-light">
                  / {product.subCatalog}
                </span>
              )}
            </div>
-           <h3 className="font-bold text-xs text-white uppercase line-clamp-1 group-hover:text-[#ff0000] transition-colors duration-300">
+           <h3 className="font-bold text-sm text-white uppercase line-clamp-1 group-hover:text-[#ff0000] transition-colors duration-300">
              {product.name}
            </h3>
-           <p className="text-[10px] text-[#a1a1a1] line-clamp-2 leading-relaxed">
+           <p className="text-[11px] text-[#a1a1a1] line-clamp-2 mt-2 leading-relaxed">
              {product.description}
            </p>
          </div>
 
-        <div className="flex items-center justify-between border-t border-white/5 pt-2">
-          <span className="text-sm font-black text-white">
+        <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+          <span className="text-lg font-black text-white">
             {formatPrice(priceVal, currency)}
           </span>
+          
           <button
             onClick={handleCardClick}
-            className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1] hover:text-white transition cursor-pointer"
+            className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] hover:text-white transition cursor-pointer"
           >
             Details →
           </button>

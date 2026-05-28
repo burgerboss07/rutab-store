@@ -744,8 +744,8 @@ export default function ContentPanel() {
                       <div className="flex flex-wrap gap-2">
                         {form.images.map((img, i) => (
                           <div key={i} className="relative group">
-                            <div className="w-16 h-20 rounded-lg overflow-hidden border border-white/10 bg-black">
-                              <Image src={img} alt={`gallery-${i}`} width={64} height={80} className="w-full h-full object-cover" unoptimized />
+                            <div className="w-12 h-14 rounded-lg overflow-hidden border border-white/10 bg-black">
+                              <Image src={img} alt={`gallery-${i}`} width={48} height={56} className="w-full h-full object-cover" unoptimized />
                             </div>
                             <button type="button" onClick={() => handleRemoveSecondaryImage(img)}
                               className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#ff0000] text-white flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-lg">×</button>
@@ -885,10 +885,10 @@ export default function ContentPanel() {
                 )},
                 { key: 'name', label: 'Product', render: (p: Product) => (
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-11 rounded-lg bg-black border border-white/10 overflow-hidden relative shrink-0 flex items-center justify-center text-[8px] text-[#555]">
+                    <div className="w-7 h-9 rounded-lg bg-black border border-white/10 overflow-hidden relative shrink-0 flex items-center justify-center text-[6px] text-[#555]">
                       {p.image_url && p.image_url !== '/placeholder.svg'
-                        ? <Image src={p.image_url} alt={p.name} fill sizes="36px" className="object-cover" unoptimized />
-                        : <Package className="w-4 h-4 opacity-30" />}
+                        ? <Image src={p.image_url} alt={p.name} fill sizes="28px" className="object-cover" unoptimized />
+                        : <Package className="w-3 h-3 opacity-30" />}
                     </div>
                     <div>
                       <p className="text-xs font-bold text-white">{p.name}</p>
