@@ -1,16 +1,17 @@
 'use client';
 
 import { useStore, StoreView, CURRENCY_CONFIG } from '../lib/store';
-import { ShoppingBag, Heart, User, Search, ChevronDown } from 'lucide-react';
-import { useSyncExternalStore, useState, useRef, useEffect } from 'react';
-
-const emptySubscribe = () => () => {};
-const getSnapshot = () => true;
-const getServerSnapshot = () => false;
+import { ShoppingBag, Heart, User, Search, ChevronDown, LogOut } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/lib/supabase-browser';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
+  const router = useRouter();
   const activeView = useStore((state) => state.activeView);
   const setActiveView = useStore((state) => state.setActiveView);
+  const user = useStore((state) => state.user);
+  const setUser = useStore((state) => state.setUser);
   const setCartOpen = useStore((state) => state.setCartOpen);
   const getCartItemCount = useStore((state) => state.getCartItemCount);
   const wishlist = useStore((state) => state.wishlist);
@@ -18,12 +19,17 @@ export default function Navbar() {
   const setCurrency = useStore((state) => state.setCurrency);
 
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsCurrencyDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -32,11 +38,24 @@ export default function Navbar() {
 
   const currencies = ['USD ($)', 'PKR (Rs)', 'AED (AED)', 'EUR (€)', 'KWD (K.D)'];
 
-  // Hydration safety
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleLogout = async () => {
+    setIsUserMenuOpen(false);
+    try {
+      const client = createClient();
+      await client.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    setUser(null);
+    router.push('/');
+  };
+
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'R';
 
   const cartCount = mounted ? getCartItemCount() : 0;
   const wishlistCount = mounted ? wishlist.length : 0;
@@ -110,13 +129,49 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* Account Profile Link */}
-          <button
-            onClick={() => setActiveView('account')}
-            className="text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
-          >
-            <User className="w-5 h-5" />
-          </button>
+          {/* Account Profile / Auth State */}
+          <div className="relative" ref={userMenuRef}>
+            {user ? (
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#ff0000]/10 border border-[#ff0000]/30 flex items-center justify-center text-[10px] font-black text-[#ff0000]">
+                  {userInitial}
+                </div>
+                <span className="hidden md:block text-[10px] font-bold uppercase tracking-wider max-w-[80px] truncate">
+                  {user.name.split(' ')[0]}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/auth/login')}
+                className="text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-[#ff0000] transition cursor-pointer px-3 py-1.5 rounded-lg border border-white/10 hover:border-[#ff0000]/30"
+              >
+                Sign In
+              </button>
+            )}
+
+            {isUserMenuOpen && user && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-[#0f0f0f] border border-white/15 rounded-2xl py-2 shadow-2xl z-50 backdrop-blur-xl">
+                <button
+                  onClick={() => { setActiveView('account'); setIsUserMenuOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-xs text-white hover:bg-white/5 transition flex items-center gap-3 cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5 text-[#a1a1a1]" />
+                  My Account
+                </button>
+                <div className="border-t border-white/5 my-1" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2.5 text-xs text-[#ff0000] hover:bg-white/5 transition flex items-center gap-3 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Currency Dropdown */}
           <div className="relative" ref={dropdownRef}>

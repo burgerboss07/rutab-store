@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useStore, Product, formatPrice, KUWAIT_AREAS } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { createClient } from '@/lib/supabase-browser';
+import { useRouter } from 'next/navigation';
 import {
   User, LogOut, Package, MapPin, Heart, Key, Loader2, Plus, ShoppingBag,
-  Trash2, Star, Pencil, Save, X, Mail, Phone, Crown
+  Trash2, Star, Pencil, Save, X, Crown
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -19,6 +20,7 @@ interface Address {
 }
 
 export default function UserDashboard() {
+  const router = useRouter();
   const user = useStore((s) => s.user);
   const setUser = useStore((s) => s.setUser);
   const orders = useStore((s) => s.orders);
@@ -29,21 +31,10 @@ export default function UserDashboard() {
 
   const supabase = typeof window !== 'undefined' ? createClient() : null;
 
-  // Hydration safety
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Auth state
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [isLoggingIn, setLoggingIn] = useState(false);
-  const [authError, setAuthError] = useState('');
-  const [authSuccess, setAuthSuccess] = useState('');
 
   // Tab
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'wishlist' | 'profile'>('orders');
@@ -148,68 +139,6 @@ export default function UserDashboard() {
   useEffect(() => {
     if (user) fetchProfileData();
   }, [user, fetchProfileData]);
-
-  // Auth handlers
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoggingIn(true);
-    setAuthError('');
-    setAuthSuccess('');
-    try {
-      const client = getSupabase();
-      if (authMode === 'login') {
-        const { data, error } = await client.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        if (data.user) {
-          setUser({
-            email: data.user.email || email,
-            name: data.user.user_metadata?.full_name || 'Rutab Member',
-            phone: data.user.user_metadata?.phone || '+965 9999 8888',
-            address: '', area: '',
-          });
-        }
-      } else {
-        const { data, error } = await client.auth.signUp({
-          email, password,
-          options: { data: { full_name: name || 'Rutab Member', phone: phone || '+965 9999 8888' } },
-        });
-        if (error) throw error;
-        if (data.user) {
-          await client.from('profiles').insert({
-            id: data.user.id, email, full_name: name || 'Rutab Member', phone: phone || '+965 9999 8888',
-          });
-          if (data.session) {
-            setUser({
-              email: data.user.email || email, name: name || 'Rutab Member',
-              phone: phone || '+965 9999 8888', address: '', area: '',
-            });
-          } else {
-            setAuthSuccess('Account created! Check your email to verify.');
-          }
-        }
-      }
-    } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed.');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: 'google') => {
-    setLoggingIn(true);
-    setAuthError('');
-    try {
-      const client = supabase || getSupabase();
-      const { error } = await client.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setAuthError(err.message || 'Social authentication failed.');
-      setLoggingIn(false);
-    }
-  };
 
   const handleLogout = async () => {
     const client = getSupabase();
@@ -325,67 +254,24 @@ export default function UserDashboard() {
     );
   }
 
-  // Auth Portal
   if (!user) {
     return (
       <div className="pt-24 min-h-screen bg-black text-white px-6 flex items-center justify-center pb-24">
-        <form onSubmit={handleAuth}
-          className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[35px] p-8 space-y-6 shadow-2xl animate-fade-in-up">
-          <div className="text-center">
+        <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[35px] p-8 space-y-6 shadow-2xl animate-fade-in-up text-center">
+          <div className="space-y-2">
             <span className="text-[#ff0000] text-xs font-bold tracking-[0.2em] uppercase">Rutab Vault</span>
-            <h2 className="text-3xl font-black uppercase text-white mt-1">{authMode === 'login' ? 'Vault Sign In' : 'Vault Register'}</h2>
+            <h2 className="text-3xl font-black uppercase text-white mt-1">Sign In Required</h2>
+            <p className="text-[10px] text-[#a1a1a1] max-w-xs mx-auto">Sign in to your Rutab account to view orders, manage addresses, and more.</p>
           </div>
-          <div className="grid grid-cols-2 p-1 bg-black border border-white/5 rounded-2xl">
-            <button type="button" onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccess(''); }}
-              className={`py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition cursor-pointer ${authMode === 'login' ? 'bg-[#ff0000] text-white' : 'text-white/60 hover:text-white'}`}>Sign In</button>
-            <button type="button" onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccess(''); }}
-              className={`py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition cursor-pointer ${authMode === 'register' ? 'bg-[#ff0000] text-white' : 'text-white/60 hover:text-white'}`}>Register</button>
-          </div>
-          {authError && <div className="bg-red-500/10 border border-red-500/30 text-red-500 text-[10px] text-center p-3 rounded-xl font-bold uppercase tracking-widest">{authError}</div>}
-          {authSuccess && <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] text-center p-3 rounded-xl font-bold uppercase tracking-widest">{authSuccess}</div>}
-          <div className="space-y-4">
-            {authMode === 'register' && (
-              <><Input label="Full Name" type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ahmad Al-Sabah" /><Input label="Phone Number" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+965 9999 9999" /></>
-            )}
-            <Input label="Email Address" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" />
-            <Input label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-          </div>
-          <button type="submit" disabled={isLoggingIn}
-            className="w-full py-4 bg-[#ff0000] text-white hover:bg-[#d60000] disabled:bg-zinc-700 font-bold text-xs uppercase tracking-widest rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
-            {isLoggingIn ? <><Loader2 className="w-4 h-4 animate-spin" /> {authMode === 'login' ? 'Signing In...' : 'Creating...'}</> : <><Key className="w-4 h-4" /> {authMode === 'login' ? 'Sign In' : 'Create Account'}</>}
+          <button onClick={() => router.push('/auth/login')}
+            className="w-full py-4 bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-xs uppercase tracking-widest rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
+            <Key className="w-4 h-4" /> Sign In
           </button>
-          
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div>
-            <div className="relative flex justify-center"><span className="bg-[#0a0a0a] px-4 text-[9px] text-[#555] uppercase tracking-wider">or continue with</span></div>
-          </div>
-
-          {/* Google Sign In — full width prominent */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('google')}
-            disabled={isLoggingIn}
-            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-bold text-xs uppercase tracking-widest transition cursor-pointer disabled:opacity-50 shadow-lg"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign in with Google
+          <button onClick={() => router.push('/auth/signup')}
+            className="w-full py-4 border border-white/10 hover:border-white/30 rounded-xl text-xs font-bold uppercase tracking-widest transition cursor-pointer flex items-center justify-center gap-2 text-white/70 hover:text-white">
+            Create Account
           </button>
-
-          <div className="text-center">
-            {authMode === 'login' ? (
-              <button type="button" onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccess(''); }}
-                className="text-[10px] text-white/50 hover:text-white transition uppercase font-bold tracking-wider cursor-pointer">New to Rutab? <span className="text-[#ff0000] underline">Register now</span></button>
-            ) : (
-              <button type="button" onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccess(''); }}
-                className="text-[10px] text-white/50 hover:text-white transition uppercase font-bold tracking-wider cursor-pointer">Already a member? <span className="text-[#ff0000] underline">Sign In</span></button>
-            )}
-          </div>
-        </form>
+        </div>
       </div>
     );
   }
@@ -626,15 +512,6 @@ function Input({ label, className = '', onChange, ...props }: { label?: string; 
       <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">{label}</label>
       <input onChange={onChange} {...props} className={`w-full bg-black border border-white/10 rounded-xl py-3.5 px-4 text-xs outline-none focus:border-[#ff0000] text-white transition-colors ${className}`} />
     </div>
-  );
-}
-
-function SocialButton({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} disabled={disabled}
-      className="flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 hover:border-white/30 bg-black text-white/80 hover:text-white text-[10px] font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 w-full">
-      {icon} {label}
-    </button>
   );
 }
 

@@ -26,7 +26,6 @@ export default function Home() {
   const [homeSettings, setHomeSettings] = useState<any>(null);
 
   useEffect(() => {
-    // Client-side OAuth code exchange fallback (for redirect fallback to homepage Site URL)
     if (typeof window !== 'undefined') {
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
@@ -41,7 +40,6 @@ export default function Home() {
             console.error('Error during client-side OAuth exchange:', err);
           })
           .finally(() => {
-            // Always clean up query parameters from the URL
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
           });
@@ -64,55 +62,7 @@ export default function Home() {
       }
     }
 
-    // Set up Supabase Auth State listener to sync user & preferred currency locally
-    const client = getSupabase();
-    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        try {
-          const { data: profile } = await client
-            .from('profiles')
-            .select('full_name, phone, preferred_currency')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          const name = profile?.full_name || session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'Rutab Member';
-          const phone = profile?.phone || session.user.user_metadata?.phone || '+965 9999 8888';
-          const preferred_currency = profile?.preferred_currency;
-
-          // Upsert profile so Google/OAuth users get a profile row
-          if (!profile) {
-            await client.from('profiles').upsert({
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: name,
-              phone: phone,
-            }, { onConflict: 'id' });
-          }
-
-          useStore.getState().setUser({
-            email: session.user.email || '',
-            name,
-            phone,
-            address: '',
-            area: '',
-          });
-
-          if (preferred_currency) {
-            useStore.getState().setCurrency(preferred_currency);
-          }
-        } catch (err) {
-          console.error('Failed to sync user auth state:', err);
-        }
-      } else {
-        useStore.getState().setUser(null);
-      }
-    });
-
     loadHomeSettings();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const defaultLayout = ['hero', 'collections', 'trending', 'feed', 'footer'];
