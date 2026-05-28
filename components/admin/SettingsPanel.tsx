@@ -39,6 +39,18 @@ export default function SettingsPanel() {
     'Meezan Bank': true
   });
 
+  const [storeName, setStoreName] = useState('RUTAB رطب');
+  const [defaultLang, setDefaultLang] = useState('English');
+  const [timezone, setTimezone] = useState('Asia/Kuwait (UTC+3)');
+  const [metaTitle, setMetaTitle] = useState('RUTAB رطب — Luxury Streetwear Kuwait');
+  const [metaDesc, setMetaDesc] = useState('Premium streetwear for the GCC...');
+  const [gaId, setGaId] = useState('G-XXXXXXXXXX');
+  const [smtpHost, setSmtpHost] = useState('smtp.sendgrid.net');
+  const [smtpPort, setSmtpPort] = useState('587');
+  const [fromName, setFromName] = useState('RUTAB Store');
+  const [fromEmail, setFromEmail] = useState('noreply@rutab.store');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
     try {
@@ -101,9 +113,23 @@ export default function SettingsPanel() {
     setSaving(true);
     try {
       const client = getSupabase();
+      const allSettings = {
+        store_name: storeName,
+        default_language: defaultLang,
+        timezone,
+        meta_title: metaTitle,
+        meta_description: metaDesc,
+        google_analytics_id: gaId,
+        smtp_host: smtpHost,
+        smtp_port: smtpPort,
+        from_name: fromName,
+        from_email: fromEmail,
+        maintenance_mode: maintenanceMode,
+        payment_gateways: gateways,
+      };
       const { error } = await client
         .from('settings')
-        .upsert({ key: 'payment_gateways', value: gateways }, { onConflict: 'key' });
+        .upsert({ key: 'store_settings', value: allSettings }, { onConflict: 'key' });
       if (error) throw error;
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -114,6 +140,38 @@ export default function SettingsPanel() {
       setSaving(false);
     }
   };
+
+  // Load saved settings on mount
+  useEffect(() => {
+    async function loadAllSettings() {
+      try {
+        const client = getSupabase();
+        const { data } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'store_settings')
+          .maybeSingle();
+        if (data?.value) {
+          const v = data.value;
+          if (v.store_name) setStoreName(v.store_name);
+          if (v.default_language) setDefaultLang(v.default_language);
+          if (v.timezone) setTimezone(v.timezone);
+          if (v.meta_title) setMetaTitle(v.meta_title);
+          if (v.meta_description) setMetaDesc(v.meta_description);
+          if (v.google_analytics_id) setGaId(v.google_analytics_id);
+          if (v.smtp_host) setSmtpHost(v.smtp_host);
+          if (v.smtp_port) setSmtpPort(v.smtp_port);
+          if (v.from_name) setFromName(v.from_name);
+          if (v.from_email) setFromEmail(v.from_email);
+          if (v.maintenance_mode !== undefined) setMaintenanceMode(v.maintenance_mode);
+          if (v.payment_gateways) setGateways(v.payment_gateways);
+        }
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+      }
+    }
+    loadAllSettings();
+  }, []);
 
   return (
     <div className="space-y-6 pt-4 animate-fade-in-up">
@@ -143,9 +201,9 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">General Settings</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Store Name" value="RUTAB رطب" />
-                <Field label="Default Language" value="English" />
-                <Field label="Timezone" value="Asia/Kuwait (UTC+3)" />
+                <Field label="Store Name" value={storeName} onChange={setStoreName} />
+                <Field label="Default Language" value={defaultLang} onChange={setDefaultLang} />
+                <Field label="Timezone" value={timezone} onChange={setTimezone} />
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Currency</label>
                   <select
@@ -177,10 +235,10 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Email Configuration</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="SMTP Host" value="smtp.sendgrid.net" />
-                <Field label="SMTP Port" value="587" />
-                <Field label="From Name" value="RUTAB Store" />
-                <Field label="From Email" value="noreply@rutab.store" />
+                <Field label="SMTP Host" value={smtpHost} onChange={setSmtpHost} />
+                <Field label="SMTP Port" value={smtpPort} onChange={setSmtpPort} />
+                <Field label="From Name" value={fromName} onChange={setFromName} />
+                <Field label="From Email" value={fromEmail} onChange={setFromEmail} />
               </div>
             </>
           )}
@@ -210,9 +268,9 @@ export default function SettingsPanel() {
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">SEO & Analytics</h3>
               <div className="grid grid-cols-1 gap-4">
-                <Field label="Default Meta Title" value="RUTAB رطب — Luxury Streetwear Kuwait" />
-                <Field label="Default Meta Description" value="Premium streetwear for the GCC..." />
-                <Field label="Google Analytics ID" value="G-XXXXXXXXXX" />
+                <Field label="Default Meta Title" value={metaTitle} onChange={setMetaTitle} />
+                <Field label="Default Meta Description" value={metaDesc} onChange={setMetaDesc} />
+                <Field label="Google Analytics ID" value={gaId} onChange={setGaId} />
               </div>
             </>
           )}
@@ -224,7 +282,7 @@ export default function SettingsPanel() {
                 <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
                 <p className="text-xs text-amber-200">When enabled, visitors will see a 503 maintenance page. Admins can still access the panel.</p>
               </div>
-              <Toggle label="Maintenance Mode" enabled={false} />
+              <Toggle label="Maintenance Mode" enabled={maintenanceMode} onToggle={setMaintenanceMode} />
             </>
           )}
 
@@ -294,24 +352,23 @@ export default function SettingsPanel() {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value, onChange }: { label: string; value: string; onChange?: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
       <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">{label}</label>
-      <input defaultValue={value}
+      <input value={value} onChange={(e) => onChange?.(e.target.value)}
         className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition" />
     </div>
   );
 }
 
-function Toggle({ label, enabled }: { label: string; enabled: boolean }) {
-  const [on, setOn] = useState(enabled);
+function Toggle({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle?: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-white font-bold">{label}</span>
-      <button onClick={() => setOn(!on)}
-        className={`w-9 h-5 rounded-full transition cursor-pointer ${on ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
-        <div className={`w-3.5 h-3.5 rounded-full bg-white transition mt-0.5 ${on ? 'ml-[18px]' : 'ml-1'}`} />
+      <button onClick={() => onToggle?.(!enabled)}
+        className={`w-9 h-5 rounded-full transition cursor-pointer ${enabled ? 'bg-[#ff0000]' : 'bg-white/10'}`}>
+        <div className={`w-3.5 h-3.5 rounded-full bg-white transition mt-0.5 ${enabled ? 'ml-[18px]' : 'ml-1'}`} />
       </button>
     </div>
   );
