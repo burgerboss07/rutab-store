@@ -30,20 +30,18 @@ export default function SettingsPanel() {
 
   interface GatewayConfig {
     enabled: boolean;
-    apiKey: string;
-    secretKey: string;
-    merchantId: string;
+    details: string;
   }
 
   const defaultGateways: Record<string, GatewayConfig> = {
-    'Cash on Delivery': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'Pickup': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'Wamd': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'Binance': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'PayPal': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'Skrill': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'EasyPaisa': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
-    'Meezan Bank': { enabled: true, apiKey: '', secretKey: '', merchantId: '' },
+    'Cash on Delivery': { enabled: true, details: '' },
+    'Pickup': { enabled: true, details: '' },
+    'Wamd': { enabled: true, details: '' },
+    'Binance': { enabled: true, details: '' },
+    'PayPal': { enabled: true, details: '' },
+    'Skrill': { enabled: true, details: '' },
+    'EasyPaisa': { enabled: true, details: '' },
+    'Meezan Bank': { enabled: true, details: '' },
   };
 
   const [gateways, setGateways] = useState<Record<string, GatewayConfig>>(defaultGateways);
@@ -117,7 +115,7 @@ export default function SettingsPanel() {
           if (typeof first === 'boolean') {
             const migrated: Record<string, GatewayConfig> = {};
             for (const [k, v] of Object.entries(val)) {
-              migrated[k] = { enabled: v as boolean, apiKey: '', secretKey: '', merchantId: '' };
+              migrated[k] = { enabled: v as boolean, details: '' };
             }
             setGateways(migrated);
           } else {
@@ -192,7 +190,7 @@ export default function SettingsPanel() {
             if (typeof first === 'boolean') {
               const migrated: Record<string, GatewayConfig> = {};
               for (const [k, val] of Object.entries(pg)) {
-                migrated[k] = { enabled: val as boolean, apiKey: '', secretKey: '', merchantId: '' };
+                migrated[k] = { enabled: val as boolean, details: '' };
               }
               setGateways(migrated);
             } else {
@@ -318,7 +316,7 @@ export default function SettingsPanel() {
                 <button onClick={() => {
                   const trimmed = newGatewayName.trim();
                   if (!trimmed || gateways[trimmed]) return;
-                  setGateways((prev) => ({ ...prev, [trimmed]: { enabled: true, apiKey: '', secretKey: '', merchantId: '' } }));
+                  setGateways((prev) => ({ ...prev, [trimmed]: { enabled: true, details: '' } }));
                   setNewGatewayName('');
                 }}
                   className="px-4 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer">
@@ -439,7 +437,7 @@ function Toggle({ label, enabled, onToggle }: { label: string; enabled: boolean;
 }
 
 function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpdate, onRemove }: {
-  name: string; config: { enabled: boolean; apiKey: string; secretKey: string; merchantId: string };
+  name: string; config: { enabled: boolean; details: string };
   isExpanded: boolean; onToggleExpand: () => void; onToggle: () => void;
   onUpdate: (field: string, value: string) => void; onRemove: () => void;
 }) {
@@ -468,22 +466,10 @@ function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpd
       </div>
       {isExpanded && (
         <div className="px-4 pb-4 pt-0 space-y-2 border-t border-white/5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3">
-            <div className="space-y-1">
-              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">API Key</label>
-              <input value={config.apiKey} onChange={(e) => onUpdate('apiKey', e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">Secret Key</label>
-              <input value={config.secretKey} onChange={(e) => onUpdate('secretKey', e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[8px] uppercase font-bold tracking-widest text-[#a1a1a1]">Merchant ID</label>
-              <input value={config.merchantId} onChange={(e) => onUpdate('merchantId', e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-            </div>
+          <div className="pt-3">
+            <input value={config.details} onChange={(e) => onUpdate('details', e.target.value)}
+              placeholder="Gateway details (account email, wallet address, etc.)"
+              className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
           </div>
         </div>
       )}
