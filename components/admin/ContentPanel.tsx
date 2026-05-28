@@ -713,56 +713,73 @@ export default function ContentPanel() {
                     {filteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL / Upload</label>
-                  <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..."
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                  <input type="file" accept="image/*" onChange={handleProductImageUpload}
-                    className="w-full text-[10px] text-white file:bg-[#ff0000] file:text-white file:px-3 file:py-2 file:rounded-xl file:border-none" />
+                <div className="sm:col-span-2 lg:col-span-3 space-y-3">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Product Images</label>
+                  {/* Main Image Preview */}
+                  <div className="flex gap-3">
+                    <div className="w-24 h-28 rounded-xl overflow-hidden border border-white/10 bg-black shrink-0">
+                      {form.image_url && form.image_url !== '/placeholder.svg' ? (
+                        <Image src={form.image_url} alt="main" width={96} height={112} className="w-full h-full object-cover" unoptimized />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#333] text-[9px] uppercase font-bold">Main</div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="Main image URL (https://...)"
+                        className="w-full bg-black border border-white/10 rounded-xl py-2 px-3.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                      <input type="file" accept="image/*" onChange={handleProductImageUpload}
+                        className="w-full text-[9px] text-white file:bg-[#ff0000] file:text-white file:px-2.5 file:py-1.5 file:rounded-xl file:border-none file:text-[9px] file:font-bold file:cursor-pointer" />
+                    </div>
+                  </div>
+                  {/* Gallery Images */}
+                  <div className="p-3 rounded-xl bg-black/30 border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Gallery ({form.images.length})</span>
+                      {form.images.length > 0 && (
+                        <button type="button" onClick={() => setForm({ ...form, images: [] })}
+                          className="text-[8px] text-[#555] hover:text-red-400 uppercase tracking-wider font-bold transition">Clear All</button>
+                      )}
+                    </div>
+                    {form.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {form.images.map((img, i) => (
+                          <div key={i} className="relative group">
+                            <div className="w-16 h-20 rounded-lg overflow-hidden border border-white/10 bg-black">
+                              <Image src={img} alt={`gallery-${i}`} width={64} height={80} className="w-full h-full object-cover" unoptimized />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveSecondaryImage(img)}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#ff0000] text-white flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-1.5">
+                      <input value={secondaryImageEntry} onChange={(e) => setSecondaryImageEntry(e.target.value)}
+                        placeholder="Paste URL & Add, or paste multiple (comma-separated)..."
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSecondaryImage(); }}}
+                        className="flex-1 bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                      <button type="button" onClick={() => {
+                        const urls = secondaryImageEntry.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+                        urls.forEach(url => {
+                          if (!form.images.includes(url)) {
+                            setForm(prev => ({ ...prev, images: [...prev.images, url] }));
+                          }
+                        });
+                        setSecondaryImageEntry('');
+                      }}
+                        className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[9px] uppercase font-bold tracking-widest transition shrink-0 cursor-pointer">Add</button>
+                    </div>
+                    <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-white/20 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition cursor-pointer group">
+                      <Plus className="w-3.5 h-3.5 text-[#ff0000]" />
+                      <span className="text-[9px] font-bold text-white">Upload Files</span>
+                      <input type="file" accept="image/*" multiple onChange={handleSecondaryImageUpload} className="hidden" />
+                    </label>
+                  </div>
                 </div>
                 <div className="sm:col-span-2 lg:col-span-3 space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Description</label>
                   <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Product description..."
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
-                </div>
-                {/* Additional Images */}
-                <div className="sm:col-span-2 lg:col-span-3 space-y-2">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Additional Images (Gallery)</label>
-                  {form.images.length > 0 && (
-                    <div className="flex flex-wrap gap-3 p-3 bg-black/30 rounded-xl border border-white/5">
-                      {form.images.map((img, i) => (
-                        <div key={i} className="relative group">
-                          <div className="w-20 h-24 rounded-xl overflow-hidden border border-white/10 bg-black">
-                            <Image src={img} alt={`img-${i}`} width={80} height={96} className="w-full h-full object-cover" />
-                          </div>
-                          <button type="button" onClick={() => handleRemoveSecondaryImage(img)}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#ff0000] text-white flex items-center justify-center text-[9px] font-bold opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <input value={secondaryImageEntry} onChange={(e) => setSecondaryImageEntry(e.target.value)}
-                      placeholder="Paste image URL and press Add..."
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSecondaryImage(); }}}
-                      className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button type="button" onClick={handleAddSecondaryImage}
-                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] uppercase font-bold tracking-widest transition shrink-0">
-                      Add URL
-                    </button>
-                  </div>
-                  <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-white/20 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition cursor-pointer group">
-                    <div className="w-8 h-8 rounded-lg bg-[#ff0000]/10 flex items-center justify-center group-hover:bg-[#ff0000]/20 transition">
-                      <Plus className="w-4 h-4 text-[#ff0000]" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold text-white">Upload Multiple Images</p>
-                      <p className="text-[9px] text-[#555]">Click to select multiple files (JPG, PNG, WebP)</p>
-                    </div>
-                    <input type="file" accept="image/*" multiple onChange={handleSecondaryImageUpload} className="hidden" />
-                  </label>
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Featured</label>
