@@ -1,12 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const protectedPaths = ['/account'];
+const protectedPaths = ['/account', '/api/account'];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only run on protected paths
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 
@@ -35,7 +34,6 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Not authenticated → redirect to login
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
@@ -43,11 +41,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-
-
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/account/:path*'],
+  matcher: ['/account/:path*', '/api/account/:path*'],
 };

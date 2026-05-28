@@ -14,13 +14,18 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- 3. Create RLS Policies to govern secure client-side access
--- Allows all users (and your Admin panel) to view public profiles
-CREATE POLICY "Allow public read access" ON public.profiles 
-  FOR SELECT USING (true);
+-- Users can read only their own profile; admins/managers can read all
+CREATE POLICY "Allow individual or admin read" ON public.profiles 
+  FOR SELECT USING (
+    auth.uid() = id 
+    OR auth.uid() IN (
+      SELECT id FROM public.profiles WHERE role IN ('super_admin', 'manager')
+    )
+  );
 
 -- Allows client-side registration script to insert newly created profiles
 CREATE POLICY "Allow individual insert" ON public.profiles 
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Allows users to modify only their own profile details
 CREATE POLICY "Allow individual update" ON public.profiles 

@@ -23,6 +23,7 @@ export default function AdminShellWrapper({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(AUTH_KEY);
@@ -38,18 +39,24 @@ export default function AdminShellWrapper({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'abd@rutab.store' && password === 'Urmine456') {
-      try {
-        await fetch('/api/admin/auth', { method: 'POST' });
-      } catch {
-        // fallback
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Authentication failed');
       }
       setIsAuthenticated(true);
       localStorage.setItem(AUTH_KEY, 'true');
-      setError('');
       router.refresh();
-    } else {
-      setError('Invalid admin credentials.');
+    } catch (err: any) {
+      setError(err.message || 'Invalid admin credentials.');
+      setLoading(false);
     }
   };
 
@@ -113,16 +120,11 @@ export default function AdminShellWrapper({
             </div>
           </div>
 
-          <button type="submit"
-            className="w-full py-4 bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer shadow-[0_0_30px_rgba(255,0,0,0.3)]">
-            <Key className="w-4 h-4" /> Authenticate
+          <button type="submit" disabled={loading}
+            className="w-full py-4 bg-[#ff0000] text-white hover:bg-[#d60000] disabled:bg-zinc-700 font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer shadow-[0_0_30px_rgba(255,0,0,0.3)]">
+            {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Key className="w-4 h-4" />}
+            {loading ? 'Verifying...' : 'Authenticate'}
           </button>
-
-          <div className="text-center pt-2">
-            <p className="text-[9px] text-[#555] uppercase tracking-wider leading-relaxed">
-              Demo: <span className="text-white/60">abd@rutab.store</span> / <span className="text-white/60">Urmine456</span>
-            </p>
-          </div>
         </form>
       </div>
     );
