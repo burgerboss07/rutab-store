@@ -14,25 +14,6 @@ export function createClient() {
 
   return createBrowserClient(
     url || 'https://placeholder.supabase.co',
-    key || 'placeholder-key',
-    {
-      cookies: {
-        getAll() {
-          if (typeof document === 'undefined') return [];
-          const cookies = document.cookie.split('; ').filter(Boolean);
-          return cookies.map(c => {
-            const [name, ...rest] = c.split('=');
-            return { name, value: rest.join('=') };
-          });
-        },
-        setAll(cookiesToSet) {
-          if (typeof document === 'undefined') return;
-          cookiesToSet.forEach(({ name, value, options }) => {
-            let cookie = `${name}=${value}; path=/; max-age=${options?.maxAge || 34560000}; SameSite=Lax;${options?.secure ? ' Secure;' : ''}`;
-            document.cookie = cookie;
-          });
-        },
-      },
-    }
+    key || 'placeholder-key'
   );
 }

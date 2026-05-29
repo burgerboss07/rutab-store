@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
+import { useStore } from '@/lib/store';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -24,25 +25,31 @@ export default function SignupPage() {
     setSuccess('');
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: name }),
+      const supabase = getSupabase();
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
       });
 
-      const data = await res.json();
+      if (signUpError) throw signUpError;
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      setSuccess(data.message || 'Account created successfully!');
-
-      if (data.message?.includes('already registered')) {
+      if (data.user?.identities?.length === 0) {
+        setSuccess('Account already registered. Redirecting to sign in...');
         setTimeout(() => router.push('/auth/login'), 1500);
-      } else {
-        setTimeout(() => router.push('/auth/login'), 2000);
+        return;
       }
+
+      if (data.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email,
+          full_name: name || email.split('@')[0],
+        });
+      }
+
+      setSuccess('Account created! You can now sign in.');
+      setTimeout(() => router.push('/auth/login'), 1500);
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -57,9 +64,7 @@ export default function SignupPage() {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
     } catch (err: any) {
@@ -84,7 +89,6 @@ export default function SignupPage() {
           <div className="text-center space-y-2">
             <span className="text-[#ff0000] text-[10px] font-bold tracking-[0.2em] uppercase">Join Rutab</span>
             <h2 className="text-3xl font-black uppercase tracking-wider">Create Account</h2>
-            <p className="text-[10px] text-[#a1a1a1]">Create an account for faster checkout and order tracking</p>
           </div>
 
           {error && (

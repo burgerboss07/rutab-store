@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 
@@ -21,17 +21,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const supabase = getSupabase();
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
+      if (signInError) throw signInError;
 
       await useStore.getState().refreshSession();
       router.push('/');
@@ -49,9 +42,7 @@ export default function LoginPage() {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
     } catch (err: any) {
@@ -76,7 +67,6 @@ export default function LoginPage() {
           <div className="text-center space-y-2">
             <span className="text-[#ff0000] text-[10px] font-bold tracking-[0.2em] uppercase">Welcome Back</span>
             <h2 className="text-3xl font-black uppercase tracking-wider">Sign In</h2>
-            <p className="text-[10px] text-[#a1a1a1]">Sign in to access your account and orders</p>
           </div>
 
           {error && (
@@ -108,9 +98,7 @@ export default function LoginPage() {
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-bold text-[#a1a1a1] tracking-widest">Password</label>
-                <Link href="/auth/forgot-password" className="text-[10px] text-[#a1a1a1] hover:text-[#ff0000] transition font-bold uppercase tracking-wider">
-                  Forgot?
-                </Link>
+                <Link href="/auth/forgot-password" className="text-[10px] text-[#a1a1a1] hover:text-[#ff0000] transition font-bold uppercase tracking-wider">Forgot?</Link>
               </div>
               <div className="relative">
                 <Lock className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
