@@ -14,8 +14,10 @@ export default function AuthCallbackPage() {
         const supabase = getSupabase();
         const code = new URLSearchParams(window.location.search).get('code');
         if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
-          await useStore.getState().refreshSession();
+          const { data } = await supabase.auth.exchangeCodeForSession(code);
+          if (data?.user) {
+            useStore.getState().setAuthUser(data.user);
+          }
         }
       } catch {}
       router.push('/');

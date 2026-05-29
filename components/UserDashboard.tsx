@@ -1,27 +1,45 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Package, Heart, ShoppingBag, LogOut, User, Mail, Phone, MapPin } from 'lucide-react';
 import { useStore, formatPrice } from '../lib/store';
+import { getSupabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function UserDashboard() {
-  const user = useStore((s) => s.user);
-  const authUser = useStore((s) => s.authUser);
-  const isAuthenticated = useStore((s) => s.isAuthenticated);
-  const signOut = useStore((s) => s.signOut);
-  const refreshSession = useStore((s) => s.refreshSession);
+  const [supaUser, setSupaUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const orders = useStore((s) => s.orders);
   const wishlist = useStore((s) => s.wishlist);
   const setActiveView = useStore((s) => s.setActiveView);
 
   useEffect(() => {
-    refreshSession();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    (async () => {
+      try {
+        const supabase = getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setSupaUser(session.user);
+          const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (p) setProfile(p);
+        }
+      } catch {}
+      setLoading(false);
+    })();
+  }, []);
 
-  const formatKWD = (v: number) => formatPrice(v, 'KWD (K.D)');
+  if (loading) {
+    return (
+      <div className="pt-24 min-h-screen bg-black text-white flex items-center justify-center pb-24">
+        <div className="w-8 h-8 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  if (!isAuthenticated) {
+  if (!supaUser) {
     return (
       <div className="pt-24 min-h-screen bg-black text-white px-6 flex items-center justify-center pb-24">
         <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[35px] p-8 space-y-6 shadow-2xl text-center">
@@ -44,23 +62,33 @@ export default function UserDashboard() {
     );
   }
 
+  const userName = profile?.full_name || supaUser.user_metadata?.full_name || '';
+  const userEmail = profile?.email || supaUser.email || '';
+  const userPhone = profile?.phone || '';
+
+  const handleSignOut = async () => {
+    const supabase = getSupabase();
+    await supabase.auth.signOut();
+    setSupaUser(null);
+    setProfile(null);
+    useStore.getState().signOut();
+  };
+
   return (
     <div className="pt-24 min-h-screen bg-black text-white px-6 pb-24">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[#ff0000] text-xs font-bold tracking-[0.2em] uppercase">My Account</span>
             <h2 className="text-3xl font-black uppercase tracking-wider">Dashboard</h2>
           </div>
-          <button onClick={signOut}
+          <button onClick={handleSignOut}
             className="flex items-center gap-2 px-4 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition cursor-pointer">
             <LogOut className="w-3.5 h-3.5" />
             Sign Out
           </button>
         </div>
 
-        {/* Profile Card */}
         <div className="bg-[#0a0a0a] border border-white/10 rounded-[35px] p-6 space-y-4">
           <h3 className="text-sm font-bold uppercase tracking-wider">Profile</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -68,34 +96,33 @@ export default function UserDashboard() {
               <User className="w-4 h-4 text-[#a1a1a1]" />
               <div>
                 <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Name</p>
-                <p className="text-xs text-white">{user?.name || authUser?.user_metadata?.full_name || 'Not set'}</p>
+                <p className="text-xs text-white">{userName || 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
               <Mail className="w-4 h-4 text-[#a1a1a1]" />
               <div>
                 <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Email</p>
-                <p className="text-xs text-white">{user?.email || authUser?.email || 'Not set'}</p>
+                <p className="text-xs text-white">{userEmail}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
               <Phone className="w-4 h-4 text-[#a1a1a1]" />
               <div>
                 <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Phone</p>
-                <p className="text-xs text-white">{user?.phone || 'Not set'}</p>
+                <p className="text-xs text-white">{userPhone || 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
               <MapPin className="w-4 h-4 text-[#a1a1a1]" />
               <div>
                 <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Address</p>
-                <p className="text-xs text-white">{user?.address || 'Not set'}</p>
+                <p className="text-xs text-white">Not set</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stats + Wishlist */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/10 text-center space-y-1">
             <Package className="w-5 h-5 text-[#a1a1a1] mx-auto" />
@@ -115,7 +142,6 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* Recent Orders */}
         <div className="bg-[#0a0a0a] border border-white/10 rounded-[35px] p-6 space-y-4">
           <h3 className="text-sm font-bold uppercase tracking-wider">Recent Orders</h3>
           {orders.length === 0 ? (
@@ -136,7 +162,7 @@ export default function UserDashboard() {
                     <p className="text-[9px] text-[#a1a1a1]">{new Date(order.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-white">{formatKWD(order.total_price)}</p>
+                    <p className="text-xs font-bold text-white">{formatPrice(order.total_price, 'KWD (K.D)')}</p>
                     <span className={`text-[9px] font-bold uppercase ${order.status === 'completed' ? 'text-emerald-400' : 'text-[#a1a1a1]'}`}>
                       {order.status}
                     </span>

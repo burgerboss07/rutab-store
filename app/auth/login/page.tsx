@@ -22,11 +22,24 @@ export default function LoginPage() {
 
     try {
       const supabase = getSupabase();
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
       if (signInError) throw signInError;
 
-      await useStore.getState().refreshSession();
+      if (data?.user) {
+        useStore.getState().setAuthUser(data.user);
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+        if (profile) {
+          useStore.getState().setUser({
+            email: profile.email || data.user.email || '',
+            name: profile.full_name || '',
+            phone: profile.phone || '',
+            address: '',
+            area: '',
+          });
+        }
+      }
+
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
