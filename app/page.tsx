@@ -25,25 +25,23 @@ export default function Home() {
   const selectedProductId = useStore((state) => state.selectedProductId);
 
   const [homeSettings, setHomeSettings] = useState<any>(null);
+  const [storeSettings, setStoreSettings] = useState<any>(null);
 
   useEffect(() => {
-    async function loadHomeSettings() {
+    async function loadSettings() {
       try {
         const client = getSupabase();
-        const { data, error } = await client
-          .from('settings')
-          .select('value')
-          .eq('key', 'home_settings')
-          .single();
-        if (data && data.value) {
-          setHomeSettings(data.value);
-        }
+        const [homeRes, storeRes] = await Promise.all([
+          client.from('settings').select('value').eq('key', 'home_settings').single(),
+          client.from('settings').select('value').eq('key', 'store_settings').single(),
+        ]);
+        if (homeRes.data?.value) setHomeSettings(homeRes.data.value);
+        if (storeRes.data?.value) setStoreSettings(storeRes.data.value);
       } catch (err) {
-        console.error('Failed to load home page settings:', err);
+        console.error('Failed to load settings:', err);
       }
     }
-
-    loadHomeSettings();
+    loadSettings();
   }, []);
 
   const defaultLayout = ['hero', 'collections', 'trending', 'feed', 'footer'];
@@ -93,13 +91,14 @@ export default function Home() {
             />
           );
         case 'feed':
+          const socialFeedCfg = storeSettings?.social_feed;
           return (
             <SocialFeed
               key="feed"
-              title={sectionConfig.title}
-              subtitle={sectionConfig.subtitle}
-              description={sectionConfig.description}
-              feeds={sectionConfig.feeds}
+              title={socialFeedCfg?.title || sectionConfig.title}
+              subtitle={socialFeedCfg?.subtitle || sectionConfig.subtitle}
+              description={socialFeedCfg?.description || sectionConfig.description}
+              feeds={socialFeedCfg?.feeds || sectionConfig.feeds}
             />
           );
         case 'footer':

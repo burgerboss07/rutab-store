@@ -14,6 +14,7 @@ const sections = [
   { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
   { id: 'payment', label: 'Payment', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'seo', label: 'SEO', icon: <Search className="w-4 h-4" /> },
+  { id: 'social', label: 'Social Feed', icon: <ImageIcon className="w-4 h-4" /> },
   { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
@@ -60,6 +61,10 @@ export default function SettingsPanel() {
   const [fromEmail, setFromEmail] = useState('noreply@rutab.store');
   const [shippingPolicy, setShippingPolicy] = useState('• **Kuwait**: Same day or next day delivery (Free of charge)\n• **GCC Countries**: 2-3 business days via DHL/SMSA (5 KWD)');
   const [returnPolicy, setReturnPolicy] = useState('• Free 14-day local returns in original unworn state');
+  const [socialTitle, setSocialTitle] = useState('Seen in Rutab');
+  const [socialSubtitle, setSocialSubtitle] = useState('Community Style');
+  const [socialDesc, setSocialDesc] = useState('Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.');
+  const [socialFeeds, setSocialFeeds] = useState<any[]>([]);
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -149,6 +154,12 @@ export default function SettingsPanel() {
         payment_gateways: gateways,
         shipping_policy: shippingPolicy,
         return_policy: returnPolicy,
+        social_feed: {
+          title: socialTitle,
+          subtitle: socialSubtitle,
+          description: socialDesc,
+          feeds: socialFeeds,
+        },
       };
       const { error } = await client
         .from('settings')
@@ -201,6 +212,12 @@ export default function SettingsPanel() {
           }
           if (v.shipping_policy) setShippingPolicy(v.shipping_policy);
           if (v.return_policy) setReturnPolicy(v.return_policy);
+          if (v.social_feed) {
+            if (v.social_feed.title) setSocialTitle(v.social_feed.title);
+            if (v.social_feed.subtitle) setSocialSubtitle(v.social_feed.subtitle);
+            if (v.social_feed.description) setSocialDesc(v.social_feed.description);
+            if (v.social_feed.feeds) setSocialFeeds(v.social_feed.feeds);
+          }
         }
       } catch (e) {
         console.error('Failed to load settings:', e);
@@ -364,6 +381,66 @@ export default function SettingsPanel() {
               <div className="grid grid-cols-1 gap-4">
                 <Field label="Default Meta Title" value={metaTitle} onChange={setMetaTitle} />
                 <Field label="Default Meta Description" value={metaDesc} onChange={setMetaDesc} />
+              </div>
+            </>
+          )}
+
+          {activeSection === 'social' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Social Feed</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Appears on the homepage as the &quot;Seen in Rutab&quot; community section.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Title" value={socialTitle} onChange={setSocialTitle} />
+                <Field label="Subtitle" value={socialSubtitle} onChange={setSocialSubtitle} />
+              </div>
+              <Field label="Description" value={socialDesc} onChange={setSocialDesc} />
+              <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-white">Feed Cards (Reels)</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {(socialFeeds.length > 0 ? socialFeeds : Array(4).fill(null)).map((feed: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
+                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Username</label>
+                          <input value={feed?.username || ''} onChange={(e) => {
+                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
+                            arr[idx] = { ...arr[idx], username: e.target.value };
+                            setSocialFeeds(arr);
+                          }} placeholder="@username"
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Views</label>
+                          <input value={feed?.views || ''} onChange={(e) => {
+                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
+                            arr[idx] = { ...arr[idx], views: e.target.value };
+                            setSocialFeeds(arr);
+                          }} placeholder="18.4K"
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Product Name</label>
+                          <input value={feed?.productName || ''} onChange={(e) => {
+                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
+                            arr[idx] = { ...arr[idx], productName: e.target.value };
+                            setSocialFeeds(arr);
+                          }} placeholder="Hoodie"
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL</label>
+                          <input value={feed?.image || ''} onChange={(e) => {
+                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
+                            arr[idx] = { ...arr[idx], image: e.target.value };
+                            setSocialFeeds(arr);
+                          }} placeholder="https://..."
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
