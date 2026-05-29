@@ -11,21 +11,10 @@ interface Props {
   onSaved: (updated: Profile) => void;
 }
 
-const statusOptions = [
-  { value: 'active', label: 'Active', color: 'bg-emerald-500' },
-  { value: 'vip', label: 'VIP', color: 'bg-amber-500' },
-  { value: 'inactive', label: 'Inactive', color: 'bg-zinc-500' },
-  { value: 'flagged', label: 'Flagged', color: 'bg-red-500' },
-] as const;
-
 export default function EditCustomerModal({ profile, onClose, onSaved }: Props) {
   const [fullName, setFullName] = useState(profile.full_name || '');
   const [email, setEmail] = useState(profile.email || '');
   const [phone, setPhone] = useState(profile.phone || '');
-  const [address, setAddress] = useState(profile.address || '');
-  const [area, setArea] = useState(profile.area || '');
-  const [notes, setNotes] = useState(profile.notes || '');
-  const [status, setStatus] = useState<Profile['status']>(profile.status || 'active');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,15 +30,11 @@ export default function EditCustomerModal({ profile, onClose, onSaved }: Props) 
           full_name: fullName,
           email,
           phone,
-          address,
-          area,
-          notes,
-          status,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Update failed');
-      onSaved({ ...profile, full_name: fullName, email, phone, address, area, notes, status });
+      onSaved({ ...profile, full_name: fullName, email, phone });
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
     } finally {
@@ -119,66 +104,14 @@ export default function EditCustomerModal({ profile, onClose, onSaved }: Props) 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Phone</label>
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+965 9000 0000"
-                className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Area / District</label>
-              <input
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                placeholder="Salmiya, Kuwait City"
-                className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
-              />
-            </div>
-          </div>
-
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Address</label>
+            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Phone</label>
             <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Street, building, apartment"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+965 9000 0000"
               className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Internal Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="VIP customer — frequent bulk buyer"
-              rows={3}
-              className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Member Status</label>
-            <div className="flex flex-wrap gap-2">
-              {statusOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setStatus(opt.value)}
-                  className={`px-5 py-2.5 rounded-xl border font-bold text-xs uppercase tracking-wider transition cursor-pointer ${
-                    status === opt.value
-                      ? `${opt.color}/20 border-${opt.value === 'active' ? 'emerald' : opt.value === 'vip' ? 'amber' : opt.value === 'flagged' ? 'red' : 'zinc'}-500/40 text-white`
-                      : 'bg-black border-white/10 text-[#a1a1a1] hover:border-white/30'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 

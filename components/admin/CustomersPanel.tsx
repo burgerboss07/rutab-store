@@ -8,7 +8,7 @@ import { mockOrders as mockOrdersData } from '@/lib/admin-store';
 import {
   Search, Users, ChevronDown, ChevronUp, Download,
   Pencil, CheckCircle2, X, Package, DollarSign, Calendar,
-  Filter, Trash2, AlertTriangle, RefreshCw
+  Trash2, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import EditCustomerModal from './EditCustomerModal';
 
@@ -17,15 +17,10 @@ export interface Profile {
   email: string;
   full_name: string;
   phone: string;
-  address?: string;
-  area?: string;
-  notes?: string;
-  status?: 'active' | 'vip' | 'inactive' | 'flagged';
   created_at: string;
 }
 
 type SortKey = 'name' | 'orders' | 'spent' | 'date';
-type StatusFilter = 'all' | 'active' | 'vip' | 'inactive' | 'flagged';
 type DateFilter = 'all' | 'month' | 'week' | 'today';
 
 interface CustomerStats {
@@ -60,9 +55,7 @@ export default function CustomersPanel() {
 
   // Search & filters
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  const [areaFilter, setAreaFilter] = useState('');
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -183,17 +176,6 @@ export default function CustomersPanel() {
       );
     }
 
-    // Status filter
-    if (statusFilter !== 'all') {
-      result = result.filter((p) => (p.status || inferStatus(p.id)) === statusFilter);
-    }
-
-    // Area filter
-    if (areaFilter.trim()) {
-      const q = areaFilter.toLowerCase();
-      result = result.filter((p) => p.area?.toLowerCase().includes(q));
-    }
-
     // Date filter
     if (dateFilter !== 'all') {
       const now = Date.now();
@@ -220,13 +202,13 @@ export default function CustomersPanel() {
     });
 
     return result;
-  }, [profiles, search, statusFilter, areaFilter, dateFilter, sortKey, sortAsc, statsMap]);
+  }, [profiles, search, dateFilter, sortKey, sortAsc, statsMap]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const inferStatus = (profileId: string): Profile['status'] => {
+  const inferStatus = (profileId: string): 'active' | 'vip' | 'inactive' | 'flagged' => {
     const stats = statsMap.get(profileId);
     if (!stats) return 'inactive';
     if (stats.orderCount >= 5 || stats.totalSpent > 500) return 'vip';
@@ -290,18 +272,17 @@ export default function CustomersPanel() {
   };
 
   const exportCSV = () => {
-    const headers = ['ID', 'Name', 'Email', 'Phone', 'Status', 'Orders', 'Total Spent', 'Area', 'Registered'];
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Orders', 'Total Spent', 'Registered'];
     const rows = selectedIds.size > 0
       ? profiles.filter((p) => selectedIds.has(p.id))
       : profiles;
     const csv = [
       headers.join(','),
       ...rows.map((p) => {
-        const status = p.status || inferStatus(p.id) || 'inactive';
         const stats = statsMap.get(p.id) || { orderCount: 0, totalSpent: 0 };
         return [
           p.id, `"${p.full_name || ''}"`, `"${p.email || ''}"`, `"${p.phone || ''}"`,
-          status, stats.orderCount, stats.totalSpent.toFixed(3), `"${p.area || ''}"`,
+          stats.orderCount, stats.totalSpent.toFixed(3),
           new Date(p.created_at).toLocaleDateString()
         ].join(',');
       })
@@ -356,24 +337,6 @@ export default function CustomersPanel() {
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] uppercase tracking-widest text-[#a1a1a1] font-bold mr-1">
-            <Filter className="w-3 h-3 inline mr-1" />
-            Status
-          </span>
-          {(['all', 'active', 'vip', 'inactive', 'flagged'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-3.5 py-1.5 rounded-full uppercase text-[9px] font-bold tracking-[0.25em] transition cursor-pointer ${
-                statusFilter === s
-                  ? 'bg-[#ff0000] text-white'
-                  : 'bg-white/5 text-white/70 hover:bg-white/10'
-              }`}
-            >
-              {s === 'all' ? 'All' : s}
-            </button>
-          ))}
-
-          <span className="text-[10px] uppercase tracking-widest text-[#a1a1a1] font-bold ml-3 mr-1">
             <Calendar className="w-3 h-3 inline mr-1" />
             Joined
           </span>
@@ -476,7 +439,7 @@ export default function CustomersPanel() {
         <div className="h-[30vh] flex flex-col items-center justify-center text-[#a1a1a1]">
           <Users className="w-10 h-10 mb-3 opacity-40" />
           <p className="text-xs uppercase tracking-widest font-bold">
-            {search || statusFilter !== 'all' || dateFilter !== 'all'
+            {search || dateFilter !== 'all'
               ? 'No members match your filters'
               : 'No vault members yet'}
           </p>
@@ -501,7 +464,7 @@ export default function CustomersPanel() {
             </div>
             <AnimatePresence mode="popLayout">
               {pageItems.map((profile, index) => {
-                const status = profile.status || inferStatus(profile.id) || 'inactive';
+                const status = inferStatus(profile.id) || 'inactive';
                 const cfg = statusConfig[status];
                 const stats = statsMap.get(profile.id) || { orderCount: 0, totalSpent: 0 };
                 const isSelected = selectedIds.has(profile.id);

@@ -24,10 +24,6 @@ export async function POST(req: Request) {
       const client = createClient(supabaseUrl, serviceRoleKey);
 
       const updateData: Record<string, any> = { full_name, email, phone };
-      if (address !== undefined) updateData.address = address;
-      if (area !== undefined) updateData.area = area;
-      if (notes !== undefined) updateData.notes = notes;
-      if (status !== undefined) updateData.status = status;
 
       const { error } = await client
         .from('profiles')
