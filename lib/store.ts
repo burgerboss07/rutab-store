@@ -337,13 +337,13 @@ export const useStore = create<StoreState>()(
               .single();
             if (profile) {
               set({
-                user: {
-                  email: profile.email || session.user.email || '',
-                  name: profile.full_name || '',
-                  phone: profile.phone || '',
-                  address: '',
-                  area: '',
-                }
+                  user: {
+                    email: profile.email || session.user.email || '',
+                    name: profile.full_name || '',
+                    phone: profile.phone || '',
+                    address: profile.address || '',
+                    area: '',
+                  }
               });
             }
           }

@@ -122,7 +122,7 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
               email: data.email || session.user.email || '',
               name: data.full_name || '',
               phone: data.phone || '',
-              address: '',
+              address: data.address || '',
               area: '',
             });
           }

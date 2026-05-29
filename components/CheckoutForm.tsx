@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStore, Order, OrderItem, formatPrice, KUWAIT_AREAS } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
@@ -121,6 +121,25 @@ export default function CheckoutForm() {
   const [block, setBlock] = useState('');
   const [street, setStreet] = useState('');
   const [house, setHouse] = useState('');
+
+  // Pre-fill address from saved profile
+  const addrPrefilled = useRef(false);
+  useEffect(() => {
+    if (addrPrefilled.current || !user?.address) return;
+    addrPrefilled.current = true;
+    const addr = user.address;
+    // Try to extract area from saved address
+    const matchedArea = KUWAIT_AREAS.find((a) => addr.toLowerCase().includes(a.toLowerCase()));
+    if (matchedArea) setArea(matchedArea);
+    // Try to extract individual fields
+    const parts = addr.split(',').map((p: string) => p.trim());
+    const houseMatch = addr.match(/house\s*(\d+)/i);
+    const blockMatch = addr.match(/block\s*(\d+)/i);
+    const streetMatch = addr.match(/street\s*(\d+)/i);
+    if (houseMatch) setHouse(houseMatch[1]);
+    if (blockMatch) setBlock(blockMatch[1]);
+    if (streetMatch) setStreet(streetMatch[1]);
+  }, [user?.address]);
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash on Delivery');

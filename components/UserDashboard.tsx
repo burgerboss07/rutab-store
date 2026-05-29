@@ -16,7 +16,7 @@ export default function UserDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: '', phone: '' });
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
@@ -26,7 +26,6 @@ export default function UserDashboard() {
   const setActiveView = useStore((s) => s.setActiveView);
 
   const totalSpent = orders.reduce((sum, o) => sum + Number(o.total_price || 0), 0);
-  const latestOrder = orders.length > 0 ? orders[0] : null;
 
   const loadProfile = async () => {
     try {
@@ -37,7 +36,7 @@ export default function UserDashboard() {
         const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         if (p) {
           setProfile(p);
-          setEditForm({ full_name: p.full_name || '', phone: p.phone || '' });
+          setEditForm({ full_name: p.full_name || '', phone: p.phone || '', address: p.address || '' });
         }
       }
     } catch {}
@@ -55,14 +54,15 @@ export default function UserDashboard() {
       const { error } = await supabase.from('profiles').update({
         full_name: editForm.full_name,
         phone: editForm.phone,
+        address: editForm.address,
       }).eq('id', supaUser.id);
       if (error) throw error;
-      setProfile((prev: any) => ({ ...prev, full_name: editForm.full_name, phone: editForm.phone }));
+      setProfile((prev: any) => ({ ...prev, full_name: editForm.full_name, phone: editForm.phone, address: editForm.address }));
       useStore.getState().setUser({
         email: userEmail,
         name: editForm.full_name,
         phone: editForm.phone,
-        address: '',
+        address: editForm.address,
         area: '',
       });
       setSaveMsg('Profile updated');
@@ -108,6 +108,7 @@ export default function UserDashboard() {
   const userName = profile?.full_name || supaUser.user_metadata?.full_name || '';
   const userEmail = profile?.email || supaUser.email || '';
   const userPhone = profile?.phone || '';
+  const userAddress = profile?.address || '';
 
   const handleSignOut = async () => {
     const supabase = getSupabase();
@@ -160,7 +161,7 @@ export default function UserDashboard() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff0000] text-white text-[10px] font-bold transition cursor-pointer disabled:opacity-50">
                   <Save className="w-3 h-3" /> {saving ? 'Saving...' : 'Save'}
                 </button>
-                <button onClick={() => { setEditing(false); setEditForm({ full_name: profile?.full_name || '', phone: profile?.phone || '' }); }}
+                <button onClick={() => { setEditing(false); setEditForm({ full_name: profile?.full_name || '', phone: profile?.phone || '', address: profile?.address || '' }); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white transition cursor-pointer">
                   <X className="w-3 h-3" /> Cancel
                 </button>
@@ -177,7 +178,7 @@ export default function UserDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {editing ? (
               <>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Full Name</label>
                   <input value={editForm.full_name} onChange={(e) => setEditForm(f => ({ ...f, full_name: e.target.value }))}
                     className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
@@ -191,6 +192,13 @@ export default function UserDashboard() {
                   <input value={editForm.phone} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))}
                     className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
                     placeholder="+965 XXXX XXXX" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Default Shipping Address</label>
+                  <textarea value={editForm.address} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))}
+                    rows={3}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none"
+                    placeholder="House/Flat No., Street, Block, Area, City, Country" />
                 </div>
               </>
             ) : (
@@ -216,23 +224,13 @@ export default function UserDashboard() {
                     <p className="text-xs text-white">{userPhone || 'Not set'}</p>
                   </div>
                 </div>
-                {latestOrder && latestOrder.address ? (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                    <MapPin className="w-4 h-4 text-[#a1a1a1]" />
-                    <div>
-                      <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Latest Shipping Address</p>
-                      <p className="text-xs text-white truncate">{latestOrder.address}</p>
-                    </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                  <MapPin className="w-4 h-4 text-[#a1a1a1]" />
+                  <div>
+                    <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Default Address</p>
+                    <p className="text-xs text-white">{userAddress || 'Not set — add one in Edit'}</p>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                    <MapPin className="w-4 h-4 text-[#a1a1a1]" />
-                    <div>
-                      <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold">Address</p>
-                      <p className="text-xs text-white/50">Add an address at checkout</p>
-                    </div>
-                  </div>
-                )}
+                </div>
               </>
             )}
           </div>
