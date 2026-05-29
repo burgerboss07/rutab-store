@@ -101,28 +101,10 @@ export default function ProductDetails() {
   // Accordion state
   const [openAccordion, setOpenAccordion] = useState<string | null>('desc');
 
-  // Shipping & returns settings
-  const [shippingPolicy, setShippingPolicy] = useState('');
-  const [returnPolicy, setReturnPolicy] = useState('');
-
-  // Fetch settings for shipping/returns
-  useEffect(() => {
-    async function fetchSettings() {
-      try {
-        const client = getSupabase();
-        const { data } = await client
-          .from('settings')
-          .select('value')
-          .eq('key', 'store_settings')
-          .maybeSingle();
-        if (data?.value) {
-          if (data.value.shipping_policy) setShippingPolicy(data.value.shipping_policy);
-          if (data.value.return_policy) setReturnPolicy(data.value.return_policy);
-        }
-      } catch { /* ignore */ }
-    }
-    fetchSettings();
-  }, []);
+  // Shipping & returns settings from store
+  const storeSettings = useStore((s) => s.storeSettings);
+  const shippingPolicy = storeSettings?.shipping_policy || '';
+  const returnPolicy = storeSettings?.return_policy || '';
 
   // Fetch product detail
   useEffect(() => {

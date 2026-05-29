@@ -94,11 +94,26 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       })
       .subscribe();
 
+    // —— SETTINGS (store_settings & home_settings) ——
+    const settingsChannel = supabase
+      .channel('public:settings:sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, async () => {
+        bump();
+        const [storeRes, homeRes] = await Promise.all([
+          supabase.from('settings').select('value').eq('key', 'store_settings').maybeSingle(),
+          supabase.from('settings').select('value').eq('key', 'home_settings').maybeSingle(),
+        ]);
+        if (storeRes.data?.value) useStore.getState().setStoreSettings(storeRes.data.value);
+        if (homeRes.data?.value) useStore.getState().setHomeSettings(homeRes.data.value);
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bannersChannel);
       supabase.removeChannel(categoriesChannel);
+      supabase.removeChannel(settingsChannel);
     };
   }, [initialized]);
 

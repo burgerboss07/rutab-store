@@ -33,10 +33,13 @@ export default function Home() {
     }
   }, []);
 
-  const [homeSettings, setHomeSettings] = useState<any>(null);
-  const [storeSettings, setStoreSettings] = useState<any>(null);
+  const storeSettings = useStore((s) => s.storeSettings);
+  const homeSettings = useStore((s) => s.homeSettings);
+  const setStoreSettings = useStore((s) => s.setStoreSettings);
+  const setHomeSettings = useStore((s) => s.setHomeSettings);
 
   useEffect(() => {
+    if (homeSettings && storeSettings) return;
     async function loadSettings() {
       try {
         const client = getSupabase();
@@ -51,7 +54,7 @@ export default function Home() {
       }
     }
     loadSettings();
-  }, []);
+  }, [homeSettings, storeSettings, setHomeSettings, setStoreSettings]);
 
   const defaultLayout = ['hero', 'collections', 'trending', 'feed', 'footer'];
   const defaultSections = {

@@ -178,6 +178,10 @@ interface StoreState {
   setCategories: (categories: any[]) => void;
   syncVersion: number;
   bumpSync: () => void;
+  storeSettings: any;
+  setStoreSettings: (settings: any) => void;
+  homeSettings: any;
+  setHomeSettings: (settings: any) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -361,6 +365,10 @@ export const useStore = create<StoreState>()(
       setCategories: (categories) => set({ categories }),
       syncVersion: 0,
       bumpSync: () => set((state) => ({ syncVersion: state.syncVersion + 1 })),
+      storeSettings: null,
+      setStoreSettings: (settings) => set({ storeSettings: settings }),
+      homeSettings: null,
+      setHomeSettings: (settings) => set({ homeSettings: settings }),
     }),
     {
       name: 'rutab-store-storage',
