@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit, Save, X, Download, RefreshCw, Search } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Download, RefreshCw, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Catalog } from '../../lib/admin-store';
 import { getSupabase } from '../../lib/supabase';
 
@@ -19,6 +19,8 @@ export default function CatalogsPanel() {
     description: '',
     image_url: ''
   });
+  const [newSubName, setNewSubName] = useState('');
+  const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
 
   const fetchCatalogs = async () => {
     try {
@@ -54,10 +56,31 @@ export default function CatalogsPanel() {
     c.description?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleAddSubCatalog = () => {
+    if (!newSubName.trim() || !editingCatalog) return;
+    const sub = {
+      id: crypto.randomUUID(),
+      name: newSubName.trim(),
+      catalogId: editingCatalog.id,
+      created_at: new Date().toISOString(),
+    };
+    setEditingCatalog({ ...editingCatalog, subCatalogs: [...editingCatalog.subCatalogs, sub] });
+    setNewSubName('');
+  };
+
+  const handleRemoveSubCatalog = (subId: string) => {
+    if (!editingCatalog) return;
+    setEditingCatalog({
+      ...editingCatalog,
+      subCatalogs: editingCatalog.subCatalogs.filter(s => s.id !== subId)
+    });
+  };
+
   // Form reset
   const resetForm = () => {
     setForm({ name: '', description: '', image_url: '' });
     setEditingCatalog(null);
+    setNewSubName('');
     setShowForm(false);
   };
 
@@ -90,17 +113,19 @@ export default function CatalogsPanel() {
 
     try {
       const client = getSupabase();
+      const subCategories = editingCatalog?.subCatalogs || [];
       if (editingCatalog) {
         const { error } = await client
           .from('categories')
           .update({
             name: payload.name,
             description: payload.description,
-            image_url: payload.image_url
+            image_url: payload.image_url,
+            sub_categories: subCategories
           })
           .eq('id', editingCatalog.id);
         if (error) throw error;
-        setCatalogs(prev => prev.map(c => c.id === editingCatalog.id ? payload : c));
+        setCatalogs(prev => prev.map(c => c.id === editingCatalog.id ? { ...payload, subCatalogs: subCategories } : c));
       } else {
         const { error } = await client
           .from('categories')
@@ -112,7 +137,7 @@ export default function CatalogsPanel() {
             sub_categories: []
           }]);
         if (error) throw error;
-        setCatalogs([payload, ...catalogs]);
+        setCatalogs([{ ...payload, subCatalogs: [] }, ...catalogs]);
       }
     } catch (err) {
       console.error('Error saving catalog:', err);
@@ -280,6 +305,36 @@ export default function CatalogsPanel() {
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
                 </div>
               </div>
+
+              {editingCatalog && (
+                <div className="border-t border-white/5 pt-5 space-y-3">
+                  <h4 className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub-Categories</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {editingCatalog.subCatalogs.length === 0 ? (
+                      <p className="text-[10px] text-[#555]">No sub-categories added yet</p>
+                    ) : (
+                      editingCatalog.subCatalogs.map(sub => (
+                        <span key={sub.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-lg text-[10px] text-white">
+                          {sub.name}
+                          <button type="button" onClick={() => handleRemoveSubCatalog(sub.id)} className="text-red-400 hover:text-red-300 cursor-pointer" title="Remove sub-category">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input value={newSubName} onChange={(e) => setNewSubName(e.target.value)}
+                      placeholder="New sub-category name..."
+                      className="flex-1 bg-black border border-white/10 rounded-lg py-1.5 px-2.5 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button type="button" onClick={handleAddSubCatalog}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white hover:bg-white/10 transition cursor-pointer whitespace-nowrap">
+                      + Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-3 pt-2">
                 <button type="submit" className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
                   <Save className="w-3.5 h-3.5" /> {editingCatalog ? 'Update Catalog' : 'Create Catalog'}
@@ -309,6 +364,7 @@ export default function CatalogsPanel() {
                   </div>
                 </th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Name</th>
+                <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Sub-Categories</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Description</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Image URL</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Created At</th>
@@ -318,57 +374,96 @@ export default function CatalogsPanel() {
             <tbody className="divide-y divide-white/5">
               {filteredCatalogs.length === 0 ? (
                 <tr>
-                  <td className="px-6 py-4 text-center text-[10px] text-[#a1a1a1]" colSpan={6}>
+                    <td className="px-6 py-4 text-center text-[10px] text-[#a1a1a1]" colSpan={7}>
                     No catalogs found
                   </td>
                 </tr>
               ) : (
                 filteredCatalogs.map((catalog) => (
-                  <tr key={catalog.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedRows.has(catalog.id)}
-                          onChange={() => toggleRowSelection(catalog.id)}
-                          className="w-4 h-4 text-[#ff0000] border-white/30 rounded"
-                        />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">{catalog.name}</td>
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap line-clamp-1">
-                      {catalog.description || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap break-all max-w-xs">
-                      {catalog.image_url || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
-                      {new Date(catalog.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap flex gap-2">
-                      <button
-                        onClick={() => handleEditCatalog(catalog)}
-                        className="p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
-                        title="Edit"
-                      >
-                        <Edit className="w-4 h-4 text-[#a1a1a1] hover:text-white" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedRows(prev => {
-                            const newSet = new Set(prev);
-                            newSet.add(catalog.id);
-                            return newSet;
-                          });
-                          setBulkDeleteConfirm(true);
-                        }}
-                        className="p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-[#a1a1a1] hover:text-white" />
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={catalog.id}>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.has(catalog.id)}
+                            onChange={() => toggleRowSelection(catalog.id)}
+                            className="w-4 h-4 text-[#ff0000] border-white/30 rounded"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">{catalog.name}</td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
+                        <button
+                          onClick={() => setExpandedSubs(prev => {
+                            const next = new Set(prev);
+                            next.has(catalog.id) ? next.delete(catalog.id) : next.add(catalog.id);
+                            return next;
+                          })}
+                          className="flex items-center gap-2 text-[10px] text-[#a1a1a1] hover:text-white transition cursor-pointer"
+                        >
+                          {catalog.subCatalogs.length > 0 ? (
+                            <span className="text-[#ff0000] font-bold">{catalog.subCatalogs.length}</span>
+                          ) : (
+                            <span className="text-[#555]">0</span>
+                          )}
+                          {expandedSubs.has(catalog.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap line-clamp-1">
+                        {catalog.description || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap break-all max-w-xs">
+                        {catalog.image_url || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
+                        {new Date(catalog.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap flex gap-2">
+                        <button
+                          onClick={() => handleEditCatalog(catalog)}
+                          className="p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4 text-[#a1a1a1] hover:text-white" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedRows(prev => {
+                              const newSet = new Set(prev);
+                              newSet.add(catalog.id);
+                              return newSet;
+                            });
+                            setBulkDeleteConfirm(true);
+                          }}
+                          className="p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4 text-[#a1a1a1] hover:text-white" />
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedSubs.has(catalog.id) && (
+                      <tr>
+                        <td colSpan={7} className="px-6 pb-4">
+                          <div className="bg-black/50 rounded-xl p-4 space-y-2">
+                            <p className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub-Categories</p>
+                            {catalog.subCatalogs.length === 0 ? (
+                              <p className="text-[10px] text-[#555]">No sub-categories</p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {catalog.subCatalogs.map(sub => (
+                                  <span key={sub.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-lg text-[10px] text-white">
+                                    {sub.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))
               )}
             </tbody>
