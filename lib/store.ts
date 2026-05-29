@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { User } from '@supabase/supabase-js';
 
 export const KUWAIT_AREAS = [
   // Capital (Al-Asimah)
@@ -152,9 +153,17 @@ interface StoreState {
   wishlist: string[]; // Product IDs
   toggleWishlist: (productId: string) => void;
 
-  // User Auth & Mock Session
+  // User Auth
   user: UserProfile | null;
   setUser: (user: UserProfile | null) => void;
+  authUser: User | null;
+  setAuthUser: (user: User | null) => void;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, full_name?: string) => Promise<{ error?: string; message?: string }>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+
   orders: Order[];
   addOrder: (order: Order) => void;
   setOrders: (orders: Order[]) => void;
@@ -254,9 +263,80 @@ export const useStore = create<StoreState>()(
         get().setToast(exists ? 'Removed from wishlist' : 'Added to wishlist');
       },
 
-      // Authentication & Orders
+      // Authentication
       user: null,
       setUser: (user) => set({ user }),
+      authUser: null,
+      setAuthUser: (authUser) => set({ authUser, isAuthenticated: !!authUser }),
+      isAuthenticated: false,
+      signIn: async (email, password) => {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { error: data.error || 'Login failed' };
+          const supabase = (await import('./supabase')).getSupabase();
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) set({ authUser: session.user, isAuthenticated: true });
+          return {};
+        } catch (err: any) {
+          return { error: err.message || 'Login failed' };
+        }
+      },
+      signUp: async (email, password, full_name) => {
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, full_name }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { error: data.error || 'Registration failed' };
+          const supabase = (await import('./supabase')).getSupabase();
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) set({ authUser: session.user, isAuthenticated: true });
+          return { message: data.message };
+        } catch (err: any) {
+          return { error: err.message || 'Registration failed' };
+        }
+      },
+      signOut: async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          const supabase = (await import('./supabase')).getSupabase();
+          await supabase.auth.signOut();
+        } catch {}
+        set({ authUser: null, isAuthenticated: false, user: null });
+      },
+      refreshSession: async () => {
+        try {
+          const supabase = (await import('./supabase')).getSupabase();
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            set({ authUser: session.user, isAuthenticated: true });
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            if (profile) {
+              set({
+                user: {
+                  email: profile.email || session.user.email || '',
+                  name: profile.full_name || '',
+                  phone: profile.phone || '',
+                  address: '',
+                  area: '',
+                }
+              });
+            }
+          }
+        } catch {}
+      },
+
       orders: [],
       addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
       setOrders: (orders) => set({ orders }),

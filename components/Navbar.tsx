@@ -12,6 +12,8 @@ export default function Navbar() {
   const wishlist = useStore((state) => state.wishlist);
   const currency = useStore((state) => state.currency);
   const setCurrency = useStore((state) => state.setCurrency);
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
+  const user = useStore((state) => state.user);
 
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -108,9 +110,17 @@ export default function Navbar() {
           {/* Account */}
           <button
             onClick={() => setActiveView('account')}
-            className="text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
+            className="relative text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
           >
-            <User className="w-5 h-5" />
+            {isAuthenticated && (user?.name || user?.email) ? (
+              <div className="w-7 h-7 rounded-full bg-[#ff0000]/20 border border-[#ff0000]/40 flex items-center justify-center">
+                <span className="text-[10px] font-black text-[#ff0000] uppercase">
+                  {(user?.name || user?.email || '?')[0]}
+                </span>
+              </div>
+            ) : (
+              <User className="w-5 h-5" />
+            )}
           </button>
 
           {/* Currency Dropdown */}
