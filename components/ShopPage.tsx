@@ -15,6 +15,7 @@ export default function ShopPage() {
   const [selectedSubCatalog, setSelectedSubCatalog] = useState<string>('All');
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>('All');
   const [selectedSize, setSelectedSize] = useState<string>('All');
+  const [selectedColor, setSelectedColor] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('newest');
   
@@ -23,12 +24,11 @@ export default function ShopPage() {
 
   const currency = useStore((s) => s.currency);
 
-  // Catalogs list (will be populated from products)
+  // Filter options (populated from products)
   const [catalogs, setCatalogs] = useState<string[]>(['All']);
-  // SubCatalogs list (will be populated based on selected catalog)
   const [subCatalogs, setSubCatalogs] = useState<string[]>(['All']);
-  // Sizes list
-  const sizes = ['All', 'S', 'M', 'L', 'XL', 'One Size'];
+  const [availableSizes, setAvailableSizes] = useState<string[]>(['All']);
+  const [availableColors, setAvailableColors] = useState<string[]>(['All']);
   // Price ranges list — reacts to currency changes
   const currencyConfig = CURRENCY_CONFIG[currency] || CURRENCY_CONFIG['KWD (K.D)'];
   const fmt = (v: number) => {
@@ -63,6 +63,18 @@ export default function ShopPage() {
           // Extract unique catalogs and subCatalogs for filters
           const uniqueCatalogs = ['All', ...new Set(mappedData.map(p => p.catalog).filter(Boolean))];
           setCatalogs(uniqueCatalogs);
+
+          // Extract unique sizes from all products
+          const allSizes = new Set<string>();
+          mappedData.forEach((p: any) => (p.sizes || []).forEach((s: string) => allSizes.add(s)));
+          const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'];
+          const sortedSizes = ['All', ...sizeOrder.filter(s => allSizes.has(s)), ...[...allSizes].filter(s => !sizeOrder.includes(s)).sort()];
+          setAvailableSizes(sortedSizes);
+
+          // Extract unique colors from all products
+          const allColors = new Set<string>();
+          mappedData.forEach((p: any) => (p.colors || []).forEach((c: string) => allColors.add(c)));
+          setAvailableColors(['All', ...allColors]);
 
           // Initialize subCatalogs to ['All'] - will update when catalog changes
           setSubCatalogs(['All']);
@@ -111,13 +123,14 @@ export default function ShopPage() {
       return false;
     }
 
-    // Size Filter
-    if (selectedSize !== 'All') {
-      if (selectedSize === 'One Size') {
-        if (p.catalog !== 'Caps') return false;
-      } else {
-        if (p.catalog === 'Caps') return false;
-      }
+    // Size Filter (driven by DB data)
+    if (selectedSize !== 'All' && (!p.sizes || !p.sizes.includes(selectedSize))) {
+      return false;
+    }
+
+    // Color Filter (driven by DB data)
+    if (selectedColor !== 'All' && (!p.colors || !p.colors.includes(selectedColor))) {
+      return false;
     }
 
     // Price Range Filter
@@ -156,6 +169,7 @@ export default function ShopPage() {
     setSelectedSubCatalog('All');
     setSelectedPriceRange('All');
     setSelectedSize('All');
+    setSelectedColor('All');
     setSearchQuery('');
     setSortBy('newest');
   };
@@ -257,25 +271,49 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* Size Filter */}
-          <div className="space-y-3 pt-4 border-t border-white/5">
-            <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Size</h4>
-            <div className="flex gap-2 flex-wrap">
-              {sizes.map((sz) => (
-                <button
-                  key={sz}
-                  onClick={() => setSelectedSize(sz)}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
-                    selectedSize === sz
-                      ? 'bg-white text-black border-white'
-                      : 'border-white/10 bg-white/5 text-white hover:border-white/30'
-                  }`}
-                >
-                  {sz}
-                </button>
-              ))}
+          {/* Size Filter (DB-driven) */}
+          {availableSizes.length > 1 && (
+            <div className="space-y-3 pt-4 border-t border-white/5">
+              <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Size</h4>
+              <div className="flex gap-2 flex-wrap">
+                {availableSizes.map((sz) => (
+                  <button
+                    key={sz}
+                    onClick={() => setSelectedSize(sz)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
+                      selectedSize === sz
+                        ? 'bg-white text-black border-white'
+                        : 'border-white/10 bg-white/5 text-white hover:border-white/30'
+                    }`}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Color Filter (DB-driven) */}
+          {availableColors.length > 1 && (
+            <div className="space-y-3 pt-4 border-t border-white/5">
+              <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Color</h4>
+              <div className="flex gap-2 flex-wrap">
+                {availableColors.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setSelectedColor(c)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
+                      selectedColor === c
+                        ? 'bg-white text-black border-white'
+                        : 'border-white/10 bg-white/5 text-white hover:border-white/30'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
 
         {/* MAIN PRODUCT LIST GRID */}
@@ -421,25 +459,49 @@ export default function ShopPage() {
                 </div>
               </div>
 
-              {/* Size Filter */}
-              <div className="space-y-3 pt-4 border-t border-white/5">
-                <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Size</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {sizes.map((sz) => (
-                    <button
-                      key={sz}
-                      onClick={() => setSelectedSize(sz)}
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
-                        selectedSize === sz
-                          ? 'bg-white text-black border-white'
-                          : 'border-white/10 bg-white/5 text-white'
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
+              {/* Size Filter (DB-driven) */}
+              {availableSizes.length > 1 && (
+                <div className="space-y-3 pt-4 border-t border-white/5">
+                  <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Size</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {availableSizes.map((sz) => (
+                      <button
+                        key={sz}
+                        onClick={() => setSelectedSize(sz)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
+                          selectedSize === sz
+                            ? 'bg-white text-black border-white'
+                            : 'border-white/10 bg-white/5 text-white'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Color Filter (DB-driven) */}
+              {availableColors.length > 1 && (
+                <div className="space-y-3 pt-4 border-t border-white/5">
+                  <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Color</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {availableColors.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setSelectedColor(c)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
+                          selectedColor === c
+                            ? 'bg-white text-black border-white'
+                            : 'border-white/10 bg-white/5 text-white'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-6 border-t border-white/10 flex gap-4 mt-6">

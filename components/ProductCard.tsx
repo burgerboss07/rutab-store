@@ -17,6 +17,8 @@ interface ProductCardProps {
     subcategory?: string;
     sku: string;
     stock?: number;
+    sizes?: string[];
+    colors?: string[];
   };
 }
 
@@ -71,14 +73,17 @@ export default function ProductCard({ product }: ProductCardProps) {
       price: priceVal,
       image_url: product.image_url || '',
       size,
-      color: 'Black',
+      color: firstColor,
     }, 1);
     setAddingSize(false);
   };
 
-  // Determine sizes available based on category (or fallback to catalog if needed)
+  // Determine sizes and colors from DB, with sensible fallbacks
   const productCategory = product.category || product.catalog;
-  const sizes = productCategory === 'Caps' ? ['One Size'] : ['S', 'M', 'L', 'XL'];
+  const sizes = product.sizes && product.sizes.length > 0
+    ? product.sizes
+    : (productCategory === 'Caps' ? ['One Size'] : ['S', 'M', 'L', 'XL']);
+  const firstColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Black';
   const secondaryImg = secondaryImages[product.id] || product.image_url || '/placeholder.svg';
 
   return (
