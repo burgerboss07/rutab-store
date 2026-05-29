@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import {
   LayoutDashboard, Users, Package, BarChart3, Settings, Shield,
   ChevronLeft, ChevronRight, ShoppingBag, UserCircle, Percent,
-  LayoutTemplate, ClipboardList
+  LayoutTemplate, ClipboardList, Bookmark
 } from 'lucide-react';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Orders', href: '/admin/orders', icon: ClipboardList },
     { label: 'Content', href: '/admin/content', icon: Package },
+    { label: 'Catalogs', href: '/admin/catalogs', icon: Bookmark },
     { label: 'Home Page', href: '/admin/homepage', icon: LayoutTemplate },
     { label: 'Discounts', href: '/admin/discounts', icon: Percent },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
