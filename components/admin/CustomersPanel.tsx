@@ -8,7 +8,7 @@ import { mockOrders as mockOrdersData } from '@/lib/admin-store';
 import {
   Search, Users, ChevronDown, ChevronUp, Download,
   Pencil, CheckCircle2, X, Package, DollarSign, Calendar,
-  Filter, Trash2, AlertTriangle
+  Filter, Trash2, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import EditCustomerModal from './EditCustomerModal';
 
@@ -80,6 +80,30 @@ export default function CustomersPanel() {
 
   // Edit modal
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+
+  // Sync state
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const handleSyncUsers = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/sync-users', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setSyncResult(`Synced! ${data.profiles_created} created, ${data.profiles_skipped} skipped`);
+        fetchData();
+      } else {
+        setSyncResult('Sync failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      setSyncResult('Sync error: ' + err.message);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncResult(null), 4000);
+    }
+  };
 
   const didFetch = useRef(false);
 
@@ -306,7 +330,15 @@ export default function CustomersPanel() {
           <p className="text-sm text-[#a1a1a1] mt-1">
             {filtered.length} customer{filtered.length !== 1 ? 's' : ''} registered
           </p>
+          {syncResult && (
+            <p className="text-[10px] mt-1 font-bold uppercase tracking-wider text-emerald-400">{syncResult}</p>
+          )}
         </div>
+        <button onClick={handleSyncUsers} disabled={syncing}
+          className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer disabled:opacity-50">
+          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : 'Sync Users'}
+        </button>
       </div>
 
       {/* Search & Filters */}
