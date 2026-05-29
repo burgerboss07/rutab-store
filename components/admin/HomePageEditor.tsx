@@ -35,6 +35,7 @@ const DEFAULT_FEEDS = [
     username: '@cyber_rutab',
     views: '18.4K',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600',
+    videoUrl: '',
     productId: '550e8400-e29b-41d4-a716-446655440102',
     productName: 'Neo-Noir Acid Wash Hoodie',
   },
@@ -42,6 +43,7 @@ const DEFAULT_FEEDS = [
     username: '@yousef_fits',
     views: '34.2K',
     image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600',
+    videoUrl: '',
     productId: '550e8400-e29b-41d4-a716-446655440107',
     productName: 'Technical Cargo Trousers',
   },
@@ -49,6 +51,7 @@ const DEFAULT_FEEDS = [
     username: '@sara.style',
     views: '11.1K',
     image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=600',
+    videoUrl: '',
     productId: '550e8400-e29b-41d4-a716-446655440104',
     productName: 'Ghost-Shell Oversized Tee',
   },
@@ -56,6 +59,7 @@ const DEFAULT_FEEDS = [
     username: '@gcc_dripper',
     views: '56.9K',
     image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=600',
+    videoUrl: '',
     productId: '550e8400-e29b-41d4-a716-446655440109',
     productName: 'Cyber-Luxe Strapback Cap',
   },
@@ -435,7 +439,7 @@ export default function HomePageEditor() {
                       <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
                       <button type="button" onClick={() => {
                         const currentFeeds = (sections.feed as any)?.feeds || DEFAULT_FEEDS;
-                        const newFeeds = [...currentFeeds, { username: '', views: '', image: '', productId: '', productName: '' }];
+                        const newFeeds = [...currentFeeds, { username: '', views: '', image: '', videoUrl: '', productId: '', productName: '' }];
                         handleTextChange('feed', 'feeds' as any, newFeeds as any);
                       }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[9px] uppercase font-bold tracking-wider transition cursor-pointer">
@@ -459,7 +463,7 @@ export default function HomePageEditor() {
                               <Trash2 className="w-3 h-3" /> Remove
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <Field
                               label="Username"
                               value={feed.username}
@@ -484,6 +488,15 @@ export default function HomePageEditor() {
                               onChange={(val) => {
                                 const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
                                 newFeeds[idx] = { ...newFeeds[idx], image: val };
+                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                              }}
+                            />
+                            <Field
+                              label="Video URL"
+                              value={feed.videoUrl || ''}
+                              onChange={(val) => {
+                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                                newFeeds[idx] = { ...newFeeds[idx], videoUrl: val };
                                 handleTextChange('feed', 'feeds' as any, newFeeds as any);
                               }}
                             />

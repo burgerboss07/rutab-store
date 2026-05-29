@@ -85,14 +85,25 @@ export default function SocialFeed({
           >
             {/* Visual Media Placeholder */}
             <div className="absolute inset-0">
-              <Image
-                src={feed.image}
-                alt="reels fit"
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-cover opacity-75 group-hover:scale-105 transition-all duration-700"
-                unoptimized
-              />
+              {feed.videoUrl ? (
+                <video
+                  src={feed.videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover opacity-75 group-hover:scale-105 transition-all duration-700"
+                />
+              ) : (
+                <Image
+                  src={feed.image}
+                  alt="reels fit"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover opacity-75 group-hover:scale-105 transition-all duration-700"
+                  unoptimized
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/10" />
             </div>
 

@@ -400,7 +400,7 @@ export default function SettingsPanel() {
                   {(socialFeeds.length > 0 ? socialFeeds : Array(4).fill(null)).map((feed: any, idx: number) => (
                     <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
                       <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                         <div className="space-y-1.5">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Username</label>
                           <input value={feed?.username || ''} onChange={(e) => {
@@ -433,6 +433,15 @@ export default function SettingsPanel() {
                           <input value={feed?.image || ''} onChange={(e) => {
                             const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
                             arr[idx] = { ...arr[idx], image: e.target.value };
+                            setSocialFeeds(arr);
+                          }} placeholder="https://..."
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Video URL</label>
+                          <input value={feed?.videoUrl || ''} onChange={(e) => {
+                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
+                            arr[idx] = { ...arr[idx], videoUrl: e.target.value };
                             setSocialFeeds(arr);
                           }} placeholder="https://..."
                           className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
