@@ -626,7 +626,7 @@ export default function CheckoutForm() {
                         onClick={() => {
                           setPaymentMethod(method);
                           setDropdownOpen(false);
-                          setProofFileName(null);
+                          setProofFile(null);
                         }}
                         className={`w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-3 hover:bg-white/5 transition cursor-pointer ${
                           paymentMethod === method ? 'text-white bg-white/5' : 'text-[#a1a1a1]'
