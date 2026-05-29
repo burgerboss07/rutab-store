@@ -32,6 +32,7 @@ export default function SettingsPanel() {
   interface GatewayConfig {
     enabled: boolean;
     details: string;
+    image?: string;
   }
 
   const defaultGateways: Record<string, GatewayConfig> = {
@@ -78,6 +79,7 @@ export default function SettingsPanel() {
       });
       const data = await res.json();
       if (data.success) {
+        localStorage.removeItem('rutab-store-storage');
         alert(`Reset successful for "${actionId}". Reloading...`);
         window.location.reload();
       } else {
@@ -161,10 +163,17 @@ export default function SettingsPanel() {
           feeds: socialFeeds,
         },
       };
-      const { error } = await client
-        .from('settings')
-        .upsert({ key: 'store_settings', value: allSettings }, { onConflict: 'key' });
-      if (error) throw error;
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: 'settings',
+          action: 'upsert',
+          data: { key: 'store_settings', value: allSettings },
+          onConflict: 'key',
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Save failed');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -552,15 +561,21 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpdate, onRemove }: {
-  name: string; config: { enabled: boolean; details: string };
+  name: string; config: { enabled: boolean; details: string; image?: string };
   isExpanded: boolean; onToggleExpand: () => void; onToggle: () => void;
   onUpdate: (field: string, value: string) => void; onRemove: () => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   return (
     <div className="rounded-xl bg-black/50 border border-white/5 overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <button onClick={onToggleExpand} className="flex items-center gap-3 flex-1 text-left cursor-pointer">
-          <CreditCard className="w-4 h-4 text-[#a1a1a1]" />
+          {config.image && !imgError ? (
+            <img src={config.image} alt={name} className="w-6 h-6 object-contain rounded"
+              onError={() => setImgError(true)} />
+          ) : (
+            <CreditCard className="w-4 h-4 text-[#a1a1a1]" />
+          )}
           <span className="text-xs font-bold text-white">{name}</span>
         </button>
         <div className="flex items-center gap-3">
@@ -581,10 +596,19 @@ function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpd
       </div>
       {isExpanded && (
         <div className="px-4 pb-4 pt-0 space-y-2 border-t border-white/5">
-          <div className="pt-3">
-            <input value={config.details} onChange={(e) => onUpdate('details', e.target.value)}
-              placeholder="Gateway details (account email, wallet address, etc.)"
-              className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+          <div className="pt-3 space-y-3">
+            <div className="space-y-1">
+              <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL (logo/icon)</label>
+              <input value={config.image || ''} onChange={(e) => { setImgError(false); onUpdate('image', e.target.value); }}
+                placeholder="https://example.com/logo.png"
+                className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Account Details</label>
+              <input value={config.details} onChange={(e) => onUpdate('details', e.target.value)}
+                placeholder="Gateway details (account email, wallet address, etc.)"
+                className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+            </div>
           </div>
         </div>
       )}

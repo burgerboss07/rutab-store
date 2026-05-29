@@ -46,10 +46,20 @@ export default function SignupPage() {
           email,
           full_name: name || email.split('@')[0],
         });
+        useStore.getState().setAuthUser(data.user);
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+        if (profile) {
+          useStore.getState().setUser({
+            email: profile.email || email,
+            name: profile.full_name || name,
+            phone: profile.phone || '',
+            address: '',
+            area: '',
+          });
+        }
       }
 
-      setSuccess('Account created! You can now sign in.');
-      setTimeout(() => router.push('/auth/login'), 1500);
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {

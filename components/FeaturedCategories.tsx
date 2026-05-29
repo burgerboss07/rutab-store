@@ -1,9 +1,10 @@
 'use client';
 
 import { useStore } from '../lib/store';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { getSupabase } from '../lib/supabase';
+
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=600';
 
 export default function FeaturedCategories({
   title = "Shop by Category",
@@ -17,6 +18,7 @@ export default function FeaturedCategories({
   const setActiveView = useStore((state) => state.setActiveView);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failedImgs, setFailedImgs] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     async function fetchCategories() {
@@ -41,7 +43,7 @@ export default function FeaturedCategories({
         const formatted = (data || []).map(cat => ({
           name: cat.name,
           desc: cat.description || `Explore our ${cat.name} collection.`,
-          image: cat.image_url || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=600',
+          image: cat.image_url || FALLBACK_IMG,
           count: `${counts[cat.name] || 0} Items`
         }));
         setCategories(formatted);
@@ -93,16 +95,15 @@ export default function FeaturedCategories({
               className="group relative h-[450px] rounded-[30px] overflow-hidden border border-white/10 bg-[#0a0a0a] cursor-pointer hover:border-[#ff0000]/40 transition-all duration-500 hover:-translate-y-2 shadow-2xl flex flex-col justify-end p-8"
             >
               {/* Background Image with Zoom on Hover */}
-              <div className="absolute inset-0 z-0">
-                <Image
-                  src={cat.image}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <img
+                  src={failedImgs.has(index) ? FALLBACK_IMG : cat.image}
                   alt={cat.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-115 transition duration-700"
-                  unoptimized
+                  onError={() => setFailedImgs(prev => new Set(prev).add(index))}
+                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-700"
+                  loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
               </div>
 
               {/* Content */}

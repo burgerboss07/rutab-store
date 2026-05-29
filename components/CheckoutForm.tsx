@@ -125,7 +125,7 @@ export default function CheckoutForm() {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash on Delivery');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [proofFileName, setProofFileName] = useState<string | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   const [activePaymentOptions, setActivePaymentOptions] = useState<PaymentMethod[]>([
@@ -251,12 +251,12 @@ export default function CheckoutForm() {
 
   const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setProofFileName(e.target.files[0].name);
+      setProofFile(e.target.files[0]);
     }
   };
 
   const handleContinueToReview = () => {
-    if (requiresProof.includes(paymentMethod) && !proofFileName) {
+    if (requiresProof.includes(paymentMethod) && !proofFile) {
       alert('Please upload your transaction proof to continue.');
       return;
     }
@@ -271,6 +271,19 @@ export default function CheckoutForm() {
       const finalPrice = parseFloat(totalAmount.toFixed(3));
 
       const client = getSupabase();
+
+      // 0. Upload payment proof if file selected
+      let proofUrl = '';
+      if (proofFile) {
+        const bucket = 'payment_proofs';
+        const path = `orders/${Date.now()}-${proofFile.name}`;
+        const { error: bucketErr } = await client.storage.from(bucket).upload(path, proofFile);
+        if (!bucketErr) {
+          const { data: urlData } = client.storage.from(bucket).getPublicUrl(path);
+          proofUrl = urlData?.publicUrl || '';
+        }
+      }
+
       // 1. Insert into orders table in Supabase
       const { data: orderData, error: orderError } = await client
         .from('orders')
@@ -279,6 +292,7 @@ export default function CheckoutForm() {
           status: 'pending',
           address: shippingAddress,
           payment_method: paymentMethod,
+          payment_proof: proofUrl || null,
         })
         .select()
         .single();
@@ -326,6 +340,7 @@ export default function CheckoutForm() {
           address: shippingAddress,
           phone: phone,
           payment_method: paymentMethod,
+          payment_proof: proofUrl || undefined,
           items: localItems,
         };
 
@@ -333,6 +348,7 @@ export default function CheckoutForm() {
       }
 
       setOrderSuccess(orderData.id);
+      setProofFile(null);
       clearCart();
     } catch (err) {
       console.error('Error submitting order to Supabase:', err);
@@ -693,10 +709,10 @@ export default function CheckoutForm() {
                         onChange={handleProofUpload}
                         className="hidden"
                       />
-                      {proofFileName ? (
+                      {proofFile ? (
                         <div className="text-center px-4">
                           <Check className="w-6 h-6 text-green-400 mx-auto mb-1" />
-                          <p className="text-xs text-green-400 font-bold truncate max-w-[200px]">{proofFileName}</p>
+                          <p className="text-xs text-green-400 font-bold truncate max-w-[200px]">{proofFile.name}</p>
                         </div>
                       ) : (
                         <div className="text-center">

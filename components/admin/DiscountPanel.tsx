@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
 import {
   Percent, Plus, Search, RefreshCw, Pencil, Trash2, CheckCircle2,
-  X, Save, Calendar, AlertTriangle
+  X, Save, Calendar
 } from 'lucide-react';
 
 interface Coupon {
@@ -37,8 +37,10 @@ export default function DiscountPanel() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
-  // Form state
   const [code, setCode] = useState('');
   const [desc, setDesc] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed_amount' | 'free_shipping'>('percentage');
@@ -47,7 +49,6 @@ export default function DiscountPanel() {
   const [usageLimit, setUsageLimit] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
 
-  // Fetch Coupons from Database
   const fetchCoupons = async () => {
     setLoading(true);
     try {
@@ -72,20 +73,27 @@ export default function DiscountPanel() {
 
   const resetForm = () => {
     setCode(''); setDesc(''); setDiscountType('percentage'); setDiscountValue('');
-    setMinAmount(''); setUsageLimit(''); setExpiresAt(''); setEditing(null); setShowForm(false);
+    setMinAmount(''); setUsageLimit(''); setExpiresAt(''); setEditing(null);
+    setShowForm(false); setFormError(''); setFormSuccess('');
   };
 
   const handleEdit = (c: Coupon) => {
     setEditing(c); setCode(c.code); setDesc(c.description || '');
     setDiscountType(c.discount_type); setDiscountValue(c.discount_value.toString());
     setMinAmount(c.min_order_amount.toString()); setUsageLimit(c.usage_limit.toString());
-    setExpiresAt(c.expires_at ? c.expires_at.split('T')[0] : ''); setShowForm(true);
+    setExpiresAt(c.expires_at ? c.expires_at.split('T')[0] : '');
+    setShowForm(true); setFormError(''); setFormSuccess('');
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code || (discountType !== 'free_shipping' && !discountValue)) return;
-    
+    setFormError('');
+    setFormSuccess('');
+    if (!code || (discountType !== 'free_shipping' && !discountValue)) {
+      setFormError('Please fill in the required fields');
+      return;
+    }
+
     const payload = {
       code: code.toUpperCase().trim(),
       description: desc.trim(),
@@ -97,6 +105,7 @@ export default function DiscountPanel() {
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
     };
 
+    setSaving(true);
     try {
       const action = editing ? 'update' : 'create';
       const res = await fetch('/api/admin/coupons', {
@@ -116,10 +125,12 @@ export default function DiscountPanel() {
           setCoupons((prev) => [json.coupon as Coupon, ...prev]);
         }
       }
-      resetForm();
-    } catch (err) {
-      console.error('Error saving coupon:', err);
-      alert('An error occurred while saving the coupon. Please try again.');
+      setFormSuccess(editing ? 'Coupon updated!' : 'Coupon created!');
+      setTimeout(resetForm, 1200);
+    } catch (err: any) {
+      setFormError(err?.message || 'Save failed');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -164,26 +175,42 @@ export default function DiscountPanel() {
         <p className="text-sm text-[#a1a1a1] mt-1">Create and manage promotional coupons.</p>
       </div>
 
-      {/* Search + Add */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555]" />
           <input type="text" placeholder="Search coupons..." value={search} onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[280px] bg-[#0a0a0a] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="px-5 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
-          <Plus className="w-3.5 h-3.5" /> New Coupon
-        </button>
+        <div className="flex gap-2">
+          <button onClick={fetchCoupons} title="Refresh"
+            className="px-3 py-2.5 rounded-xl border border-white/10 hover:border-white/30 text-white/70 hover:text-white transition cursor-pointer">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={() => { resetForm(); setShowForm(true); }}
+            className="px-5 py-2.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition cursor-pointer">
+            <Plus className="w-3.5 h-3.5" /> New Coupon
+          </button>
+        </div>
       </div>
 
-      {/* Add/Edit Form */}
       <AnimatePresence>
         {showForm && (
           <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
             onSubmit={handleSave} className="overflow-hidden">
             <div className="p-6 rounded-3xl bg-[#111111] border border-white/5 space-y-5">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">{editing ? 'Edit Coupon' : 'New Coupon'}</h3>
+
+              {formError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-500 text-xs p-3 rounded-xl font-bold">
+                  {formError}
+                </div>
+              )}
+              {formSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs p-3 rounded-xl font-bold">
+                  {formSuccess}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Coupon Code" value={code} onChange={setCode} placeholder="e.g. SUMMER20" required />
                 <Field label="Description" value={desc} onChange={setDesc} placeholder="20% off summer collection" />
@@ -204,10 +231,13 @@ export default function DiscountPanel() {
                 <Field label="Expires At" value={expiresAt} onChange={setExpiresAt} type="date" />
               </div>
               <div className="flex items-center gap-3 pt-2">
-                <button type="submit" className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
-                  <Save className="w-3.5 h-3.5" /> {editing ? 'Update Coupon' : 'Create Coupon'}
+                <button type="submit" disabled={saving}
+                  className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] disabled:bg-zinc-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
+                  {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {saving ? 'Saving...' : editing ? 'Update Coupon' : 'Create Coupon'}
                 </button>
-                <button type="button" onClick={resetForm} className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                <button type="button" onClick={resetForm} disabled={saving}
+                  className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                   Cancel
                 </button>
               </div>
@@ -216,7 +246,6 @@ export default function DiscountPanel() {
         )}
       </AnimatePresence>
 
-      {/* Coupon List */}
       {loading ? (
         <div className="h-[30vh] flex flex-col items-center justify-center text-[#a1a1a1]">
           <RefreshCw className="w-8 h-8 text-[#ff0000] animate-spin mb-3" />

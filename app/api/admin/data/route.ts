@@ -9,69 +9,63 @@ function getAdminClient() {
   return createClient(supabaseUrl, serviceRoleKey);
 }
 
-export async function GET() {
-  try {
-    const adminClient = getAdminClient();
-    const { data, error } = await adminClient
-      .from('coupons')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ coupons: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
-  }
-}
+const ALLOWED_TABLES = ['products', 'orders', 'order_items', 'categories', 'settings', 'banners'];
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { action, coupon } = body;
+    const { table, action, data, id } = body;
+
+    if (!ALLOWED_TABLES.includes(table)) {
+      return NextResponse.json({ error: `Table '${table}' not allowed` }, { status: 400 });
+    }
 
     const adminClient = getAdminClient();
 
-    if (action === 'create') {
-      const { data, error } = await adminClient
-        .from('coupons')
-        .insert({ ...coupon, used_count: 0 })
+    if (action === 'insert') {
+      const { data: result, error } = await adminClient
+        .from(table)
+        .insert(data)
         .select()
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, coupon: data });
+      return NextResponse.json({ success: true, data: result });
     }
 
     if (action === 'update') {
-      const { data, error } = await adminClient
-        .from('coupons')
-        .update(coupon)
-        .eq('id', coupon.id)
+      if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+      const { data: result, error } = await adminClient
+        .from(table)
+        .update(data)
+        .eq('id', id)
         .select()
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true, coupon: data });
+      return NextResponse.json({ success: true, data: result });
     }
 
     if (action === 'delete') {
+      if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
       const { error } = await adminClient
-        .from('coupons')
+        .from(table)
         .delete()
-        .eq('id', coupon.id);
+        .eq('id', id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true });
     }
 
-    if (action === 'toggle') {
-      const { error } = await adminClient
-        .from('coupons')
-        .update({ is_active: coupon.is_active })
-        .eq('id', coupon.id);
+    if (action === 'upsert') {
+      const { data: result, error } = await adminClient
+        .from(table)
+        .upsert(data, { onConflict: body.onConflict || 'id' })
+        .select()
+        .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, data: result });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (err: any) {
-    console.error('Coupon POST error:', err?.message || err);
     return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
   }
 }

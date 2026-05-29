@@ -4,7 +4,13 @@ import { createServerClient } from '@supabase/ssr';
 const protectedPaths = ['/account', '/api/account'];
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  if (pathname === '/' && searchParams.has('code')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    return NextResponse.redirect(url);
+  }
 
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
@@ -45,5 +51,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/api/account/:path*'],
+  matcher: ['/', '/account/:path*', '/api/account/:path*'],
 };

@@ -109,10 +109,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] uppercase font-bold text-[#a1a1a1] tracking-widest">Password</label>
-                <Link href="/auth/forgot-password" className="text-[10px] text-[#a1a1a1] hover:text-[#ff0000] transition font-bold uppercase tracking-wider">Forgot?</Link>
-              </div>
+              <label className="text-[10px] uppercase font-bold text-[#a1a1a1] tracking-widest">Password</label>
               <div className="relative">
                 <Lock className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
                 <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}

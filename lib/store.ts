@@ -123,10 +123,11 @@ export interface Order {
   address: string;
   phone: string;
   payment_method: string;
+  payment_proof?: string;
   items: OrderItem[];
 }
 
-export type StoreView = 'home' | 'shop' | 'checkout' | 'account' | 'wishlist' | 'admin';
+export type StoreView = 'home' | 'shop' | 'checkout' | 'account' | 'orders' | 'track' | 'wishlist' | 'admin';
 
 interface StoreState {
   // Navigation & UI state
@@ -134,6 +135,8 @@ interface StoreState {
   setActiveView: (view: StoreView) => void;
   selectedProductId: string | null;
   setSelectedProductId: (id: string | null) => void;
+  trackingOrderId: string | null;
+  setTrackingOrderId: (id: string | null) => void;
   isCartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   toastMessage: string | null;
@@ -177,6 +180,8 @@ export const useStore = create<StoreState>()(
       setActiveView: (view) => set({ activeView: view }),
       selectedProductId: null,
       setSelectedProductId: (id) => set({ selectedProductId: id }),
+      trackingOrderId: null,
+      setTrackingOrderId: (id) => set({ trackingOrderId: id }),
       isCartOpen: false,
       setCartOpen: (open) => set({ isCartOpen: open }),
       toastMessage: null,

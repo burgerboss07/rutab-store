@@ -171,15 +171,16 @@ export default function ContentPanel() {
     };
 
     try {
-      const client = getSupabase();
-      const { error } = await client.from('categories').insert([{
-        id: newId,
-        name: newCatalog.name,
-        description: newCatalog.description,
-        image_url: newCatalog.image_url,
-        sub_categories: []
-      }]);
-      if (error) throw error;
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: 'categories',
+          action: 'insert',
+          data: { id: newId, name: newCatalog.name, description: newCatalog.description, image_url: newCatalog.image_url, sub_categories: [] },
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Insert failed');
       setCatalogsState((prev) => [newCatalog, ...prev]);
     } catch (err) {
       console.error('Error adding catalog to Supabase:', err);
@@ -208,13 +209,17 @@ export default function ContentPanel() {
     const updatedSubCatalogs = [...targetCat.subCatalogs, newSub];
 
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('categories')
-        .update({ sub_categories: updatedSubCatalogs })
-        .eq('id', targetCat.id);
-      
-      if (error) throw error;
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: 'categories',
+          action: 'update',
+          id: targetCat.id,
+          data: { sub_categories: updatedSubCatalogs },
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
 
       setCatalogsState((prev) =>
         prev.map((cat) =>
@@ -321,20 +326,18 @@ export default function ContentPanel() {
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) return;
     try {
-      const client = getSupabase();
+      const table = tab === 'products' ? 'products' : 'orders';
+      for (const id of selectedRows) {
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table, action: 'delete', id }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Delete failed');
+      }
       if (tab === 'products') {
-        const { error } = await client
-          .from('products')
-          .delete()
-          .in('id', Array.from(selectedRows));
-        if (error) throw error;
         setProducts((prev) => prev.filter((p) => !selectedRows.has(p.id)));
       } else {
-        const { error } = await client
-          .from('orders')
-          .delete()
-          .in('id', Array.from(selectedRows));
-        if (error) throw error;
         setOrders((prev) => prev.filter((o) => !selectedRows.has(o.id)));
       }
       setSelectedRows(new Set());
@@ -365,7 +368,6 @@ export default function ContentPanel() {
     const stockVal = bulkEditForm.stock ? parseInt(bulkEditForm.stock) : undefined;
 
     try {
-      const client = getSupabase();
       const dbUpdates: any = {};
       if (priceVal !== undefined) dbUpdates.price = priceVal;
       if (stockVal !== undefined) dbUpdates.stock = stockVal;
@@ -377,10 +379,14 @@ export default function ContentPanel() {
       if (bulkEditForm.sizes && bulkEditForm.sizes.length > 0) dbUpdates.sizes = bulkEditForm.sizes;
       if (bulkEditForm.colors && bulkEditForm.colors.length > 0) dbUpdates.colors = bulkEditForm.colors;
 
-      const updatePromises = Array.from(selectedRows).map(id =>
-        client.from('products').update(dbUpdates).eq('id', id)
-      );
-      await Promise.all(updatePromises);
+      for (const id of selectedRows) {
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: 'products', action: 'update', id, data: dbUpdates }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
+      }
       
       setProducts(prev => prev.map(p => {
         if (!selectedRows.has(p.id)) return p;
@@ -461,14 +467,20 @@ export default function ContentPanel() {
     };
 
     try {
-      const client = getSupabase();
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: 'products',
+          action: isNew ? 'insert' : 'update',
+          ...(isNew ? {} : { id: editingProduct.id }),
+          data: dbPayload,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Save failed');
       if (isNew) {
-        const { error } = await client.from('products').insert([dbPayload]);
-        if (error) throw error;
         setProducts((prev) => [payload, ...prev]);
       } else {
-        const { error } = await client.from('products').update(dbPayload).eq('id', editingProduct.id);
-        if (error) throw error;
         setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? payload : p)));
       }
     } catch (err) {
@@ -1032,6 +1044,16 @@ export default function ContentPanel() {
                 )},
                 { key: 'payment', label: 'Payment', render: (o: Order) => (
                   <span className="text-[10px] text-[#a1a1a1]">{o.payment_method}</span>
+                )},
+                { key: 'proof', label: 'Proof', render: (o: Order) => (
+                  o.payment_proof ? (
+                    <button onClick={() => window.open(o.payment_proof, '_blank')}
+                      className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 hover:border-[#ff0000]/40 transition cursor-pointer">
+                      <img src={o.payment_proof} alt="Payment proof" className="w-full h-full object-cover" />
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-[#333]">—</span>
+                  )
                 )},
                 { key: 'status', label: 'Status', render: (o: Order) => (
                   editingOrderId === o.id ? (

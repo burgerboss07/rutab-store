@@ -124,10 +124,17 @@ export default function CustomersPanel() {
         .order('created_at', { ascending: false });
 
       if (!orderData || orderData.length === 0) {
-        const { error: seedErr } = await client.from('orders').insert(
-          (mockOrdersData as any[]).map((o: any) => ({ ...o, created_at: new Date(o.created_at).toISOString() }))
-        );
-        if (!seedErr) {
+        const seedRes = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'orders',
+            action: 'insert',
+            data: (mockOrdersData as any[]).map((o: any) => ({ ...o, created_at: new Date(o.created_at).toISOString() })),
+          }),
+        });
+        if (seedRes.ok) {
+          const client = getSupabase();
           const { data } = await client.from('orders').select('*').order('created_at', { ascending: false });
           orderData = data;
         }

@@ -16,6 +16,8 @@ import ProductDetails from '@/components/ProductDetails';
 import CartDrawer from '@/components/CartDrawer';
 import CheckoutForm from '@/components/CheckoutForm';
 import UserDashboard from '@/components/UserDashboard';
+import OrdersPage from '@/components/OrdersPage';
+import OrderTracking from '@/components/OrderTracking';
 import WishlistPage from '@/components/WishlistPage';
 import AdminDashboard from '@/components/AdminDashboard';
 
@@ -23,6 +25,13 @@ export default function Home() {
   const activeView = useStore((state) => state.activeView);
   const toastMessage = useStore((state) => state.toastMessage);
   const selectedProductId = useStore((state) => state.selectedProductId);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('code')) {
+      window.location.href = '/auth/callback' + window.location.search;
+    }
+  }, []);
 
   const [homeSettings, setHomeSettings] = useState<any>(null);
   const [storeSettings, setStoreSettings] = useState<any>(null);
@@ -120,6 +129,10 @@ export default function Home() {
         return <CheckoutForm />;
       case 'wishlist':
         return <WishlistPage />;
+      case 'orders':
+        return <OrdersPage />;
+      case 'track':
+        return <OrderTracking />;
       case 'account':
         return <UserDashboard />;
       default:

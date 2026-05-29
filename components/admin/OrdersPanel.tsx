@@ -8,7 +8,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import DataTable from './ui/DataTable';
 import {
   ShoppingBag, Search, Download, CheckCircle2,
-  Trash2, AlertTriangle, RefreshCw
+  Trash2, AlertTriangle, RefreshCw, X
 } from 'lucide-react';
 
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -25,6 +25,7 @@ export default function OrdersPanel() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [orderStatusEdit, setOrderStatusEdit] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fetched = useRef(false);
 
   useEffect(() => {
@@ -78,12 +79,14 @@ export default function OrdersPanel() {
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) return;
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('orders')
-        .delete()
-        .in('id', Array.from(selectedRows));
-      if (error) throw error;
+      for (const id of selectedRows) {
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: 'orders', action: 'delete', id }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Delete failed');
+      }
       setOrders((prev) => prev.filter((o) => !selectedRows.has(o.id)));
       setSelectedRows(new Set());
       setSelectAll(false);
@@ -96,8 +99,12 @@ export default function OrdersPanel() {
 
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const client = getSupabase();
-      await client.from('orders').update({ status: newStatus }).eq('id', orderId);
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'orders', action: 'update', id: orderId, data: { status: newStatus } }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
     } catch (err) {
       console.error('Error updating order status:', err);
@@ -110,9 +117,9 @@ export default function OrdersPanel() {
       ? filteredOrders.filter((d) => selectedRows.has(d.id))
       : filteredOrders;
     const csv = [
-      'ID,Total,Status,Payment,Date,Phone,Address',
+      'ID,Total,Status,Payment,Proof,Date,Phone,Address',
       ...rows.map((o) =>
-        `"${o.id}",${o.total_price},"${o.status}","${o.payment_method}","${o.created_at}","${o.phone || ''}","${(o.address || '').replace(/"/g, '""')}"`
+        `"${o.id}",${o.total_price},"${o.status}","${o.payment_method}","${o.payment_proof || ''}","${o.created_at}","${o.phone || ''}","${(o.address || '').replace(/"/g, '""')}"`
       ),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -209,6 +216,16 @@ export default function OrdersPanel() {
             { key: 'payment', label: 'Payment', render: (o: Order) => (
               <span className="text-[10px] text-[#a1a1a1]">{o.payment_method}</span>
             )},
+            { key: 'proof', label: 'Proof', render: (o: Order) => (
+              o.payment_proof ? (
+                <button onClick={() => setPreviewImage(o.payment_proof)}
+                  className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 hover:border-[#ff0000]/40 transition cursor-pointer">
+                  <img src={o.payment_proof} alt="Payment proof" className="w-full h-full object-cover" />
+                </button>
+              ) : (
+                <span className="text-[10px] text-[#333]">—</span>
+              )
+            )},
             { key: 'status', label: 'Status', render: (o: Order) => (
               editingOrderId === o.id ? (
                 <select value={orderStatusEdit} onChange={(e) => { setOrderStatusEdit(e.target.value); }}
@@ -241,6 +258,22 @@ export default function OrdersPanel() {
           data={filteredOrders}
           keyExtractor={(o) => o.id}
         />
+      )}
+
+      {/* Image preview modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6"
+          onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-2xl w-full max-h-[90vh] flex items-center justify-center">
+            <button onClick={() => setPreviewImage(null)}
+              className="absolute -top-10 right-0 text-white/60 hover:text-white transition cursor-pointer z-10">
+              <X className="w-6 h-6" />
+            </button>
+            <img src={previewImage} alt="Payment proof"
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain"
+              onClick={(e) => e.stopPropagation()} />
+          </div>
+        </div>
       )}
     </div>
   );

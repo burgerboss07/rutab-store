@@ -112,31 +112,31 @@ export default function CatalogsPanel() {
     };
 
     try {
-      const client = getSupabase();
       const subCategories = editingCatalog?.subCatalogs || [];
       if (editingCatalog) {
-        const { error } = await client
-          .from('categories')
-          .update({
-            name: payload.name,
-            description: payload.description,
-            image_url: payload.image_url,
-            sub_categories: subCategories
-          })
-          .eq('id', editingCatalog.id);
-        if (error) throw error;
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'categories',
+            action: 'update',
+            id: editingCatalog.id,
+            data: { name: payload.name, description: payload.description, image_url: payload.image_url, sub_categories: subCategories },
+          }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
         setCatalogs(prev => prev.map(c => c.id === editingCatalog.id ? { ...payload, subCatalogs: subCategories } : c));
       } else {
-        const { error } = await client
-          .from('categories')
-          .insert([{
-            id: payload.id,
-            name: payload.name,
-            description: payload.description,
-            image_url: payload.image_url,
-            sub_categories: []
-          }]);
-        if (error) throw error;
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'categories',
+            action: 'insert',
+            data: { id: payload.id, name: payload.name, description: payload.description, image_url: payload.image_url, sub_categories: [] },
+          }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Insert failed');
         setCatalogs([{ ...payload, subCatalogs: [] }, ...catalogs]);
       }
     } catch (err) {
@@ -175,12 +175,14 @@ export default function CatalogsPanel() {
   // Delete selected catalogs
   const handleDeleteSelected = async () => {
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('categories')
-        .delete()
-        .in('id', Array.from(selectedRows));
-      if (error) throw error;
+      for (const id of selectedRows) {
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: 'categories', action: 'delete', id }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error || 'Delete failed');
+      }
 
       setCatalogs(prev => prev.filter(c => !selectedRows.has(c.id)));
       setSelectedRows(new Set());
