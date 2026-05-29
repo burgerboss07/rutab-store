@@ -615,21 +615,52 @@ export default function ContentPanel() {
                 <Field label="SKU" value={form.sku} onChange={(v: string) => setForm({ ...form, sku: v })} placeholder="TS-HD-001" />
                 <Field label="Price (KWD)" value={form.price} onChange={(v: string) => setForm({ ...form, price: v })} type="number" step="0.001" placeholder="45.000" required />
                 <Field label="Stock" value={form.stock} onChange={(v: string) => setForm({ ...form, stock: v })} type="number" placeholder="10" />
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Size</label>
-                  <div className="flex flex-wrap gap-2">
-                    {form.sizes.map((size) => (
-                      <button key={size} type="button" onClick={() => handleRemoveSize(size)}
-                        className="text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20">
-                        {size} ×
-                      </button>
-                    ))}
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
+                  {/* Selected Size Tags */}
+                  {form.sizes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {form.sizes.map((size) => (
+                        <button key={size} type="button" onClick={() => handleRemoveSize(size)}
+                          className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-[#ff0000]/20 hover:border-[#ff0000]/30">
+                          {size} ×
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Preset Size Buttons */}
+                  <div className="flex flex-wrap gap-1.5 p-3 bg-black rounded-xl border border-white/10">
+                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'].map((s) => {
+                      const isSelected = form.sizes.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            if (form.sizes.includes(s)) {
+                              handleRemoveSize(s);
+                            } else {
+                              setForm((prev) => ({ ...prev, sizes: [...prev.sizes, s] }));
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all duration-200 cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#ff0000] text-white shadow-lg shadow-[#ff0000]/20'
+                              : 'border border-white/10 text-[#a1a1a1] hover:border-white/30 hover:text-white'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {/* Custom Size Input */}
                   <div className="flex gap-2">
-                    <input value={sizeEntry} onChange={(e) => setSizeEntry(e.target.value)} placeholder="Add size"
+                    <input value={sizeEntry} onChange={(e) => setSizeEntry(e.target.value)} placeholder="Custom size (e.g. 28, 30, 32)"
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSize(); }}}
                       className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
                     <button type="button" onClick={handleAddSize}
-                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition">
+                      className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition shrink-0">
                       Add
                     </button>
                   </div>
@@ -840,6 +871,49 @@ export default function ContentPanel() {
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
                     {bulkFilteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-black rounded-xl border border-white/10">
+                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'].map((s) => {
+                      const isSelected = bulkEditForm.sizes.includes(s);
+                      return (
+                        <button key={s} type="button" onClick={() => {
+                          setBulkEditForm((prev) => ({
+                            ...prev,
+                            sizes: isSelected ? prev.sizes.filter((x) => x !== s) : [...prev.sizes, s],
+                          }));
+                        }} className={`px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold tracking-wider transition cursor-pointer ${
+                          isSelected ? 'bg-[#ff0000] text-white' : 'border border-white/10 text-[#a1a1a1] hover:border-white/30'
+                        }`}>{s}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-black rounded-xl border border-white/10">
+                    {PRESET_COLORS.map((c) => {
+                      const isSelected = bulkEditForm.colors.includes(c.name);
+                      return (
+                        <button key={c.name} type="button" onClick={() => {
+                          setBulkEditForm((prev) => ({
+                            ...prev,
+                            colors: isSelected ? prev.colors.filter((x) => x !== c.name) : [...prev.colors, c.name],
+                          }));
+                        }} className={`w-6 h-6 rounded-full transition cursor-pointer relative ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-black scale-105' : 'ring-1 ring-white/10 hover:scale-110'}`}
+                          style={{ backgroundColor: c.hex }} title={c.name}>
+                          {isSelected && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <svg viewBox="0 0 10 10" className="w-2 h-2">
+                                <path d="M2 5l2.5 2.5L8 3" stroke={c.hex === '#ffffff' || c.hex === '#fffdd0' || c.hex === '#f5f5dc' ? '#000' : '#fff'} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                              </svg>
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 pt-2">
                   <button type="button" onClick={resetBulkForm}
