@@ -52,6 +52,13 @@ export default function UserDashboard() {
       }).eq('id', supaUser.id);
       if (error) throw error;
       setProfile((prev: any) => ({ ...prev, full_name: editForm.full_name, phone: editForm.phone }));
+      useStore.getState().setUser({
+        email: userEmail,
+        name: editForm.full_name,
+        phone: editForm.phone,
+        address: '',
+        area: '',
+      });
       setSaveMsg('Profile updated');
       setEditing(false);
     } catch (err: any) {
