@@ -5,7 +5,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import { useStore, CURRENCY_CONFIG } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import {
-  Settings, Globe, Mail, CreditCard, Search,
+  Settings, Globe, Mail, CreditCard, Search, Truck,
   Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown
 } from 'lucide-react';
 
@@ -14,6 +14,7 @@ const sections = [
   { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
   { id: 'payment', label: 'Payment', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'seo', label: 'SEO', icon: <Search className="w-4 h-4" /> },
+  { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
@@ -57,7 +58,8 @@ export default function SettingsPanel() {
   const [smtpPort, setSmtpPort] = useState('587');
   const [fromName, setFromName] = useState('RUTAB Store');
   const [fromEmail, setFromEmail] = useState('noreply@rutab.store');
-
+  const [shippingPolicy, setShippingPolicy] = useState('• **Kuwait**: Same day or next day delivery (Free of charge)\n• **GCC Countries**: 2-3 business days via DHL/SMSA (5 KWD)');
+  const [returnPolicy, setReturnPolicy] = useState('• Free 14-day local returns in original unworn state');
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -145,6 +147,8 @@ export default function SettingsPanel() {
         from_name: fromName,
         from_email: fromEmail,
         payment_gateways: gateways,
+        shipping_policy: shippingPolicy,
+        return_policy: returnPolicy,
       };
       const { error } = await client
         .from('settings')
@@ -195,6 +199,8 @@ export default function SettingsPanel() {
               setGateways(pg);
             }
           }
+          if (v.shipping_policy) setShippingPolicy(v.shipping_policy);
+          if (v.return_policy) setReturnPolicy(v.return_policy);
         }
       } catch (e) {
         console.error('Failed to load settings:', e);
@@ -358,6 +364,27 @@ export default function SettingsPanel() {
               <div className="grid grid-cols-1 gap-4">
                 <Field label="Default Meta Title" value={metaTitle} onChange={setMetaTitle} />
                 <Field label="Default Meta Description" value={metaDesc} onChange={setMetaDesc} />
+              </div>
+            </>
+          )}
+
+          {activeSection === 'shipping' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shipping &amp; Returns</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">These appear in the product detail page accordion.</p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Shipping Policy</label>
+                  <textarea value={shippingPolicy} onChange={(e) => setShippingPolicy(e.target.value)}
+                    rows={4} placeholder="Enter shipping policy details..."
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Return Policy</label>
+                  <textarea value={returnPolicy} onChange={(e) => setReturnPolicy(e.target.value)}
+                    rows={3} placeholder="Enter return policy details..."
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+                </div>
               </div>
             </>
           )}

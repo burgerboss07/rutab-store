@@ -101,6 +101,29 @@ export default function ProductDetails() {
   // Accordion state
   const [openAccordion, setOpenAccordion] = useState<string | null>('desc');
 
+  // Shipping & returns settings
+  const [shippingPolicy, setShippingPolicy] = useState('');
+  const [returnPolicy, setReturnPolicy] = useState('');
+
+  // Fetch settings for shipping/returns
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const client = getSupabase();
+        const { data } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'store_settings')
+          .maybeSingle();
+        if (data?.value) {
+          if (data.value.shipping_policy) setShippingPolicy(data.value.shipping_policy);
+          if (data.value.return_policy) setReturnPolicy(data.value.return_policy);
+        }
+      } catch { /* ignore */ }
+    }
+    fetchSettings();
+  }, []);
+
   // Fetch product detail
   useEffect(() => {
     async function fetchProduct() {
@@ -432,10 +455,17 @@ export default function ProductDetails() {
                         <ChevronDown className={`w-4 h-4 transition-transform ${openAccordion === 'shipping' ? 'rotate-180' : ''}`} />
                       </button>
                       {openAccordion === 'shipping' && (
-                        <div className="p-4 pt-0 text-xs text-[#e5e5e5] leading-relaxed space-y-1">
-                          <p>• <strong>Kuwait</strong>: Same day or next day delivery (Free of charge)</p>
-                          <p>• <strong>GCC Countries</strong>: 2-3 business days via DHL/SMSA (5 KWD)</p>
-                          <p>• <strong>Returns</strong>: Free 14-day local returns in original unworn state</p>
+                        <div className="p-4 pt-0 text-xs text-[#e5e5e5] leading-relaxed space-y-1 whitespace-pre-line">
+                          {shippingPolicy && <p>{shippingPolicy}</p>}
+                          {returnPolicy && (
+                            <>
+                              {shippingPolicy && <div className="border-t border-white/10 my-2" />}
+                              <p><strong>Returns</strong>: {returnPolicy}</p>
+                            </>
+                          )}
+                          {!shippingPolicy && !returnPolicy && (
+                            <p className="text-[#555] italic">Shipping & returns information not configured yet.</p>
+                          )}
                         </div>
                       )}
                     </div>
