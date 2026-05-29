@@ -366,7 +366,7 @@ export default function CatalogsPanel() {
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Name</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Sub-Categories</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Description</th>
-                <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Image URL</th>
+                <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6 w-[140px]">Image</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Created At</th>
                 <th className="h-12 text-left text-[9px] uppercase font-bold tracking-widest text-white/60 px-6">Actions</th>
               </tr>
@@ -413,7 +413,7 @@ export default function CatalogsPanel() {
                       <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap line-clamp-1">
                         {catalog.description || '-'}
                       </td>
-                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap break-all max-w-xs">
+                      <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap truncate max-w-[140px]">
                         {catalog.image_url || '-'}
                       </td>
                       <td className="px-6 py-4 text-left text-[10px] font-medium whitespace-nowrap">
