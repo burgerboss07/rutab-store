@@ -36,6 +36,17 @@ export default function OrdersPanel() {
     if (!fetched.current) { fetched.current = true; fetchOrders(); }
   }, []);
 
+  // Live sync: re-fetch when orders change in DB
+  useEffect(() => {
+    const channel = getSupabase()
+      .channel('admin-orders-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchOrders();
+      })
+      .subscribe();
+    return () => { getSupabase().removeChannel(channel); };
+  }, []);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {

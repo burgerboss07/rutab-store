@@ -2,6 +2,7 @@ import './globals.css';
 import LenisProvider from '@/components/LenisProvider';
 import FaviconUpdater from '@/components/FaviconUpdater';
 import SessionProvider from '@/components/SessionProvider';
+import SyncProvider from '@/components/SyncProvider';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -37,9 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         <FaviconUpdater />
         <SessionProvider>
-          <LenisProvider>
-            {children}
-          </LenisProvider>
+          <SyncProvider>
+            <LenisProvider>
+              {children}
+            </LenisProvider>
+          </SyncProvider>
         </SessionProvider>
       </body>
     </html>

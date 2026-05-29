@@ -170,6 +170,14 @@ interface StoreState {
   orders: Order[];
   addOrder: (order: Order) => void;
   setOrders: (orders: Order[]) => void;
+  products: any[];
+  setProducts: (products: any[]) => void;
+  banners: any[];
+  setBanners: (banners: any[]) => void;
+  categories: any[];
+  setCategories: (categories: any[]) => void;
+  syncVersion: number;
+  bumpSync: () => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -345,6 +353,14 @@ export const useStore = create<StoreState>()(
       orders: [],
       addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
       setOrders: (orders) => set({ orders }),
+      products: [],
+      setProducts: (products) => set({ products }),
+      banners: [],
+      setBanners: (banners) => set({ banners }),
+      categories: [],
+      setCategories: (categories) => set({ categories }),
+      syncVersion: 0,
+      bumpSync: () => set((state) => ({ syncVersion: state.syncVersion + 1 })),
     }),
     {
       name: 'rutab-store-storage',

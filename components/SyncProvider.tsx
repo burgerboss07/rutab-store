@@ -1,0 +1,139 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { getSupabase } from '@/lib/supabase';
+import { useStore } from '@/lib/store';
+
+export default function SyncProvider({ children }: { children: React.ReactNode }) {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const supabase = getSupabase();
+
+    // Get current user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (initialized) return;
+    setInitialized(true);
+
+    const supabase = getSupabase();
+
+    const bump = () => useStore.getState().bumpSync();
+
+    // —— ORDERS ——
+    const ordersChannel = supabase
+      .channel('public:orders:sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+        bump();
+        const { data } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
+        if (data) {
+          const mapped = data.map((o: any) => ({
+            id: o.id,
+            created_at: o.created_at,
+            total_price: o.total_price,
+            status: o.status,
+            address: o.address || '',
+            phone: o.phone || '',
+            payment_method: o.payment_method || '',
+            payment_proof: o.payment_proof || undefined,
+            items: (o.order_items || []).map((i: any) => ({
+              id: i.product_id || i.id,
+              product_name: i.product_name || '',
+              price: i.price,
+              quantity: i.quantity,
+              size: i.size || '',
+              color: i.color || '',
+            })),
+          }));
+          useStore.getState().setOrders(mapped);
+        }
+      })
+      .subscribe();
+
+    // —— PRODUCTS ——
+    const productsChannel = supabase
+      .channel('public:products:sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+        bump();
+        const { data } = await supabase.from('products').select('*');
+        if (data) useStore.getState().setProducts(data);
+      })
+      .subscribe();
+
+    // —— BANNERS ——
+    const bannersChannel = supabase
+      .channel('public:banners:sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, async () => {
+        bump();
+        const { data } = await supabase.from('banners').select('*');
+        if (data) useStore.getState().setBanners(data);
+      })
+      .subscribe();
+
+    // —— CATEGORIES ——
+    const categoriesChannel = supabase
+      .channel('public:categories:sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, async () => {
+        bump();
+        const { data } = await supabase.from('categories').select('*');
+        if (data) useStore.getState().setCategories(data);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(bannersChannel);
+      supabase.removeChannel(categoriesChannel);
+    };
+  }, [initialized]);
+
+  // Profile sync (re-subscribes when userId changes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!userId) return;
+
+    const supabase = getSupabase();
+    const profileChannel = supabase
+      .channel('public:profiles:sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        async () => {
+          const session = (await supabase.auth.getSession()).data.session;
+          if (!session?.user) return;
+          const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (data) {
+            useStore.getState().setUser({
+              email: data.email || session.user.email || '',
+              name: data.full_name || '',
+              phone: data.phone || '',
+              address: '',
+              area: '',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [userId]);
+
+  return <>{children}</>;
+}
