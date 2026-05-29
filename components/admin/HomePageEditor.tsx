@@ -5,7 +5,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import { getSupabase } from '@/lib/supabase';
 import {
   LayoutTemplate, ArrowUp, ArrowDown, Eye, EyeOff, Save,
-  RefreshCw, Smartphone, Monitor, HelpCircle
+  RefreshCw, Smartphone, Monitor, HelpCircle, Plus, Trash2
 } from 'lucide-react';
 
 interface SectionConfig {
@@ -431,11 +431,34 @@ export default function HomePageEditor() {
 
                   {/* Edit Feed Cards */}
                   <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
+                      <button type="button" onClick={() => {
+                        const currentFeeds = (sections.feed as any)?.feeds || DEFAULT_FEEDS;
+                        const newFeeds = [...currentFeeds, { username: '', views: '', image: '', productId: '', productName: '' }];
+                        handleTextChange('feed', 'feeds' as any, newFeeds as any);
+                      }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[9px] uppercase font-bold tracking-wider transition cursor-pointer">
+                        <Plus className="w-3 h-3" /> Add Card
+                      </button>
+                    </div>
+                    {((sections.feed as any)?.feeds || DEFAULT_FEEDS).length === 0 && (
+                      <p className="text-xs text-[#555] italic">No feed cards. Click &quot;Add Card&quot; to create one.</p>
+                    )}
                     <div className="grid grid-cols-1 gap-4">
                       {((sections.feed as any)?.feeds || DEFAULT_FEEDS).map((feed: any, idx: number) => (
                         <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
-                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
+                            <button type="button" onClick={() => {
+                              const currentFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                              currentFeeds.splice(idx, 1);
+                              handleTextChange('feed', 'feeds' as any, currentFeeds as any);
+                            }}
+                              className="flex items-center gap-1 text-[9px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider transition cursor-pointer">
+                              <Trash2 className="w-3 h-3" /> Remove
+                            </button>
+                          </div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <Field
                               label="Username"
