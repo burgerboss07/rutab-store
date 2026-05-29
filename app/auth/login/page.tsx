@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
+import { useStore } from '@/lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
+      await useStore.getState().refreshSession();
       router.push('/');
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
