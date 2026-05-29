@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminStore } from '@/lib/admin-store';
-import { getSupabase } from '../../lib/supabase';
 import {
   Percent, Plus, Search, RefreshCw, Pencil, Trash2, CheckCircle2,
   X, Save, Calendar, AlertTriangle
@@ -52,17 +51,12 @@ export default function DiscountPanel() {
   const fetchCoupons = async () => {
     setLoading(true);
     try {
-      const client = getSupabase();
-      const { data, error } = await client
-        .from('coupons')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      if (data) {
-        setCoupons(data as Coupon[]);
-      }
+      const res = await fetch('/api/admin/coupons');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Fetch failed');
+      if (json.coupons) setCoupons(json.coupons as Coupon[]);
     } catch (err) {
-      console.error('Error fetching coupons from DB:', err);
+      console.error('Error fetching coupons:', err);
     } finally {
       setLoading(false);
     }
@@ -104,35 +98,27 @@ export default function DiscountPanel() {
     };
 
     try {
-      const client = getSupabase();
-      if (editing) {
-        const { data, error } = await client
-          .from('coupons')
-          .update(payload)
-          .eq('id', editing.id)
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) {
-          setCoupons((prev) => prev.map((c) => (c.id === editing.id ? (data as Coupon) : c)));
-        }
-      } else {
-        const { data, error } = await client
-          .from('coupons')
-          .insert({
-            ...payload,
-            used_count: 0,
-          })
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) {
-          setCoupons((prev) => [data as Coupon, ...prev]);
+      const action = editing ? 'update' : 'create';
+      const res = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          coupon: editing ? { ...payload, id: editing.id } : payload,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Save failed');
+      if (json.coupon) {
+        if (editing) {
+          setCoupons((prev) => prev.map((c) => (c.id === editing.id ? (json.coupon as Coupon) : c)));
+        } else {
+          setCoupons((prev) => [json.coupon as Coupon, ...prev]);
         }
       }
       resetForm();
     } catch (err) {
-      console.error('Error saving coupon to DB:', err);
+      console.error('Error saving coupon:', err);
       alert('An error occurred while saving the coupon. Please try again.');
     }
   };
@@ -140,15 +126,15 @@ export default function DiscountPanel() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this coupon?')) return;
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('coupons')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      const res = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', coupon: { id } }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Delete failed');
       setCoupons((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      console.error('Error deleting coupon from DB:', err);
+      console.error('Error deleting coupon:', err);
       alert('Failed to delete coupon.');
     }
   };
@@ -157,17 +143,17 @@ export default function DiscountPanel() {
     const coupon = coupons.find((c) => c.id === id);
     if (!coupon) return;
     try {
-      const client = getSupabase();
-      const { error } = await client
-        .from('coupons')
-        .update({ is_active: !coupon.is_active })
-        .eq('id', id);
-      if (error) throw error;
+      const res = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle', coupon: { id, is_active: !coupon.is_active } }),
+      });
+      if (!res.ok) throw new Error((await res.json())?.error || 'Toggle failed');
       setCoupons((prev) =>
         prev.map((c) => (c.id === id ? { ...c, is_active: !c.is_active } : c))
       );
     } catch (err) {
-      console.error('Error toggling coupon status in DB:', err);
+      console.error('Error toggling coupon status:', err);
     }
   };
 
