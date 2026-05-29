@@ -15,16 +15,42 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ids array required' }, { status: 400 });
     }
 
-    // Only pass valid UUIDs to Supabase — mock IDs (u1, u2, …) are skipped
+    // Only pass valid UUIDs to Supabase
     const validIds = ids.filter((id: string) => UUID_RE.test(id));
 
-    if (validIds.length > 0) {
-      const adminClient = getAdminClient();
-      const { error } = await adminClient.from('profiles').delete().in('id', validIds);
-      if (error) throw error;
+    if (validIds.length === 0) {
+      return NextResponse.json({ success: true, deleted: 0, note: 'No valid UUIDs provided' });
     }
 
-    return NextResponse.json({ success: true, deleted: ids.length });
+    const adminClient = getAdminClient();
+    let profileErrors = 0;
+    let authErrors = 0;
+    let deleted = 0;
+
+    for (const id of validIds) {
+      // Delete from profiles table
+      const { error: profileError } = await adminClient.from('profiles').delete().eq('id', id);
+      if (profileError) {
+        console.error('Profile delete error for', id, profileError);
+        profileErrors++;
+      }
+
+      // Delete from auth.users (removes the user entirely)
+      const { error: authError } = await adminClient.auth.admin.deleteUser(id);
+      if (authError) {
+        console.error('Auth delete error for', id, authError);
+        authErrors++;
+      }
+
+      deleted++;
+    }
+
+    return NextResponse.json({
+      success: true,
+      deleted,
+      profileErrors,
+      authErrors,
+    });
   } catch (err: any) {
     console.error('Error deleting users:', err);
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
