@@ -229,7 +229,7 @@ export default function OrdersPanel() {
             )},
             { key: 'proof', label: 'Proof', render: (o: Order) => (
               o.payment_proof ? (
-                <button onClick={() => setPreviewImage(o.payment_proof)}
+                <button onClick={() => setPreviewImage(o.payment_proof!)}
                   className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 hover:border-[#ff0000]/40 transition cursor-pointer">
                   <img src={o.payment_proof} alt="Payment proof" className="w-full h-full object-cover" />
                 </button>
