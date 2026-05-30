@@ -18,6 +18,7 @@ const sections = [
   { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
   { id: 'sizing', label: 'Sizing Chart', icon: <Ruler className="w-4 h-4" /> },
   { id: 'fabric', label: 'Fabric & Materials', icon: <span className="text-xs font-bold w-4 h-4 flex items-center justify-center">F</span> },
+  { id: 'filters', label: 'Filters', icon: <Search className="w-4 h-4" /> },
   { id: 'story', label: 'Our Story', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
@@ -87,6 +88,21 @@ export default function SettingsPanel() {
     'Screen-printed matte silicone graphics',
   ];
   const [fabricCare, setFabricCare] = useState(defaultFabricCare);
+
+  // Filter config state
+  const defaultSizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'];
+  const defaultColorConfig = [
+    { name: 'Black', hex: '#0a0a0a' },
+    { name: 'White', hex: '#ffffff' },
+    { name: 'Grey', hex: '#6b7280' },
+    { name: 'Red', hex: '#dc2626' },
+    { name: 'Blue', hex: '#2563eb' },
+    { name: 'Navy', hex: '#1e3a8a' },
+    { name: 'Green', hex: '#16a34a' },
+    { name: 'Olive', hex: '#556b2f' },
+  ];
+  const [sizeOrder, setSizeOrder] = useState(defaultSizeOrder);
+  const [colorConfig, setColorConfig] = useState(defaultColorConfig);
 
   // Story page state
   const defaultMilestones = [
@@ -198,6 +214,11 @@ export default function SettingsPanel() {
 
         fabric_care: fabricCare,
 
+        filter_config: {
+          sizeOrder,
+          colorConfig,
+        },
+
         story: {
           hero: storyHero,
           narrative: storyNarrative,
@@ -270,6 +291,12 @@ export default function SettingsPanel() {
           if (v.return_policy) setReturnPolicy(v.return_policy);
 
           if (v.fabric_care) setFabricCare(v.fabric_care);
+
+          if (v.filter_config) {
+            const fc = v.filter_config;
+            if (fc.sizeOrder) setSizeOrder(fc.sizeOrder);
+            if (fc.colorConfig) setColorConfig(fc.colorConfig);
+          }
 
           if (v.story) {
             const st = v.story;
@@ -527,6 +554,53 @@ export default function SettingsPanel() {
                 ))}
                 <button onClick={() => setFabricCare([...fabricCare, ''])}
                   className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Item</button>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'filters' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shop Filters</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Configure size order and color display for the shop page filters.</p>
+
+              {/* Size order */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Size Order</label>
+                <div className="flex flex-wrap gap-2">
+                  {sizeOrder.map((sz, idx) => (
+                    <div key={idx} className="flex items-center gap-1 bg-black border border-white/10 rounded-lg px-2.5 py-1.5">
+                      <input value={sz} onChange={(e) => {
+                        const arr = [...sizeOrder]; arr[idx] = e.target.value; setSizeOrder(arr);
+                      }} className="w-14 bg-transparent text-xs text-white text-center focus:outline-none" />
+                      <button onClick={() => setSizeOrder(sizeOrder.filter((_, i) => i !== idx))}
+                        className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3 h-3" /></button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setSizeOrder([...sizeOrder, ''])}
+                  className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Size</button>
+              </div>
+
+              {/* Color config */}
+              <div className="pt-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Color Swatches (name + hex)</label>
+                {colorConfig.map((c, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-2">
+                    <input value={c.name} onChange={(e) => {
+                      const arr = [...colorConfig]; arr[idx] = { ...arr[idx], name: e.target.value }; setColorConfig(arr);
+                    }} placeholder="Name" className="w-24 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <div className="flex items-center gap-1.5">
+                      <input value={c.hex} onChange={(e) => {
+                        const arr = [...colorConfig]; arr[idx] = { ...arr[idx], hex: e.target.value }; setColorConfig(arr);
+                      }} placeholder="#000000" className="w-24 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition font-mono" />
+                      <span className="w-5 h-5 rounded-full border border-white/10 shrink-0" style={{ backgroundColor: c.hex || '#000' }} />
+                    </div>
+                    <button onClick={() => setColorConfig(colorConfig.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setColorConfig([...colorConfig, { name: '', hex: '#000000' }])}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Color</button>
               </div>
             </>
           )}

@@ -10,6 +10,7 @@ export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const syncVersion = useStore((s) => s.syncVersion);
+  const storeSettings = useStore((s) => s.storeSettings);
 
   // Filters State
   const [selectedCatalog, setSelectedCatalog] = useState<string>('All');
@@ -68,14 +69,16 @@ export default function ShopPage() {
           // Extract unique sizes from all products
           const allSizes = new Set<string>();
           mappedData.forEach((p: any) => (p.sizes || []).forEach((s: string) => allSizes.add(s)));
-          const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'];
-          const sortedSizes = ['All', ...sizeOrder.filter(s => allSizes.has(s)), ...[...allSizes].filter(s => !sizeOrder.includes(s)).sort()];
+          const storeSizeOrder = storeSettings?.filter_config?.sizeOrder || ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'];
+          const sortedSizes = ['All', ...storeSizeOrder.filter((s: string) => allSizes.has(s)), ...[...allSizes].filter((s: string) => !storeSizeOrder.includes(s)).sort()];
           setAvailableSizes(sortedSizes);
 
           // Extract unique colors from all products
           const allColors = new Set<string>();
           mappedData.forEach((p: any) => (p.colors || []).forEach((c: string) => allColors.add(c)));
-          setAvailableColors(['All', ...allColors]);
+          const storeColorConfig = storeSettings?.filter_config?.colorConfig || [];
+          const colorOrder = ['All', ...storeColorConfig.map((c: any) => c.name).filter((n: string) => allColors.has(n)), ...[...allColors].filter((c: string) => !storeColorConfig.some((sc: any) => sc.name === c)).sort()];
+          setAvailableColors(colorOrder);
 
           // Initialize subCatalogs to ['All'] - will update when catalog changes
           setSubCatalogs(['All']);
@@ -298,19 +301,23 @@ export default function ShopPage() {
             <div className="space-y-3 pt-4 border-t border-white/5">
               <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Color</h4>
               <div className="flex gap-2 flex-wrap">
-                {availableColors.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setSelectedColor(c)}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
-                      selectedColor === c
-                        ? 'bg-white text-black border-white'
-                        : 'border-white/10 bg-white/5 text-white hover:border-white/30'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
+                {availableColors.map((c) => {
+                  const colorHex = (storeSettings?.filter_config?.colorConfig || []).find((cc: any) => cc.name === c)?.hex;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedColor(c)}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer flex items-center gap-1.5 ${
+                        selectedColor === c
+                          ? 'bg-white text-black border-white'
+                          : 'border-white/10 bg-white/5 text-white hover:border-white/30'
+                      }`}
+                    >
+                      {colorHex && <span className="w-3 h-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: colorHex }} />}
+                      {c}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
