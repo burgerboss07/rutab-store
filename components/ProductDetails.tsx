@@ -102,8 +102,6 @@ export default function ProductDetails() {
   // Accordion state
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
-  // Shipping & returns settings from store
-  const storeSettings = useStore((s) => s.storeSettings);
   const shippingPolicy = storeSettings?.shipping_policy || '';
   const returnPolicy = storeSettings?.return_policy || '';
 
