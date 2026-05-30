@@ -1,7 +1,7 @@
 'use client';
 
 import { useStore, StoreView, CURRENCY_CONFIG } from '../lib/store';
-import { ShoppingBag, Heart, User, Search } from 'lucide-react';
+import { ShoppingBag, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export default function Navbar() {
@@ -16,6 +16,7 @@ export default function Navbar() {
   const user = useStore((state) => state.user);
 
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <button
               key={link.view}
-              onClick={() => setActiveView(link.view)}
+              onClick={() => link.view === 'story' ? window.location.href = '/story' : setActiveView(link.view)}
               className={`hover:text-[#ff0000] transition-colors relative py-2 cursor-pointer ${
                 activeView === link.view ? 'text-[#ff0000]' : 'text-[#e5e5e5]'
               }`}
@@ -85,12 +86,22 @@ export default function Navbar() {
           ))}
         </nav>
 
+        {/* Mobile Hamburger */}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="md:hidden text-white hover:text-[#ff0000] transition cursor-pointer p-2"
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
         {/* Action Controls */}
         <div className="flex items-center gap-5 md:gap-7">
           {/* Mock Search Trigger */}
           <button 
             onClick={() => setActiveView('shop')}
-            className="text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
+            className="text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer p-2"
+            aria-label="Search products"
           >
             <Search className="w-5 h-5" />
           </button>
@@ -98,7 +109,8 @@ export default function Navbar() {
           {/* Wishlist Link */}
           <button
             onClick={() => setActiveView('wishlist')}
-            className="text-[#e5e5e5] hover:text-[#ff0000] transition relative cursor-pointer"
+            className="text-[#e5e5e5] hover:text-[#ff0000] transition relative cursor-pointer p-2"
+            aria-label="Wishlist"
           >
             <Heart className={`w-5 h-5 ${activeView === 'wishlist' ? 'text-[#ff0000] fill-[#ff0000]' : ''}`} />
             {wishlistCount > 0 && (
@@ -111,7 +123,8 @@ export default function Navbar() {
           {/* Account */}
           <button
             onClick={() => setActiveView('account')}
-            className="relative text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer"
+            className="relative text-[#e5e5e5] hover:text-[#ff0000] transition cursor-pointer p-2"
+            aria-label="Account"
           >
             {isAuthenticated && (user?.name || user?.email) ? (
               <div className="w-7 h-7 rounded-full bg-[#ff0000]/20 border border-[#ff0000]/40 flex items-center justify-center">
@@ -169,6 +182,28 @@ export default function Navbar() {
         </div>
 
       </div>
+
+      {/* Mobile Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-white/10 bg-black/95 backdrop-blur-xl">
+          <nav className="flex flex-col py-4 px-6">
+            {navLinks.map((link) => (
+              <button
+                key={link.view}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  link.view === 'story' ? window.location.href = '/story' : setActiveView(link.view);
+                }}
+                className={`text-left py-3.5 text-sm uppercase tracking-widest font-bold border-b border-white/5 last:border-0 ${
+                  activeView === link.view ? 'text-[#ff0000]' : 'text-[#e5e5e5]'
+                }`}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

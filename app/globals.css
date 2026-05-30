@@ -48,11 +48,27 @@ html {
   scroll-behavior: smooth;
 }
 
+
+
+/* Keyboard focus ring */
+*:focus-visible {
+  outline: 2px solid #ff0000;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Mobile tap highlight */
+* {
+  -webkit-tap-highlight-color: rgba(255, 0, 0, 0.2);
+}
+
 body {
   background-color: #000000;
   color: #e5e5e5;
   font-family: var(--font-body);
   overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 h1, h2, h3, h4, h5, h6 {
