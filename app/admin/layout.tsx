@@ -26,11 +26,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('email')
           .eq('id', user.id)
           .single();
-        const role = profile?.role || 'customer';
-        isAuthenticated = role === 'super_admin' || role === 'manager';
+        const adminEmails = ['abd@rutab.store'];
+        isAuthenticated = profile?.email !== undefined && adminEmails.includes(profile.email);
       }
     } catch {
       isAuthenticated = false;

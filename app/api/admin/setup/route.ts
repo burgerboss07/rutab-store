@@ -46,7 +46,6 @@ export async function POST() {
     const { error: profileErr } = await client.from('profiles').upsert({
       id: userId,
       email: 'abd@rutab.store',
-      role: 'super_admin',
       full_name: 'Abd',
     }, { onConflict: 'id' });
 

@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
       // Re-create admin profile
       const { error: adminErr } = await client.from('profiles').upsert(
-        { email: 'abd@rutab.store', role: 'super_admin', name: 'Abd' },
+        { email: 'abd@rutab.store', full_name: 'Abd' },
         { onConflict: 'email' }
       );
       if (adminErr) errors.push(`admin profile: ${adminErr.message}`);

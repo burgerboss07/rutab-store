@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Use service role to ensure admin profile exists with correct role
+    // Ensure admin profile exists
     const serviceClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -36,18 +36,11 @@ export async function POST(request: NextRequest) {
     await serviceClient.from('profiles').upsert({
       id: authData.user.id,
       email: authData.user.email!,
-      role: 'super_admin',
       full_name: authData.user.user_metadata?.full_name || email.split('@')[0],
     }, { onConflict: 'id' });
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', authData.user.id)
-      .single();
-
-    const role = profile?.role || 'customer';
-    if (role !== 'super_admin' && role !== 'manager') {
+    const adminEmails = ['abd@rutab.store'];
+    if (!adminEmails.includes(authData.user.email!)) {
       await supabase.auth.signOut();
       return NextResponse.json({ error: 'Unauthorized — admin access required' }, { status: 403 });
     }
