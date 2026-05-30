@@ -44,10 +44,10 @@ export default function Home() {
     async function loadSettings() {
       try {
         const client = getSupabase();
-        const [homeRes, storeRes] = await Promise.all([
-          client.from('settings').select('value').eq('key', 'home_settings').single(),
-          client.from('settings').select('value').eq('key', 'store_settings').single(),
-        ]);
+          const [homeRes, storeRes] = await Promise.all([
+            client.from('settings').select('value').eq('key', 'home_settings').maybeSingle(),
+            client.from('settings').select('value').eq('key', 'store_settings').maybeSingle(),
+          ]);
         if (homeRes.data?.value) setHomeSettings(homeRes.data.value);
         if (storeRes.data?.value) setStoreSettings(storeRes.data.value);
       } catch (err) {

@@ -372,6 +372,7 @@ export const useStore = create<StoreState>()(
     {
       name: 'rutab-store-storage',
       partialize: (state) => ({
+        activeView: state.activeView,
         currency: state.currency,
         cart: state.cart,
         wishlist: state.wishlist,
