@@ -100,7 +100,7 @@ export default function ProductDetails() {
   const [isSizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   // Accordion state
-  const [openAccordion, setOpenAccordion] = useState<string | null>('desc');
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   // Shipping & returns settings from store
   const storeSettings = useStore((s) => s.storeSettings);
@@ -393,22 +393,6 @@ export default function ProductDetails() {
 
                   {/* Product Details Accordions */}
                   <div className="pt-6 border-t border-white/5 space-y-2">
-                    {/* Description */}
-                    <div className="border border-white/5 rounded-2xl overflow-hidden bg-white/5">
-                      <button
-                        onClick={() => setOpenAccordion(openAccordion === 'desc' ? null : 'desc')}
-                        className="w-full p-4 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-white"
-                      >
-                        Description
-                        <ChevronDown className={`w-4 h-4 transition-transform ${openAccordion === 'desc' ? 'rotate-180' : ''}`} />
-                      </button>
-                      {openAccordion === 'desc' && (
-                        <div className="p-4 pt-0 text-xs text-[#e5e5e5] leading-relaxed">
-                          {product.description}
-                        </div>
-                      )}
-                    </div>
-
                     {/* Materials */}
                     <div className="border border-white/5 rounded-2xl overflow-hidden bg-white/5">
                       <button

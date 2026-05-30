@@ -375,7 +375,7 @@ export default function HomePageEditor() {
                       </button>
 
                       {/* Customize Text Indicator */}
-                      {['hero', 'collections', 'trending', 'feed'].includes(secId) && (
+                      {['hero', 'collections', 'trending', 'feed', 'footer'].includes(secId) && (
                         <button
                           onClick={() => setActiveSectionEdit(secId)}
                           className={`ml-2 px-3 py-1.5 rounded-lg text-[9px] uppercase tracking-wider font-black transition cursor-pointer border ${
@@ -394,78 +394,7 @@ export default function HomePageEditor() {
             </div>
           </div>
 
-          {/* Section 2: Footer Content (always visible, not in Copy panel) */}
-          <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 shadow-xl space-y-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white border-b border-white/5 pb-3">
-              2. Footer Content
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Brand Description</label>
-                <textarea value={footerBrandDesc} onChange={(e) => setFooterBrandDesc(e.target.value)}
-                  rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Newsletter Title" value={footerNewsletterTitle} onChange={setFooterNewsletterTitle} />
-                <Field label="Copyright Text" value={footerCopyright} onChange={setFooterCopyright} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Newsletter Note</label>
-                <textarea value={footerNewsletterNote} onChange={(e) => setFooterNewsletterNote(e.target.value)}
-                  rows={2} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
-              </div>
-            </div>
-            <details className="group">
-              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
-                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
-                Shop Links
-              </summary>
-              <div className="pt-4 space-y-4">
-                {footerShopLinks.map((link, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input value={link.label} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterShopLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <input value={link.view} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterShopLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button onClick={() => setFooterShopLinks(footerShopLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-                <button onClick={() => setFooterShopLinks([...footerShopLinks, { label: '', view: 'shop' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
-              </div>
-            </details>
-            <details className="group">
-              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
-                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
-                Company Links
-              </summary>
-              <div className="pt-4 space-y-4">
-                {footerCompanyLinks.map((link, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input value={link.label} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <input value={link.view} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button onClick={() => setFooterCompanyLinks(footerCompanyLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-                <button onClick={() => setFooterCompanyLinks([...footerCompanyLinks, { label: '', view: '#' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
-              </div>
-            </details>
-            <details className="group">
-              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
-                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
-                Social Links
-              </summary>
-              <div className="pt-4 space-y-4">
-                {footerSocialLinks.map((link, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input value={link.label} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterSocialLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <input value={link.url} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], url: e.target.value }; setFooterSocialLinks(arr); }} placeholder="URL" className="flex-[2] bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button onClick={() => setFooterSocialLinks(footerSocialLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-                <button onClick={() => setFooterSocialLinks([...footerSocialLinks, { label: '', url: '' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
-              </div>
-            </details>
-          </div>
-
-          {/* Section 3: Copy Content Editing Panel */}
+          {/* Section 2: Copy Content Editing Panel */}
           {activeSectionEdit && SECTION_LABELS[activeSectionEdit] && (
             <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 shadow-xl space-y-5 animate-fade-in-up">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">

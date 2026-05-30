@@ -111,8 +111,7 @@ export default function ShopPage() {
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
       const nameMatch = p.name.toLowerCase().includes(query);
-      const descMatch = p.description ? p.description.toLowerCase().includes(query) : false;
-      if (!nameMatch && !descMatch) return false;
+      if (!nameMatch) return false;
     }
 
     // Catalog Filter

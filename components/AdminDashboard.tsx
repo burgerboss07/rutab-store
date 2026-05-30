@@ -27,7 +27,6 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [prodName, setProdName] = useState('');
-  const [prodDesc, setProdDesc] = useState('');
   const [prodPrice, setProdPrice] = useState('');
   const [prodImg, setProdImg] = useState('');
   const [prodCategory, setProdCategory] = useState('Brand Shirts');
@@ -92,7 +91,6 @@ export default function AdminDashboard() {
 
     const payload = {
       name: prodName,
-      description: prodDesc,
       price: parseFloat(prodPrice),
       image_url: prodImg,
       category: prodCategory,
@@ -132,7 +130,6 @@ export default function AdminDashboard() {
     setFormMode('edit');
     setEditingId(p.id);
     setProdName(p.name);
-    setProdDesc(p.description || '');
     setProdPrice(typeof p.price === 'string' ? p.price : p.price.toString());
     setProdImg(p.image_url || '');
     setProdCategory(p.category || 'Brand Shirts');
@@ -180,7 +177,6 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setProdName('');
-    setProdDesc('');
     setProdPrice('');
     setProdImg('');
     setProdCategory('Brand Shirts');

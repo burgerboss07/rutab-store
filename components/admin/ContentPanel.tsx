@@ -18,7 +18,7 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 
 interface ProductFormData {
   name: string; sku: string; price: string; stock: string;
-  description: string; image_url: string; is_featured: boolean;
+  image_url: string; is_featured: boolean;
   catalog: string; subCatalog: string;
   sizes: string[]; colors: string[];
   images: string[];
@@ -26,7 +26,7 @@ interface ProductFormData {
 
 const emptyForm: ProductFormData = {
   name: '', sku: '', price: '', stock: '0',
-  description: '', image_url: '/placeholder.svg', is_featured: false,
+  image_url: '/placeholder.svg', is_featured: false,
   catalog: '', subCatalog: '',
   sizes: [], colors: [],
   images: [],
@@ -417,7 +417,7 @@ export default function ContentPanel() {
       ...form,
       name: p.name, sku: p.sku || '',
       price: String(p.price), stock: String(p.stock ?? 0),
-      description: p.description || '', image_url: p.image_url || '/placeholder.svg',
+      image_url: p.image_url || '/placeholder.svg',
       is_featured: p.is_featured || false,
       catalog: p.catalog || '',
       subCatalog: p.subCatalog || '',
@@ -439,7 +439,7 @@ export default function ContentPanel() {
       id: prodId,
       name: form.name, sku: form.sku,
       price: parseFloat(form.price), stock: parseInt(form.stock) || 0,
-      description: form.description, image_url: form.image_url,
+      image_url: form.image_url,
       is_featured: form.is_featured,
       catalog: form.catalog,
       subCatalog: form.subCatalog,
@@ -455,7 +455,6 @@ export default function ContentPanel() {
       sku: payload.sku || null,
       price: payload.price,
       stock: payload.stock,
-      description: payload.description || null,
       image_url: payload.image_url || null,
       category: payload.catalog,
       subcategory: payload.subCatalog || null,
@@ -818,11 +817,6 @@ export default function ContentPanel() {
                       <input type="file" accept="image/*" multiple onChange={handleSecondaryImageUpload} className="hidden" />
                     </label>
                   </div>
-                </div>
-                <div className="sm:col-span-2 lg:col-span-3 space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Description</label>
-                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Product description..."
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Featured</label>

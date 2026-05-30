@@ -8,7 +8,6 @@ interface ProductCardProps {
   product: {
     id: string;
     name: string;
-    description: string;
     price: string | number;
     image_url?: string | null;
     catalog?: string;
@@ -203,12 +202,9 @@ export default function ProductCard({ product }: ProductCardProps) {
            <h3 className="font-bold text-sm text-white uppercase line-clamp-1 group-hover:text-[#ff0000] transition-colors duration-300">
              {product.name}
            </h3>
-           <p className="text-[11px] text-[#a1a1a1] line-clamp-2 mt-2 leading-relaxed">
-             {product.description}
-           </p>
-         </div>
+          </div>
 
-        <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
           <span className="text-lg font-black text-white">
             {formatPrice(priceVal, currency)}
           </span>

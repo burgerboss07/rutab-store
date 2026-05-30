@@ -52,7 +52,6 @@ export function formatPrice(value: number, currentCurrency: string = 'KWD (K.D)'
 export interface Product {
   id: string;
   name: string;
-  description: string;
   price: string | number;
   image_url: string;
   catalog?: string;
