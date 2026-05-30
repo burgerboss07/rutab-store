@@ -103,7 +103,10 @@ export default function SettingsPanel() {
   ];
   const [sizeOrder, setSizeOrder] = useState(defaultSizeOrder);
   const [colorConfig, setColorConfig] = useState(defaultColorConfig);
+  const [availableCatalogs, setAvailableCatalogs] = useState<string[]>([]);
   const [catalogOrder, setCatalogOrder] = useState<string[]>(['All']);
+  const [subCatalogMap, setSubCatalogMap] = useState<Record<string, string[]>>({});
+  const [visibleSubCatalogs, setVisibleSubCatalogs] = useState<Record<string, string[]>>({});
   const [priceThresholds, setPriceThresholds] = useState([
     { label: 'Under', value: 'under-15', max: '15' },
     { label: 'Mid', value: '15-25', min: '15', max: '25' },
@@ -224,6 +227,7 @@ export default function SettingsPanel() {
           sizeOrder,
           colorConfig,
           catalogOrder,
+          visibleSubCatalogs,
           priceThresholds,
         },
 
@@ -305,6 +309,7 @@ export default function SettingsPanel() {
             if (fc.sizeOrder) setSizeOrder(fc.sizeOrder);
             if (fc.colorConfig) setColorConfig(fc.colorConfig);
             if (fc.catalogOrder) setCatalogOrder(fc.catalogOrder);
+            if (fc.visibleSubCatalogs) setVisibleSubCatalogs(fc.visibleSubCatalogs);
             if (fc.priceThresholds) setPriceThresholds(fc.priceThresholds);
           }
 
@@ -327,6 +332,32 @@ export default function SettingsPanel() {
       }
     }
     loadAllSettings();
+  }, []);
+
+  // Fetch available catalogs and subCatalogs from products
+  useEffect(() => {
+    async function fetchCatalogOptions() {
+      try {
+        const client = getSupabase();
+        const { data } = await client
+          .from('products')
+          .select('catalog, subCatalog')
+          .not('catalog', 'is', null);
+        if (data) {
+          const cats = [...new Set(data.map((p: any) => p.catalog).filter(Boolean))] as string[];
+          setAvailableCatalogs(cats);
+          const subMap: Record<string, string[]> = {};
+          cats.forEach(cat => {
+            const subs = [...new Set(data.filter((p: any) => p.catalog === cat).map((p: any) => p.subCatalog).filter(Boolean))] as string[];
+            subMap[cat] = subs;
+          });
+          setSubCatalogMap(subMap);
+        }
+      } catch (e) {
+        console.error('Failed to load catalog options:', e);
+      }
+    }
+    fetchCatalogOptions();
   }, []);
 
   return (
@@ -573,23 +604,64 @@ export default function SettingsPanel() {
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shop Filters</h3>
               <p className="text-[10px] text-[#a1a1a1] -mt-4">Configure all filter options for the shop page.</p>
 
-              {/* Catalog order */}
+              {/* Catalog visibility + order */}
               <div className="border-b border-white/5 pb-4">
-                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Catalog Order</label>
-                <p className="text-[9px] text-[#555] mb-2 -mt-2">Controls display order. Options not in this list appear alphabetically after.</p>
-                <div className="flex flex-wrap gap-2">
-                  {catalogOrder.map((cat, idx) => (
-                    <div key={idx} className="flex items-center gap-1 bg-black border border-white/10 rounded-lg px-2.5 py-1.5">
-                      <input value={cat} onChange={(e) => {
-                        const arr = [...catalogOrder]; arr[idx] = e.target.value; setCatalogOrder(arr);
-                      }} className="w-20 bg-transparent text-xs text-white text-center focus:outline-none" />
-                      <button onClick={() => setCatalogOrder(catalogOrder.filter((_, i) => i !== idx))}
-                        className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3 h-3" /></button>
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Catalog Visibility & Order</label>
+                <p className="text-[9px] text-[#555] mb-2 -mt-2">Toggle visibility and reorder catalogs from your products.</p>
+                {availableCatalogs.length === 0 && <p className="text-xs text-[#555]">No catalogs found in products.</p>}
+                {catalogOrder.filter(c => c !== 'All').map((cat, idx) => {
+                  const subs = subCatalogMap[cat] || [];
+                  const visibleSubs = visibleSubCatalogs[cat] || subs;
+                  return (
+                    <div key={cat} className="mb-2 bg-black/40 border border-white/5 rounded-xl p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#555] font-mono w-4">{idx + 1}</span>
+                        <span className="text-xs font-bold text-white flex-1">{cat}</span>
+                        <button onClick={() => {
+                          const arr = catalogOrder.filter(c => c !== 'All');
+                          if (idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; setCatalogOrder(['All', ...arr]); }
+                        }} className="text-white/30 hover:text-white cursor-pointer text-xs" disabled={idx === 0}>▲</button>
+                        <button onClick={() => {
+                          const arr = catalogOrder.filter(c => c !== 'All');
+                          if (idx < arr.length - 1) { [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]]; setCatalogOrder(['All', ...arr]); }
+                        }} className="text-white/30 hover:text-white cursor-pointer text-xs" disabled={idx === catalogOrder.filter(c => c !== 'All').length - 1}>▼</button>
+                        <button onClick={() => setCatalogOrder(catalogOrder.filter(c => c !== cat))}
+                          className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3 h-3" /></button>
+                      </div>
+                      {/* Sub-catalogs */}
+                      {subs.length > 0 && (
+                        <div className="mt-2 pl-6 flex flex-wrap gap-1.5">
+                          {subs.map(sub => {
+                            const isVisible = visibleSubCatalogs[cat]?.includes(sub) ?? true;
+                            return (
+                              <button key={sub} onClick={() => {
+                                const current = visibleSubCatalogs[cat] || subs;
+                                const updated = isVisible ? current.filter((s: string) => s !== sub) : [...current, sub];
+                                setVisibleSubCatalogs({ ...visibleSubCatalogs, [cat]: updated });
+                              }}
+                                className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                                  isVisible ? 'border-[#ff0000]/40 text-[#ff0000] bg-[#ff0000]/5' : 'border-white/10 text-[#555]'
+                                }`}>
+                                {sub} {isVisible ? '✓' : '✕'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-                <button onClick={() => setCatalogOrder([...catalogOrder, ''])}
-                  className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Catalog</button>
+                  );
+                })}
+                {/* Add missing catalogs */}
+                {availableCatalogs.filter(c => !catalogOrder.includes(c)).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {availableCatalogs.filter(c => !catalogOrder.includes(c)).map(cat => (
+                      <button key={cat} onClick={() => setCatalogOrder([...catalogOrder, cat])}
+                        className="text-[9px] px-2 py-0.5 rounded-full border border-white/10 text-[#555] hover:text-white hover:border-white/30 transition cursor-pointer">
+                        + {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Price thresholds */}

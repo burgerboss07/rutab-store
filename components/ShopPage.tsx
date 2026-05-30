@@ -112,13 +112,16 @@ export default function ShopPage() {
       return;
     }
     // Get unique subCatalogs for the selectedCatalog
-    const uniqueSubCatalogs = ['All', ...new Set(
+    const uniqueSubCatalogs = [...new Set(
       products
         .filter(p => p.catalog === selectedCatalog)
         .map(p => p.subCatalog)
         .filter((sc): sc is string => Boolean(sc))
     )];
-    setSubCatalogs(uniqueSubCatalogs);
+    // Apply admin visibility config
+    const visibleSubs = storeSettings?.filter_config?.visibleSubCatalogs?.[selectedCatalog] || uniqueSubCatalogs;
+    const filtered = uniqueSubCatalogs.filter(sc => visibleSubs.includes(sc));
+    setSubCatalogs(['All', ...filtered]);
   }, [selectedCatalog, products]);
 
   // Apply filters inline during render
