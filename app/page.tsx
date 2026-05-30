@@ -32,6 +32,10 @@ export default function Home() {
     if (params.get('code')) {
       window.location.href = '/auth/callback' + window.location.search;
     }
+    const viewParam = params.get('view') as StoreView | null;
+    if (viewParam) {
+      useStore.getState().setActiveView(viewParam);
+    }
   }, []);
 
   const storeSettings = useStore((s) => s.storeSettings);
