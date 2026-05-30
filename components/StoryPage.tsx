@@ -5,7 +5,7 @@ import { MapPin, Package, Award, Users } from 'lucide-react';
 
 const milestones = [
   { year: '2023', title: 'The Vision', desc: 'RUTAB was born from a vision to fuse Arab heritage with modern streetwear, creating a brand that speaks to the GCC\'s bold new generation.' },
-  { year: '2024', title: 'First Drop', desc: 'Our inaugural collection sold out in 48 hours, establishing RUTAB as Kuwait\'s fastest-growing luxury streetwear label.' },
+  { year: '2024', title: 'First Drop', desc: 'Our inaugural collection sold out in 48 hours, establishing RUTAB as a fastest-growing luxury streetwear label across the GCC.' },
   { year: '2025', title: 'GCC Expansion', desc: 'Expanded across the Gulf region with pop-ups in Dubai, Riyadh, and Doha — bringing Gulf luxury streetwear to the world.' },
   { year: '2026', title: 'Global Reach', desc: 'Launched worldwide shipping, collaborated with regional artists, and built a community of over 50,000 loyal customers.' },
 ];
@@ -14,7 +14,7 @@ const values = [
   { icon: Award, title: 'Quality First', desc: 'Every piece is crafted with premium materials and meticulous attention to detail.' },
   { icon: Users, title: 'Community Driven', desc: 'Built by the culture, for the culture — our community shapes every collection.' },
   { icon: Package, title: 'Limited Drops', desc: 'Exclusivity is at our core. Each drop is limited, making every piece a collector\'s item.' },
-  { icon: MapPin, title: 'Proudly Kuwaiti', desc: 'Rooted in Kuwaiti heritage, inspired by Gulf identity, designed for the world.' },
+  { icon: MapPin, title: 'Global Roots', desc: 'Rooted in Arab heritage, inspired by global street culture, designed for the world.' },
 ];
 
 export default function StoryPage() {
@@ -35,7 +35,7 @@ export default function StoryPage() {
           <span className="text-[#ff0000]">Story</span>
         </h1>
         <p className="text-sm md:text-base text-[#a1a1a1] max-w-2xl mt-6 leading-relaxed">
-          From a bold idea in Kuwait to a movement redefining Gulf streetwear. RUTAB is more than fashion — it&apos;s identity, heritage, and the future of Arab luxury.
+          From a bold idea to a movement redefining luxury streetwear. RUTAB is more than fashion — it&apos;s identity, heritage, and the future of style.
         </p>
       </motion.div>
 
@@ -49,17 +49,17 @@ export default function StoryPage() {
         >
           <span className="text-[#ff0000] text-[10px] font-bold tracking-[0.25em] uppercase block mb-4">Our Heritage</span>
           <h2 className="text-3xl md:text-5xl font-black uppercase leading-tight mb-6">
-            Born in Kuwait,<br />Built for the <span className="text-[#ff0000]">World</span>
+            Born from Vision,<br />Built for the <span className="text-[#ff0000]">World</span>
           </h2>
           <div className="space-y-4 text-sm text-[#a1a1a1] leading-relaxed">
             <p>
-              RUTAB (رطب) takes its name from the Arabic word for fresh dates — a symbol of hospitality, generosity, and the rich cultural tapestry of the Gulf region. Just as dates have been a cornerstone of Arab tradition for millennia, RUTAB aims to be a cornerstone of the modern Arab fashion identity.
+              RUTAB (رطب) takes its name from the Arabic word for fresh dates — a symbol of hospitality, generosity, and cultural richness. Just as dates have been a cornerstone of tradition for millennia, RUTAB aims to be a cornerstone of modern luxury streetwear.
             </p>
             <p>
-              Founded in Kuwait, our brand represents the intersection of traditional Gulf heritage and contemporary streetwear culture. We believe that luxury should tell a story — one that honors where you come from while boldly stepping into the future.
+              Our brand represents the intersection of heritage and contemporary street culture. We believe that luxury should tell a story — one that honors where you come from while boldly stepping into the future, wherever that may be.
             </p>
             <p>
-              Every stitch, every fabric choice, every design element is a tribute to the resilience, creativity, and ambition of the Arab youth. We don&apos;t just follow trends — we set them, drawing inspiration from the bustling souks of Kuwait City to the avant-garde runways of Tokyo and Milan.
+              Every stitch, every fabric choice, every design element is a tribute to resilience, creativity, and ambition. We don&apos;t just follow trends — we set them, drawing inspiration from global street culture to the avant-garde runways of Tokyo, Milan, and beyond.
             </p>
           </div>
         </motion.div>
