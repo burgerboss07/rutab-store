@@ -116,8 +116,8 @@ export default function HomePageEditor() {
     try {
       const client = getSupabase();
       const [homeResult, storeResult] = await Promise.all([
-        client.from('settings').select('value').eq('key', 'home_settings').single(),
-        client.from('settings').select('value').eq('key', 'store_settings').single(),
+        client.from('settings').select('value').eq('key', 'home_settings').maybeSingle(),
+        client.from('settings').select('value').eq('key', 'store_settings').maybeSingle(),
       ]);
       
       if (storeResult.data?.value?.footer) {
@@ -217,7 +217,7 @@ export default function HomePageEditor() {
           .from('settings')
           .select('value')
           .eq('key', 'store_settings')
-          .single();
+          .maybeSingle();
         if (existing?.value) merged = existing.value;
       } catch {}
       merged.footer = {
