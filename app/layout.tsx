@@ -1,10 +1,32 @@
 import './globals.css';
+import { Bebas_Neue, Poppins, Inter } from 'next/font/google';
 import LenisProvider from '@/components/LenisProvider';
 import FaviconUpdater from '@/components/FaviconUpdater';
 import SessionProvider from '@/components/SessionProvider';
 import SyncProvider from '@/components/SyncProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { createClient } from '@supabase/supabase-js';
+
+const bebasNeue = Bebas_Neue({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-bebas-neue',
+});
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
+  variable: '--font-poppins',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+});
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 export const dynamic = 'force-dynamic';
 
@@ -34,9 +56,11 @@ export async function generateMetadata() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${bebasNeue.variable} ${poppins.variable} ${inter.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {supabaseUrl && <link rel="preconnect" href={supabaseUrl} />}
+        {supabaseUrl && <link rel="dns-prefetch" href={supabaseUrl} />}
       </head>
       <body className="antialiased">
         <SpeedInsights />

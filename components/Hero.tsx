@@ -1,10 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useStore } from '../lib/store';
-import GarmentCanvas from './3D/GarmentCanvas';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
+
+const GarmentCanvas = dynamic(() => import('./3D/GarmentCanvas'), { ssr: false });
 
 export default function Hero({
   title = "رُطب",
@@ -31,7 +33,6 @@ export default function Hero({
           fill
           priority
           className="object-cover object-left opacity-35 lg:opacity-45"
-          unoptimized
         />
         {/* Blending gradients */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,transparent_40%,#000000_90%)]" />

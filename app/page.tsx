@@ -1,26 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useStore, type StoreView } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-import FeaturedCategories from '@/components/FeaturedCategories';
-import TrendingSlider from '@/components/TrendingSlider';
-import SocialFeed from '@/components/SocialFeed';
-import Footer from '@/components/Footer';
 
-// Pages / Views
-import ShopPage from '@/components/ShopPage';
-import ProductDetails from '@/components/ProductDetails';
-import CartDrawer from '@/components/CartDrawer';
-import CheckoutForm from '@/components/CheckoutForm';
-import UserDashboard from '@/components/UserDashboard';
-import OrdersPage from '@/components/OrdersPage';
-import OrderTracking from '@/components/OrderTracking';
-import WishlistPage from '@/components/WishlistPage';
-import StoryPage from '@/components/StoryPage';
-import AdminDashboard from '@/components/AdminDashboard';
+// Lazy-loaded view components — only loaded when their view is activated
+const FeaturedCategories = dynamic(() => import('@/components/FeaturedCategories'), { ssr: false });
+const TrendingSlider = dynamic(() => import('@/components/TrendingSlider'), { ssr: false });
+const SocialFeed = dynamic(() => import('@/components/SocialFeed'), { ssr: false });
+const Footer = dynamic(() => import('@/components/Footer'), { ssr: false });
+const ShopPage = dynamic(() => import('@/components/ShopPage'), { ssr: false });
+const ProductDetails = dynamic(() => import('@/components/ProductDetails'), { ssr: false });
+const CartDrawer = dynamic(() => import('@/components/CartDrawer'), { ssr: false });
+const CheckoutForm = dynamic(() => import('@/components/CheckoutForm'), { ssr: false });
+const UserDashboard = dynamic(() => import('@/components/UserDashboard'), { ssr: false });
+const OrdersPage = dynamic(() => import('@/components/OrdersPage'), { ssr: false });
+const OrderTracking = dynamic(() => import('@/components/OrderTracking'), { ssr: false });
+const WishlistPage = dynamic(() => import('@/components/WishlistPage'), { ssr: false });
+const StoryPage = dynamic(() => import('@/components/StoryPage'), { ssr: false });
+const AdminDashboard = dynamic(() => import('@/components/AdminDashboard'), { ssr: false });
 
 export default function Home() {
   const activeView = useStore((state) => state.activeView);
