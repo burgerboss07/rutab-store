@@ -351,7 +351,7 @@ export default function ProductDetails() {
                         className="text-xs font-bold text-white flex items-center gap-1.5 hover:text-[#ff0000] transition cursor-pointer"
                       >
                         <Ruler className="w-3.5 h-3.5" />
-                        Size Guide
+                        Size Chart
                       </button>
                     </div>
                     <div className="flex gap-2 flex-wrap">
