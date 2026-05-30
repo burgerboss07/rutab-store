@@ -615,7 +615,7 @@ function Field({ label, value, onChange }: FieldProps) {
 
 interface RenderCtx {
   sections: Record<string, any>;
-  handleTextChange: (id: string, field: string, val: string) => void;
+  handleTextChange: (id: string, field: keyof SectionConfig, val: string) => void;
   DEFAULT_FEEDS: any[];
   dbProducts: { id: string; name: string }[];
   footerBrandDesc: string; setFooterBrandDesc: (v: string) => void;
