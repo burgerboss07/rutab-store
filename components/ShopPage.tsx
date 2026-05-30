@@ -38,12 +38,23 @@ export default function ShopPage() {
     const formatted = converted.toLocaleString(undefined, { minimumFractionDigits: currencyConfig.decimals, maximumFractionDigits: currencyConfig.decimals });
     return currencyConfig.suffix ? `${formatted} ${currencyConfig.symbol}` : `${currencyConfig.symbol}${formatted}`;
   };
-  const priceRanges = useMemo(() => [
-    { label: 'All Prices', value: 'All' },
-    { label: `Under ${fmt(15)}`, value: 'under-15' },
-    { label: `${fmt(15)} - ${fmt(25)}`, value: '15-25' },
-    { label: `Over ${fmt(25)}`, value: 'over-25' },
-  ], [currency]);
+  const priceRanges = useMemo(() => {
+    const thresholds = storeSettings?.filter_config?.priceThresholds || [];
+    const t15 = thresholds.find((t: any) => t.value === 'under-15')?.max;
+    const t25min = thresholds.find((t: any) => t.value === '15-25')?.min;
+    const t25max = thresholds.find((t: any) => t.value === '15-25')?.max;
+    const t25 = thresholds.find((t: any) => t.value === 'over-25')?.min;
+    const low = t15 ? parseFloat(t15) : 15;
+    const midMin = t25min ? parseFloat(t25min) : 15;
+    const midMax = t25max ? parseFloat(t25max) : 25;
+    const high = t25 ? parseFloat(t25) : 25;
+    return [
+      { label: 'All Prices', value: 'All' },
+      { label: `Under ${fmt(low)}`, value: 'under-15' },
+      { label: `${fmt(midMin)} - ${fmt(midMax)}`, value: '15-25' },
+      { label: `Over ${fmt(high)}`, value: 'over-25' },
+    ];
+  }, [currency, storeSettings]);
 
   // Fetch products and set filter options
   useEffect(() => {
@@ -64,7 +75,9 @@ export default function ShopPage() {
 
           // Extract unique catalogs and subCatalogs for filters
           const uniqueCatalogs = ['All', ...new Set(mappedData.map(p => p.catalog).filter(Boolean))];
-          setCatalogs(uniqueCatalogs);
+          const catOrder = storeSettings?.filter_config?.catalogOrder || [];
+          const sortedCatalogs = ['All', ...catOrder.filter((c: string) => c !== 'All' && uniqueCatalogs.includes(c)), ...uniqueCatalogs.filter((c: string) => c !== 'All' && !catOrder.includes(c))];
+          setCatalogs(sortedCatalogs);
 
           // Extract unique sizes from all products
           const allSizes = new Set<string>();

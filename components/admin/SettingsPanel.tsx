@@ -103,6 +103,12 @@ export default function SettingsPanel() {
   ];
   const [sizeOrder, setSizeOrder] = useState(defaultSizeOrder);
   const [colorConfig, setColorConfig] = useState(defaultColorConfig);
+  const [catalogOrder, setCatalogOrder] = useState<string[]>(['All']);
+  const [priceThresholds, setPriceThresholds] = useState([
+    { label: 'Under', value: 'under-15', max: '15' },
+    { label: 'Mid', value: '15-25', min: '15', max: '25' },
+    { label: 'Over', value: 'over-25', min: '25' },
+  ]);
 
   // Story page state
   const defaultMilestones = [
@@ -217,6 +223,8 @@ export default function SettingsPanel() {
         filter_config: {
           sizeOrder,
           colorConfig,
+          catalogOrder,
+          priceThresholds,
         },
 
         story: {
@@ -296,6 +304,8 @@ export default function SettingsPanel() {
             const fc = v.filter_config;
             if (fc.sizeOrder) setSizeOrder(fc.sizeOrder);
             if (fc.colorConfig) setColorConfig(fc.colorConfig);
+            if (fc.catalogOrder) setCatalogOrder(fc.catalogOrder);
+            if (fc.priceThresholds) setPriceThresholds(fc.priceThresholds);
           }
 
           if (v.story) {
@@ -561,10 +571,57 @@ export default function SettingsPanel() {
           {activeSection === 'filters' && (
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shop Filters</h3>
-              <p className="text-[10px] text-[#a1a1a1] -mt-4">Configure size order and color display for the shop page filters.</p>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Configure all filter options for the shop page.</p>
+
+              {/* Catalog order */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Catalog Order</label>
+                <p className="text-[9px] text-[#555] mb-2 -mt-2">Controls display order. Options not in this list appear alphabetically after.</p>
+                <div className="flex flex-wrap gap-2">
+                  {catalogOrder.map((cat, idx) => (
+                    <div key={idx} className="flex items-center gap-1 bg-black border border-white/10 rounded-lg px-2.5 py-1.5">
+                      <input value={cat} onChange={(e) => {
+                        const arr = [...catalogOrder]; arr[idx] = e.target.value; setCatalogOrder(arr);
+                      }} className="w-20 bg-transparent text-xs text-white text-center focus:outline-none" />
+                      <button onClick={() => setCatalogOrder(catalogOrder.filter((_, i) => i !== idx))}
+                        className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3 h-3" /></button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setCatalogOrder([...catalogOrder, ''])}
+                  className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Catalog</button>
+              </div>
+
+              {/* Price thresholds */}
+              <div className="border-b border-white/5 pb-4 pt-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Price Range Thresholds (in base currency)</label>
+                <p className="text-[9px] text-[#555] mb-2 -mt-2">Set the dollar/KWD amounts that define each price bracket.</p>
+                {priceThresholds.map((pr, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-2 flex-wrap">
+                    <input value={pr.label} onChange={(e) => {
+                      const arr = [...priceThresholds]; arr[idx] = { ...arr[idx], label: e.target.value }; setPriceThresholds(arr);
+                    }} placeholder="Label" className="w-16 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    {pr.min !== undefined && (
+                      <input value={pr.min} onChange={(e) => {
+                        const arr = [...priceThresholds]; arr[idx] = { ...arr[idx], min: e.target.value }; setPriceThresholds(arr);
+                      }} placeholder="Min" type="number" className="w-16 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    )}
+                    {pr.max !== undefined && (
+                      <input value={pr.max} onChange={(e) => {
+                        const arr = [...priceThresholds]; arr[idx] = { ...arr[idx], max: e.target.value }; setPriceThresholds(arr);
+                      }} placeholder="Max" type="number" className="w-16 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    )}
+                    <span className="text-xs text-[#555]">
+                      {pr.value === 'under-15' ? '(under)' : pr.value === 'over-25' ? '(over)' : '(range)'}
+                    </span>
+                    <button onClick={() => setPriceThresholds(priceThresholds.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+              </div>
 
               {/* Size order */}
-              <div className="border-b border-white/5 pb-4">
+              <div className="border-b border-white/5 pb-4 pt-4">
                 <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Size Order</label>
                 <div className="flex flex-wrap gap-2">
                   {sizeOrder.map((sz, idx) => (
