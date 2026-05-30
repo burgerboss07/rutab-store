@@ -12,17 +12,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // SPA view routes — redirect to root with ?view= param
-  const viewRoutes: Record<string, string> = {
-    '/story': 'story',
-  };
-  if (viewRoutes[pathname]) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    url.searchParams.set('view', viewRoutes[pathname]);
-    return NextResponse.redirect(url);
-  }
-
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 

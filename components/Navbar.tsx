@@ -73,7 +73,7 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <button
               key={link.view}
-              onClick={() => link.view === 'story' ? window.location.href = '/story' : setActiveView(link.view)}
+              onClick={() => setActiveView(link.view)}
               className={`hover:text-[#ff0000] transition-colors relative py-2 cursor-pointer ${
                 activeView === link.view ? 'text-[#ff0000]' : 'text-[#e5e5e5]'
               }`}
@@ -192,7 +192,7 @@ export default function Navbar() {
                 key={link.view}
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  link.view === 'story' ? window.location.href = '/story' : setActiveView(link.view);
+                  setActiveView(link.view);
                 }}
                 className={`text-left py-3.5 text-sm uppercase tracking-widest font-bold border-b border-white/5 last:border-0 ${
                   activeView === link.view ? 'text-[#ff0000]' : 'text-[#e5e5e5]'

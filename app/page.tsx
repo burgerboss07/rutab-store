@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useStore, type StoreView } from '@/lib/store';
+import { useStore } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -33,10 +33,7 @@ export default function Home() {
     if (params.get('code')) {
       window.location.href = '/auth/callback' + window.location.search;
     }
-    const viewParam = params.get('view') as StoreView | null;
-    if (viewParam) {
-      useStore.getState().setActiveView(viewParam);
-    }
+
   }, []);
 
   const storeSettings = useStore((s) => s.storeSettings);
