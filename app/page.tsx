@@ -19,6 +19,7 @@ import UserDashboard from '@/components/UserDashboard';
 import OrdersPage from '@/components/OrdersPage';
 import OrderTracking from '@/components/OrderTracking';
 import WishlistPage from '@/components/WishlistPage';
+import StoryPage from '@/components/StoryPage';
 import AdminDashboard from '@/components/AdminDashboard';
 
 export default function Home() {
@@ -136,6 +137,8 @@ export default function Home() {
         return <OrdersPage />;
       case 'track':
         return <OrderTracking />;
+      case 'story':
+        return <StoryPage />;
       case 'account':
         return <UserDashboard />;
       default:

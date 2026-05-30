@@ -41,6 +41,7 @@ export default function Navbar() {
   const navLinks: { label: string; view: StoreView }[] = [
     { label: 'Home', view: 'home' },
     { label: 'Shop', view: 'shop' },
+    { label: 'Our Story', view: 'story' },
     { label: 'Account', view: 'account' },
   ];
 
