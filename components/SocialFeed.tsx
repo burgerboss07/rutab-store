@@ -4,44 +4,7 @@ import { useStore } from '../lib/store';
 import { Play, Heart, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 
-const feeds = [
-  {
-    username: '@cyber_rutab',
-    likes: '1.2k',
-    comments: '42',
-    views: '18.4K',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600',
-    productId: '550e8400-e29b-41d4-a716-446655440101', // Cyberpunk Hoodie
-    productName: 'Cyberpunk Hoodie',
-  },
-  {
-    username: '@yousef_fits',
-    likes: '3.4k',
-    comments: '118',
-    views: '34.2K',
-    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600',
-    productId: '550e8400-e29b-41d4-a716-446655440107', // Cargo Trousers
-    productName: 'Cargo Trousers',
-  },
-  {
-    username: '@sara.style',
-    likes: '984',
-    comments: '29',
-    views: '11.1K',
-    image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=600',
-    productId: '550e8400-e29b-41d4-a716-446655440104', // Ghost Tee
-    productName: 'Ghost-Shell Tee',
-  },
-  {
-    username: '@gcc_dripper',
-    likes: '4.8k',
-    comments: '235',
-    views: '56.9K',
-    image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=600',
-    productId: '550e8400-e29b-41d4-a716-446655440109', // Cap
-    productName: 'Cyber-Luxe Cap',
-  },
-];
+const feeds: any[] = [];
 
 export default function SocialFeed({
   title = "Seen in Rutab",
