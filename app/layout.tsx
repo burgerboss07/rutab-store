@@ -3,6 +3,7 @@ import LenisProvider from '@/components/LenisProvider';
 import FaviconUpdater from '@/components/FaviconUpdater';
 import SessionProvider from '@/components/SessionProvider';
 import SyncProvider from '@/components/SyncProvider';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head />
       <body className="antialiased">
+        <SpeedInsights />
         <FaviconUpdater />
         <SessionProvider>
           <SyncProvider>
