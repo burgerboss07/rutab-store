@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 const bebasNeue = Bebas_Neue({
   subsets: ['latin'],
   weight: '400',
+  display: 'optional',
   variable: '--font-bebas-neue',
 });
 
@@ -17,12 +18,14 @@ const poppins = Poppins({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800'],
   style: ['normal', 'italic'],
+  display: 'optional',
   variable: '--font-poppins',
 });
 
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'optional',
   variable: '--font-inter',
 });
 
