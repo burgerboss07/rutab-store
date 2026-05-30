@@ -5,6 +5,7 @@ import FaviconUpdater from '@/components/FaviconUpdater';
 import SessionProvider from '@/components/SessionProvider';
 import SyncProvider from '@/components/SyncProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 import { createClient } from '@supabase/supabase-js';
 
 const bebasNeue = Bebas_Neue({
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <SpeedInsights />
+        <Analytics />
         <FaviconUpdater />
         <SessionProvider>
           <SyncProvider>
