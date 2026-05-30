@@ -103,6 +103,7 @@ export default function CheckoutForm() {
   const setActiveView = useStore((state) => state.setActiveView);
   const user = useStore((state) => state.user);
   const currency = useStore((state) => state.currency);
+  const syncVersion = useStore((state) => state.syncVersion);
   
   // Promo code states
   const [promoCode, setPromoCode] = useState('');
@@ -184,7 +185,7 @@ export default function CheckoutForm() {
       }
     }
     loadActiveGateways();
-  }, [paymentMethod]);
+  }, [paymentMethod, syncVersion]);
 
   // Checkout flow control
   const [isSubmitting, setSubmitting] = useState(false);

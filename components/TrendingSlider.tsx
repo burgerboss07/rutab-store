@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getSupabase } from '../lib/supabase';
 import ProductCard from './ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Product } from '../lib/store';
+import { Product, useStore } from '../lib/store';
 
 export default function TrendingSlider({
   title = "Trending Drops",
@@ -16,6 +16,7 @@ export default function TrendingSlider({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const syncVersion = useStore((s) => s.syncVersion);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -41,7 +42,7 @@ export default function TrendingSlider({
       }
     }
     fetchProducts();
-  }, []);
+  }, [syncVersion]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (sliderRef.current) {

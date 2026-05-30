@@ -16,6 +16,7 @@ export default function FeaturedCategories({
   description?: string;
 } = {}) {
   const setActiveView = useStore((state) => state.setActiveView);
+  const syncVersion = useStore((state) => state.syncVersion);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [failedImgs, setFailedImgs] = useState<Set<number>>(new Set());
@@ -56,7 +57,7 @@ export default function FeaturedCategories({
       }
     }
     fetchCategories();
-  }, []);
+  }, [syncVersion]);
 
 
   const handleCategoryClick = (categoryName: string) => {

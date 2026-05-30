@@ -9,6 +9,7 @@ import { SlidersHorizontal, Search, RotateCcw, X } from 'lucide-react';
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const syncVersion = useStore((s) => s.syncVersion);
 
   // Filters State
   const [selectedCatalog, setSelectedCatalog] = useState<string>('All');
@@ -86,7 +87,7 @@ export default function ShopPage() {
       }
     }
     fetchProductsAndSetFilters();
-  }, []);
+  }, [syncVersion]);
 
   // Update subCatalogs options when selectedCatalog changes
   useEffect(() => {
