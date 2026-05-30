@@ -86,6 +86,7 @@ export default function ProductDetails() {
   const setCartOpen = useStore((state) => state.setCartOpen);
   const toggleWishlist = useStore((state) => state.toggleWishlist);
   const wishlist = useStore((state) => state.wishlist);
+  const storeSettings = useStore((s) => s.storeSettings);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -486,36 +487,25 @@ export default function ProductDetails() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    <tr>
-                      <td className="p-3 font-bold">S</td>
-                      <td className="p-3">118</td>
-                      <td className="p-3">68</td>
-                      <td className="p-3">59</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-bold">M</td>
-                      <td className="p-3">124</td>
-                      <td className="p-3">71</td>
-                      <td className="p-3">61</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-bold">L</td>
-                      <td className="p-3">130</td>
-                      <td className="p-3">74</td>
-                      <td className="p-3">63</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-bold">XL</td>
-                      <td className="p-3">136</td>
-                      <td className="p-3">77</td>
-                      <td className="p-3">65</td>
-                    </tr>
+                    {(storeSettings?.sizing_chart?.rows || [
+                      { size: 'S', chest: '118', length: '68', sleeve: '59' },
+                      { size: 'M', chest: '124', length: '71', sleeve: '61' },
+                      { size: 'L', chest: '130', length: '74', sleeve: '63' },
+                      { size: 'XL', chest: '136', length: '77', sleeve: '65' },
+                    ]).map((row: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="p-3 font-bold">{row.size}</td>
+                        <td className="p-3">{row.chest}</td>
+                        <td className="p-3">{row.length}</td>
+                        <td className="p-3">{row.sleeve}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
 
               <p className="text-[10px] text-[#a1a1a1] leading-relaxed">
-                * Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.
+                {storeSettings?.sizing_chart?.note || '* Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.'}
               </p>
             </div>
           </div>

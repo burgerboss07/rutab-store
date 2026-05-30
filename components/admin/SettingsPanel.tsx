@@ -5,7 +5,7 @@ import { useAdminStore } from '@/lib/admin-store';
 import { useStore, CURRENCY_CONFIG } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import {
-  Settings, Globe, Mail, CreditCard, Search, Truck,
+  Settings, Globe, Mail, CreditCard, Search, Truck, Ruler,
   Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown
 } from 'lucide-react';
 
@@ -14,8 +14,9 @@ const sections = [
   { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
   { id: 'payment', label: 'Payment', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'seo', label: 'SEO', icon: <Search className="w-4 h-4" /> },
-  { id: 'social', label: 'Social Feed', icon: <ImageIcon className="w-4 h-4" /> },
+
   { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
+  { id: 'sizing', label: 'Sizing Chart', icon: <Ruler className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
@@ -65,7 +66,16 @@ export default function SettingsPanel() {
   const [socialTitle, setSocialTitle] = useState('Seen in Rutab');
   const [socialSubtitle, setSocialSubtitle] = useState('Community Style');
   const [socialDesc, setSocialDesc] = useState('Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.');
-  const [socialFeeds, setSocialFeeds] = useState<any[]>([]);
+
+  // Sizing chart state
+  const defaultSizingRows = [
+    { size: 'S', chest: '118', length: '68', sleeve: '59' },
+    { size: 'M', chest: '124', length: '71', sleeve: '61' },
+    { size: 'L', chest: '130', length: '74', sleeve: '63' },
+    { size: 'XL', chest: '136', length: '77', sleeve: '65' },
+  ];
+  const [sizingRows, setSizingRows] = useState(defaultSizingRows);
+  const [sizingNote, setSizingNote] = useState('* Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.');
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -156,11 +166,10 @@ export default function SettingsPanel() {
         payment_gateways: gateways,
         shipping_policy: shippingPolicy,
         return_policy: returnPolicy,
-        social_feed: {
-          title: socialTitle,
-          subtitle: socialSubtitle,
-          description: socialDesc,
-          feeds: socialFeeds,
+
+        sizing_chart: {
+          rows: sizingRows,
+          note: sizingNote,
         },
       };
       const res = await fetch('/api/admin/data', {
@@ -221,11 +230,11 @@ export default function SettingsPanel() {
           }
           if (v.shipping_policy) setShippingPolicy(v.shipping_policy);
           if (v.return_policy) setReturnPolicy(v.return_policy);
-          if (v.social_feed) {
-            if (v.social_feed.title) setSocialTitle(v.social_feed.title);
-            if (v.social_feed.subtitle) setSocialSubtitle(v.social_feed.subtitle);
-            if (v.social_feed.description) setSocialDesc(v.social_feed.description);
-            if (v.social_feed.feeds) setSocialFeeds(v.social_feed.feeds);
+
+          if (v.sizing_chart) {
+            const sc = v.sizing_chart;
+            if (sc.rows) setSizingRows(sc.rows);
+            if (sc.note) setSizingNote(sc.note);
           }
         }
       } catch (e) {
@@ -394,75 +403,6 @@ export default function SettingsPanel() {
             </>
           )}
 
-          {activeSection === 'social' && (
-            <>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Social Feed</h3>
-              <p className="text-[10px] text-[#a1a1a1] -mt-4">Appears on the homepage as the &quot;Seen in Rutab&quot; community section.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Title" value={socialTitle} onChange={setSocialTitle} />
-                <Field label="Subtitle" value={socialSubtitle} onChange={setSocialSubtitle} />
-              </div>
-              <Field label="Description" value={socialDesc} onChange={setSocialDesc} />
-              <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-white">Feed Cards (Reels)</h4>
-                <div className="grid grid-cols-1 gap-4">
-                  {(socialFeeds.length > 0 ? socialFeeds : Array(4).fill(null)).map((feed: any, idx: number) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
-                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Username</label>
-                          <input value={feed?.username || ''} onChange={(e) => {
-                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
-                            arr[idx] = { ...arr[idx], username: e.target.value };
-                            setSocialFeeds(arr);
-                          }} placeholder="@username"
-                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Views</label>
-                          <input value={feed?.views || ''} onChange={(e) => {
-                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
-                            arr[idx] = { ...arr[idx], views: e.target.value };
-                            setSocialFeeds(arr);
-                          }} placeholder="18.4K"
-                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Product Name</label>
-                          <input value={feed?.productName || ''} onChange={(e) => {
-                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
-                            arr[idx] = { ...arr[idx], productName: e.target.value };
-                            setSocialFeeds(arr);
-                          }} placeholder="Hoodie"
-                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Image URL</label>
-                          <input value={feed?.image || ''} onChange={(e) => {
-                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
-                            arr[idx] = { ...arr[idx], image: e.target.value };
-                            setSocialFeeds(arr);
-                          }} placeholder="https://..."
-                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Video URL</label>
-                          <input value={feed?.videoUrl || ''} onChange={(e) => {
-                            const arr = [...(socialFeeds.length > 0 ? socialFeeds : Array(4).fill({}))];
-                            arr[idx] = { ...arr[idx], videoUrl: e.target.value };
-                            setSocialFeeds(arr);
-                          }} placeholder="https://..."
-                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
           {activeSection === 'shipping' && (
             <>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shipping &amp; Returns</h3>
@@ -480,6 +420,42 @@ export default function SettingsPanel() {
                     rows={3} placeholder="Enter return policy details..."
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
                 </div>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'sizing' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Streetwear Sizing Chart</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Edits the sizing guide modal in the product detail page.</p>
+
+              <div className="space-y-4">
+                {sizingRows.map((row, idx) => (
+                  <div key={idx} className="flex items-center gap-2 flex-wrap">
+                    <input value={row.size} onChange={(e) => {
+                      const arr = [...sizingRows]; arr[idx] = { ...arr[idx], size: e.target.value }; setSizingRows(arr);
+                    }} placeholder="Size" className="w-16 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={row.chest} onChange={(e) => {
+                      const arr = [...sizingRows]; arr[idx] = { ...arr[idx], chest: e.target.value }; setSizingRows(arr);
+                    }} placeholder="Chest" className="w-24 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={row.length} onChange={(e) => {
+                      const arr = [...sizingRows]; arr[idx] = { ...arr[idx], length: e.target.value }; setSizingRows(arr);
+                    }} placeholder="Length" className="w-24 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={row.sleeve} onChange={(e) => {
+                      const arr = [...sizingRows]; arr[idx] = { ...arr[idx], sleeve: e.target.value }; setSizingRows(arr);
+                    }} placeholder="Sleeve" className="w-24 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setSizingRows(sizingRows.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setSizingRows([...sizingRows, { size: '', chest: '', length: '', sleeve: '' }])}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Row</button>
+              </div>
+
+              <div className="space-y-1.5 pt-4 border-t border-white/5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizing Note</label>
+                <textarea value={sizingNote} onChange={(e) => setSizingNote(e.target.value)}
+                  rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
               </div>
             </>
           )}

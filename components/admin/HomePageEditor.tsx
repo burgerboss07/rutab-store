@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/lib/admin-store';
 import { getSupabase } from '@/lib/supabase';
 import {
-  LayoutTemplate, ArrowUp, ArrowDown, Eye, EyeOff, Save,
+  LayoutTemplate, ArrowUp, ArrowDown, Eye, EyeOff, Save, ChevronDown,
   RefreshCw, Smartphone, Monitor, HelpCircle, Plus, Trash2
 } from 'lucide-react';
 
@@ -78,6 +78,14 @@ export default function HomePageEditor() {
   const [layout, setLayout] = useState<string[]>([]);
   const [sections, setSections] = useState<Record<string, SectionConfig>>({});
   const [dbProducts, setDbProducts] = useState<{ id: string; name: string }[]>([]);
+  // Footer editable fields (stored in store_settings)
+  const [footerBrandDesc, setFooterBrandDesc] = useState('Premium luxury streetwear destination based in Kuwait, serving the broader GCC region with limited, high-end fashion drops.');
+  const [footerShopLinks, setFooterShopLinks] = useState([{ label: 'Hoodies', view: 'shop' }, { label: 'T-Shirts', view: 'shop' }, { label: 'Caps & Hats', view: 'shop' }]);
+  const [footerCompanyLinks, setFooterCompanyLinks] = useState([{ label: 'About Brand', view: 'home' }, { label: 'Track Order', view: 'account' }]);
+  const [footerNewsletterTitle, setFooterNewsletterTitle] = useState('Join the drops');
+  const [footerNewsletterNote, setFooterNewsletterNote] = useState('Subscribe to receive SMS & email notifications for upcoming limited collections.');
+  const [footerCopyright, setFooterCopyright] = useState('© 2026 RUTAB — Luxury Fashion E-commerce Experience.');
+  const [footerSocialLinks, setFooterSocialLinks] = useState([{ label: 'Instagram', url: '' }, { label: 'TikTok', url: '' }, { label: 'WhatsApp', url: '' }]);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -107,14 +115,24 @@ export default function HomePageEditor() {
     setLoading(true);
     try {
       const client = getSupabase();
-      const { data, error } = await client
-        .from('settings')
-        .select('value')
-        .eq('key', 'home_settings')
-        .single();
+      const [homeResult, storeResult] = await Promise.all([
+        client.from('settings').select('value').eq('key', 'home_settings').single(),
+        client.from('settings').select('value').eq('key', 'store_settings').single(),
+      ]);
       
-      if (data && data.value) {
-        const val = data.value as HomeSettings;
+      if (storeResult.data?.value?.footer) {
+        const f = storeResult.data.value.footer;
+        if (f.brandDescription) setFooterBrandDesc(f.brandDescription);
+        if (f.shopLinks) setFooterShopLinks(f.shopLinks);
+        if (f.companyLinks) setFooterCompanyLinks(f.companyLinks);
+        if (f.newsletterTitle) setFooterNewsletterTitle(f.newsletterTitle);
+        if (f.newsletterNote) setFooterNewsletterNote(f.newsletterNote);
+        if (f.copyright) setFooterCopyright(f.copyright);
+        if (f.socialLinks) setFooterSocialLinks(f.socialLinks);
+      }
+
+      if (homeResult.data && homeResult.data.value) {
+        const val = homeResult.data.value as HomeSettings;
         setLayout(val.layout || []);
         setSections(val.sections || {});
       } else {
@@ -191,13 +209,58 @@ export default function HomePageEditor() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const client = getSupabase();
-      const payload = { layout, sections };
-      const { error } = await client
-        .from('settings')
-        .upsert({ key: 'home_settings', value: payload }, { onConflict: 'key' });
-      
-      if (error) throw error;
+      // Read existing store_settings to merge footer (don't nuke other settings)
+      let merged: any = {};
+      try {
+        const client = getSupabase();
+        const { data: existing } = await client
+          .from('settings')
+          .select('value')
+          .eq('key', 'store_settings')
+          .single();
+        if (existing?.value) merged = existing.value;
+      } catch {}
+      merged.footer = {
+        brandDescription: footerBrandDesc,
+        shopLinks: footerShopLinks,
+        companyLinks: footerCompanyLinks,
+        newsletterTitle: footerNewsletterTitle,
+        newsletterNote: footerNewsletterNote,
+        copyright: footerCopyright,
+        socialLinks: footerSocialLinks,
+      };
+
+      const ops = [
+        fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'settings',
+            action: 'upsert',
+            data: { key: 'home_settings', value: { layout, sections } },
+            onConflict: 'key',
+          }),
+        }),
+        fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: 'settings',
+            action: 'upsert',
+            data: { key: 'store_settings', value: merged },
+            onConflict: 'key',
+          }),
+        }),
+      ];
+
+      const results = await Promise.all(ops);
+      for (const res of results) {
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error || `HTTP ${res.status}`);
+        }
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -331,7 +394,78 @@ export default function HomePageEditor() {
             </div>
           </div>
 
-          {/* Section 2: Copy Content Editing Panel */}
+          {/* Section 2: Footer Content (always visible, not in Copy panel) */}
+          <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 shadow-xl space-y-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white border-b border-white/5 pb-3">
+              2. Footer Content
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Brand Description</label>
+                <textarea value={footerBrandDesc} onChange={(e) => setFooterBrandDesc(e.target.value)}
+                  rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Newsletter Title" value={footerNewsletterTitle} onChange={setFooterNewsletterTitle} />
+                <Field label="Copyright Text" value={footerCopyright} onChange={setFooterCopyright} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Newsletter Note</label>
+                <textarea value={footerNewsletterNote} onChange={(e) => setFooterNewsletterNote(e.target.value)}
+                  rows={2} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+              </div>
+            </div>
+            <details className="group">
+              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
+                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
+                Shop Links
+              </summary>
+              <div className="pt-4 space-y-4">
+                {footerShopLinks.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input value={link.label} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterShopLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={link.view} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterShopLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setFooterShopLinks(footerShopLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setFooterShopLinks([...footerShopLinks, { label: '', view: 'shop' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+              </div>
+            </details>
+            <details className="group">
+              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
+                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
+                Company Links
+              </summary>
+              <div className="pt-4 space-y-4">
+                {footerCompanyLinks.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input value={link.label} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={link.view} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setFooterCompanyLinks(footerCompanyLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setFooterCompanyLinks([...footerCompanyLinks, { label: '', view: '#' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+              </div>
+            </details>
+            <details className="group">
+              <summary className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] cursor-pointer hover:text-white transition list-none flex items-center gap-2">
+                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition" />
+                Social Links
+              </summary>
+              <div className="pt-4 space-y-4">
+                {footerSocialLinks.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input value={link.label} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterSocialLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={link.url} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], url: e.target.value }; setFooterSocialLinks(arr); }} placeholder="URL" className="flex-[2] bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setFooterSocialLinks(footerSocialLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setFooterSocialLinks([...footerSocialLinks, { label: '', url: '' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+              </div>
+            </details>
+          </div>
+
+          {/* Section 3: Copy Content Editing Panel */}
           {activeSectionEdit && SECTION_LABELS[activeSectionEdit] && (
             <div className="rounded-3xl bg-[#0a0a0a] border border-white/5 p-6 shadow-xl space-y-5 animate-fade-in-up">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -344,194 +478,16 @@ export default function HomePageEditor() {
               </div>
 
               {/* Render Inputs dynamically depending on section editing */}
-              {activeSectionEdit === 'hero' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                      label="Logo Arabic Heading"
-                      value={sections.hero?.title || 'رُطب'}
-                      onChange={(val) => handleTextChange('hero', 'title', val)}
-                    />
-                    <Field
-                      label="Subtitle Label Tag"
-                      value={sections.hero?.subtitle || 'Los Santos · Kuwait Drop'}
-                      onChange={(val) => handleTextChange('hero', 'subtitle', val)}
-                    />
-                  </div>
-                  <Field
-                    label="Primary Slogan text"
-                    value={sections.hero?.slogan || 'FUTURE ARAB STREETWEAR.'}
-                    onChange={(val) => handleTextChange('hero', 'slogan', val)}
-                  />
-                  <Field
-                    label="Highlighted Slogan text"
-                    value={sections.hero?.sloganHighlight || 'BOLD. FRESH STYLE. REAL COMFORT.'}
-                    onChange={(val) => handleTextChange('hero', 'sloganHighlight', val)}
-                  />
-                  <Field
-                    label="Description details"
-                    value={sections.hero?.description || 'RUTAB—YOUR EVERYDAY CHOICE.'}
-                    onChange={(val) => handleTextChange('hero', 'description', val)}
-                  />
-                </div>
-              )}
-
-              {activeSectionEdit === 'collections' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                      label="Main Grid Title"
-                      value={sections.collections?.title || 'Shop by Category'}
-                      onChange={(val) => handleTextChange('collections', 'title', val)}
-                    />
-                    <Field
-                      label="Tag Subtitle label"
-                      value={sections.collections?.subtitle || 'Collections'}
-                      onChange={(val) => handleTextChange('collections', 'subtitle', val)}
-                    />
-                  </div>
-                  <Field
-                    label="Paragraph Description"
-                    value={sections.collections?.description || 'Premium streetwear essentials designed for oversized silhouettes, technical wear, and bold statements.'}
-                    onChange={(val) => handleTextChange('collections', 'description', val)}
-                  />
-                </div>
-              )}
-
-              {activeSectionEdit === 'trending' && (
-                <div className="space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="Heading title"
-                    value={sections.trending?.title || 'Trending Drops'}
-                    onChange={(val) => handleTextChange('trending', 'title', val)}
-                  />
-                  <Field
-                    label="Category subtitle Tag"
-                    value={sections.trending?.subtitle || 'Hot Right Now'}
-                    onChange={(val) => handleTextChange('trending', 'subtitle', val)}
-                  />
-                </div>
-              )}
-
-              {activeSectionEdit === 'feed' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                      label="Seen in Title"
-                      value={sections.feed?.title || 'Seen in Rutab'}
-                      onChange={(val) => handleTextChange('feed', 'title', val)}
-                    />
-                    <Field
-                      label="Subtitle label tag"
-                      value={sections.feed?.subtitle || 'Community Style'}
-                      onChange={(val) => handleTextChange('feed', 'subtitle', val)}
-                    />
-                  </div>
-                  <Field
-                    label=" Seen in Description copy"
-                    value={sections.feed?.description || 'Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.'}
-                    onChange={(val) => handleTextChange('feed', 'description', val)}
-                  />
-
-                  {/* Edit Feed Cards */}
-                  <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
-                      <button type="button" onClick={() => {
-                        const currentFeeds = (sections.feed as any)?.feeds || DEFAULT_FEEDS;
-                        const newFeeds = [...currentFeeds, { username: '', views: '', image: '', videoUrl: '', productId: '', productName: '' }];
-                        handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                      }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[9px] uppercase font-bold tracking-wider transition cursor-pointer">
-                        <Plus className="w-3 h-3" /> Add Card
-                      </button>
-                    </div>
-                    {((sections.feed as any)?.feeds || DEFAULT_FEEDS).length === 0 && (
-                      <p className="text-xs text-[#555] italic">No feed cards. Click &quot;Add Card&quot; to create one.</p>
-                    )}
-                    <div className="grid grid-cols-1 gap-4">
-                      {((sections.feed as any)?.feeds || DEFAULT_FEEDS).map((feed: any, idx: number) => (
-                        <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
-                            <button type="button" onClick={() => {
-                              const currentFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                              currentFeeds.splice(idx, 1);
-                              handleTextChange('feed', 'feeds' as any, currentFeeds as any);
-                            }}
-                              className="flex items-center gap-1 text-[9px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider transition cursor-pointer">
-                              <Trash2 className="w-3 h-3" /> Remove
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                            <Field
-                              label="Username"
-                              value={feed.username}
-                              onChange={(val) => {
-                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                                newFeeds[idx] = { ...newFeeds[idx], username: val };
-                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                              }}
-                            />
-                            <Field
-                              label="Views Count"
-                              value={feed.views}
-                              onChange={(val) => {
-                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                                newFeeds[idx] = { ...newFeeds[idx], views: val };
-                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                              }}
-                            />
-                            <Field
-                              label="Image URL"
-                              value={feed.image}
-                              onChange={(val) => {
-                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                                newFeeds[idx] = { ...newFeeds[idx], image: val };
-                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                              }}
-                            />
-                            <Field
-                              label="Video URL"
-                              value={feed.videoUrl || ''}
-                              onChange={(val) => {
-                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                                newFeeds[idx] = { ...newFeeds[idx], videoUrl: val };
-                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Product Selection */}
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">
-                              Linked Product
-                            </label>
-                            <select
-                              value={feed.productId || ''}
-                              onChange={(e) => {
-                                const prodId = e.target.value;
-                                const prodName = dbProducts.find(p => p.id === prodId)?.name || '';
-                                const newFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
-                                newFeeds[idx] = { ...newFeeds[idx], productId: prodId, productName: prodName };
-                                handleTextChange('feed', 'feeds' as any, newFeeds as any);
-                              }}
-                              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-[#ff0000]/40 transition cursor-pointer"
-                            >
-                              <option value="">Select a product...</option>
-                              {dbProducts.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {renderSectionContent(activeSectionEdit, {
+                sections, handleTextChange, DEFAULT_FEEDS, dbProducts,
+                footerBrandDesc, setFooterBrandDesc,
+                footerNewsletterTitle, setFooterNewsletterTitle,
+                footerNewsletterNote, setFooterNewsletterNote,
+                footerCopyright, setFooterCopyright,
+                footerShopLinks, setFooterShopLinks,
+                footerCompanyLinks, setFooterCompanyLinks,
+                footerSocialLinks, setFooterSocialLinks,
+              })}
             </div>
           )}
         </div>
@@ -684,7 +640,12 @@ export default function HomePageEditor() {
                   return (
                     <div key="preview-footer" className="p-4 bg-[#050505] border border-white/10 rounded-2xl text-center space-y-2 text-[#a1a1a1]">
                       <span className="text-[#ff0000] font-black text-xs tracking-widest uppercase">RUTAB</span>
-                      <p className="text-[7px]">© 2026 RUTAB — GCC STREETWEAR</p>
+                      <p className="text-[7px] leading-relaxed">{footerCopyright}</p>
+                      <div className="flex justify-center gap-3 text-[6px] uppercase tracking-wider font-bold text-[#555]">
+                        {footerSocialLinks.filter(s => s.label).map((s, i) => (
+                          <span key={i}>{s.label}</span>
+                        ))}
+                      </div>
                     </div>
                   );
                 }
@@ -721,4 +682,186 @@ function Field({ label, value, onChange }: FieldProps) {
       />
     </div>
   );
+}
+
+interface RenderCtx {
+  sections: Record<string, any>;
+  handleTextChange: (id: string, field: string, val: string) => void;
+  DEFAULT_FEEDS: any[];
+  dbProducts: { id: string; name: string }[];
+  footerBrandDesc: string; setFooterBrandDesc: (v: string) => void;
+  footerNewsletterTitle: string; setFooterNewsletterTitle: (v: string) => void;
+  footerNewsletterNote: string; setFooterNewsletterNote: (v: string) => void;
+  footerCopyright: string; setFooterCopyright: (v: string) => void;
+  footerShopLinks: any[]; setFooterShopLinks: (v: any[]) => void;
+  footerCompanyLinks: any[]; setFooterCompanyLinks: (v: any[]) => void;
+  footerSocialLinks: any[]; setFooterSocialLinks: (v: any[]) => void;
+}
+
+function renderSectionContent(sectionId: string, ctx: RenderCtx) {
+  const { sections, handleTextChange, DEFAULT_FEEDS, dbProducts } = ctx;
+  const {
+    footerBrandDesc, setFooterBrandDesc,
+    footerNewsletterTitle, setFooterNewsletterTitle,
+    footerNewsletterNote, setFooterNewsletterNote,
+    footerCopyright, setFooterCopyright,
+    footerShopLinks, setFooterShopLinks,
+    footerCompanyLinks, setFooterCompanyLinks,
+    footerSocialLinks, setFooterSocialLinks,
+  } = ctx;
+
+  if (sectionId === 'hero') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Logo Arabic Heading" value={sections.hero?.title || 'رُطب'} onChange={(val) => handleTextChange('hero', 'title', val)} />
+          <Field label="Subtitle Label Tag" value={sections.hero?.subtitle || 'Los Santos · Kuwait Drop'} onChange={(val) => handleTextChange('hero', 'subtitle', val)} />
+        </div>
+        <Field label="Primary Slogan text" value={sections.hero?.slogan || 'FUTURE ARAB STREETWEAR.'} onChange={(val) => handleTextChange('hero', 'slogan', val)} />
+        <Field label="Highlighted Slogan text" value={sections.hero?.sloganHighlight || 'BOLD. FRESH STYLE. REAL COMFORT.'} onChange={(val) => handleTextChange('hero', 'sloganHighlight', val)} />
+        <Field label="Description details" value={sections.hero?.description || 'RUTAB—YOUR EVERYDAY CHOICE.'} onChange={(val) => handleTextChange('hero', 'description', val)} />
+      </div>
+    );
+  }
+
+  if (sectionId === 'collections') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Main Grid Title" value={sections.collections?.title || 'Shop by Category'} onChange={(val) => handleTextChange('collections', 'title', val)} />
+          <Field label="Tag Subtitle label" value={sections.collections?.subtitle || 'Collections'} onChange={(val) => handleTextChange('collections', 'subtitle', val)} />
+        </div>
+        <Field label="Paragraph Description" value={sections.collections?.description || 'Premium streetwear essentials designed for oversized silhouettes, technical wear, and bold statements.'} onChange={(val) => handleTextChange('collections', 'description', val)} />
+      </div>
+    );
+  }
+
+  if (sectionId === 'trending') {
+    return (
+      <div className="space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Heading title" value={sections.trending?.title || 'Trending Drops'} onChange={(val) => handleTextChange('trending', 'title', val)} />
+        <Field label="Category subtitle Tag" value={sections.trending?.subtitle || 'Hot Right Now'} onChange={(val) => handleTextChange('trending', 'subtitle', val)} />
+      </div>
+    );
+  }
+
+  if (sectionId === 'feed') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Seen in Title" value={sections.feed?.title || 'Seen in Rutab'} onChange={(val) => handleTextChange('feed', 'title', val)} />
+          <Field label="Subtitle label tag" value={sections.feed?.subtitle || 'Community Style'} onChange={(val) => handleTextChange('feed', 'subtitle', val)} />
+        </div>
+        <Field label=" Seen in Description copy" value={sections.feed?.description || 'Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.'} onChange={(val) => handleTextChange('feed', 'description', val)} />
+        <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Feed Cards (Reels)</h4>
+            <button type="button" onClick={() => {
+              const currentFeeds = (sections.feed as any)?.feeds || DEFAULT_FEEDS;
+              const newFeeds = [...currentFeeds, { username: '', views: '', image: '', videoUrl: '', productId: '', productName: '' }];
+              handleTextChange('feed', 'feeds' as any, newFeeds as any);
+            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[9px] uppercase font-bold tracking-wider transition cursor-pointer">
+              <Plus className="w-3 h-3" /> Add Card
+            </button>
+          </div>
+          {((sections.feed as any)?.feeds || DEFAULT_FEEDS).length === 0 && (
+            <p className="text-xs text-[#555] italic">No feed cards. Click &quot;Add Card&quot; to create one.</p>
+          )}
+          <div className="grid grid-cols-1 gap-4">
+            {((sections.feed as any)?.feeds || DEFAULT_FEEDS).map((feed: any, idx: number) => (
+              <div key={idx} className="p-4 rounded-2xl bg-black border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Card #{idx + 1}</span>
+                  <button type="button" onClick={() => {
+                    const currentFeeds = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                    currentFeeds.splice(idx, 1);
+                    handleTextChange('feed', 'feeds' as any, currentFeeds as any);
+                  }} className="flex items-center gap-1 text-[9px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider transition cursor-pointer">
+                    <Trash2 className="w-3 h-3" /> Remove
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <Field label="Username" value={feed.username} onChange={(val) => { const arr = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)]; arr[idx] = { ...arr[idx], username: val }; handleTextChange('feed', 'feeds' as any, arr as any); }} />
+                  <Field label="Views Count" value={feed.views} onChange={(val) => { const arr = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)]; arr[idx] = { ...arr[idx], views: val }; handleTextChange('feed', 'feeds' as any, arr as any); }} />
+                  <Field label="Image URL" value={feed.image} onChange={(val) => { const arr = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)]; arr[idx] = { ...arr[idx], image: val }; handleTextChange('feed', 'feeds' as any, arr as any); }} />
+                  <Field label="Video URL" value={feed.videoUrl || ''} onChange={(val) => { const arr = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)]; arr[idx] = { ...arr[idx], videoUrl: val }; handleTextChange('feed', 'feeds' as any, arr as any); }} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Linked Product</label>
+                  <select value={feed.productId || ''} onChange={(e) => {
+                    const prodId = e.target.value;
+                    const prodName = dbProducts.find(p => p.id === prodId)?.name || '';
+                    const arr = [...((sections.feed as any)?.feeds || DEFAULT_FEEDS)];
+                    arr[idx] = { ...arr[idx], productId: prodId, productName: prodName };
+                    handleTextChange('feed', 'feeds' as any, arr as any);
+                  }} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-[#ff0000]/40 transition cursor-pointer">
+                    <option value="">Select a product...</option>
+                    {dbProducts.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sectionId === 'footer') {
+    return (
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Brand Description</label>
+            <textarea value={footerBrandDesc} onChange={(e) => setFooterBrandDesc(e.target.value)}
+              rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Newsletter Title" value={footerNewsletterTitle} onChange={setFooterNewsletterTitle} />
+            <Field label="Copyright Text" value={footerCopyright} onChange={setFooterCopyright} />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Newsletter Note</label>
+            <textarea value={footerNewsletterNote} onChange={(e) => setFooterNewsletterNote(e.target.value)}
+              rows={2} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+          </div>
+        </div>
+        <div className="pt-4 border-t border-white/5 space-y-4">
+          <h4 className="text-xs font-black uppercase tracking-wider text-white">Shop Links</h4>
+          {footerShopLinks.map((link, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input value={link.label} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterShopLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <input value={link.view} onChange={(e) => { const arr = [...footerShopLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterShopLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <button onClick={() => setFooterShopLinks(footerShopLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+          <button onClick={() => setFooterShopLinks([...footerShopLinks, { label: '', view: 'shop' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+        </div>
+        <div className="pt-4 border-t border-white/5 space-y-4">
+          <h4 className="text-xs font-black uppercase tracking-wider text-white">Company Links</h4>
+          {footerCompanyLinks.map((link, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input value={link.label} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <input value={link.view} onChange={(e) => { const arr = [...footerCompanyLinks]; arr[idx] = { ...arr[idx], view: e.target.value }; setFooterCompanyLinks(arr); }} placeholder="Target view" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <button onClick={() => setFooterCompanyLinks(footerCompanyLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+          <button onClick={() => setFooterCompanyLinks([...footerCompanyLinks, { label: '', view: '#' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+        </div>
+        <div className="pt-4 border-t border-white/5 space-y-4">
+          <h4 className="text-xs font-black uppercase tracking-wider text-white">Social Links</h4>
+          {footerSocialLinks.map((link, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input value={link.label} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], label: e.target.value }; setFooterSocialLinks(arr); }} placeholder="Label" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <input value={link.url} onChange={(e) => { const arr = [...footerSocialLinks]; arr[idx] = { ...arr[idx], url: e.target.value }; setFooterSocialLinks(arr); }} placeholder="URL" className="flex-[2] bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <button onClick={() => setFooterSocialLinks(footerSocialLinks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+          <button onClick={() => setFooterSocialLinks([...footerSocialLinks, { label: '', url: '' }])} className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Link</button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

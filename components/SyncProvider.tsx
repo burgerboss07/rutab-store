@@ -34,6 +34,36 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
 
     const bump = () => useStore.getState().bumpSync();
 
+    // —— INITIAL FETCH: populate store with current DB data ———
+    (async () => {
+      const [ordersRes, productsRes, bannersRes, catsRes, storeRes, homeRes] = await Promise.all([
+        supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
+        supabase.from('products').select('*'),
+        supabase.from('banners').select('*'),
+        supabase.from('categories').select('*'),
+        supabase.from('settings').select('value').eq('key', 'store_settings').maybeSingle(),
+        supabase.from('settings').select('value').eq('key', 'home_settings').maybeSingle(),
+      ]);
+      if (ordersRes.data) {
+        const mapped = ordersRes.data.map((o: any) => ({
+          id: o.id, created_at: o.created_at, total_price: o.total_price,
+          status: o.status, address: o.address || '', phone: o.phone || '',
+          payment_method: o.payment_method || '', payment_proof: o.payment_proof || undefined,
+          items: (o.order_items || []).map((i: any) => ({
+            id: i.product_id || i.id, product_name: i.product_name || '',
+            price: i.price, quantity: i.quantity, size: i.size || '', color: i.color || '',
+          })),
+        }));
+        useStore.getState().setOrders(mapped);
+      }
+      if (productsRes.data) useStore.getState().setProducts(productsRes.data);
+      if (bannersRes.data) useStore.getState().setBanners(bannersRes.data);
+      if (catsRes.data) useStore.getState().setCategories(catsRes.data);
+      if (storeRes.data?.value) useStore.getState().setStoreSettings(storeRes.data.value);
+      if (homeRes.data?.value) useStore.getState().setHomeSettings(homeRes.data.value);
+      bump();
+    })();
+
     // —— ORDERS ——
     const ordersChannel = supabase
       .channel('public:orders:sync')
