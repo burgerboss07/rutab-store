@@ -334,22 +334,22 @@ export default function SettingsPanel() {
     loadAllSettings();
   }, []);
 
-  // Fetch available catalogs and subCatalogs from products
+  // Fetch available catalogs and subCatalogs from categories table
   useEffect(() => {
     async function fetchCatalogOptions() {
       try {
         const client = getSupabase();
         const { data } = await client
-          .from('products')
-          .select('catalog, subCatalog')
-          .not('catalog', 'is', null);
+          .from('categories')
+          .select('name, sub_categories');
         if (data) {
-          const cats = [...new Set(data.map((p: any) => p.catalog).filter(Boolean))] as string[];
+          const cats = data.map((c: any) => c.name).filter(Boolean) as string[];
           setAvailableCatalogs(cats);
           const subMap: Record<string, string[]> = {};
-          cats.forEach(cat => {
-            const subs = [...new Set(data.filter((p: any) => p.catalog === cat).map((p: any) => p.subCatalog).filter(Boolean))] as string[];
-            subMap[cat] = subs;
+          data.forEach((c: any) => {
+            if (c.name) {
+              subMap[c.name] = (Array.isArray(c.sub_categories) ? c.sub_categories : []).map((s: any) => s.name || s).filter(Boolean);
+            }
           });
           setSubCatalogMap(subMap);
         }
