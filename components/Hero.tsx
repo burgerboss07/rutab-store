@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
@@ -51,62 +50,51 @@ export default function Hero({
         {/* Left Side Content */}
         <div className="text-left space-y-8 max-w-xl">
           {/* Animated subtitle tag */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2.5 px-4.5 py-2.5 rounded-full border border-[#ff0000]/20 bg-[#ff0000]/5 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.15)]"
+          <div
+            className="inline-flex items-center gap-2.5 px-4.5 py-2.5 rounded-full border border-[#ff0000]/20 bg-[#ff0000]/5 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.15)] animate-fade-in-up"
           >
             <span className="w-2.5 h-2.5 bg-[#ff0000] rounded-full animate-ping" />
             <p className="text-[10px] uppercase font-bold tracking-[0.25em] text-[#e5e5e5]">
               {subtitle}
             </p>
-          </motion.div>
+          </div>
 
           {/* Heading */}
           <div className="space-y-4">
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-7xl sm:text-8xl md:text-9xl font-black leading-none tracking-tight text-white relative"
+            <h1
+              className="text-7xl sm:text-8xl md:text-9xl font-black leading-none tracking-tight text-white relative animate-fade-in-up"
+              style={{ animationDelay: '0.1s' }}
             >
               {title}
               <span className="absolute left-0 bottom-0 text-stroke-white text-5xl md:text-6xl font-black block tracking-widest translate-y-12">
                 RUTAB
               </span>
-            </motion.h1>
+            </h1>
             
             {/* Cinematic spacer to let heading breathe */}
             <div className="h-10" />
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-2xl sm:text-3xl text-white/90 leading-relaxed font-light"
+            <p
+              className="text-2xl sm:text-3xl text-white/90 leading-relaxed font-light animate-fade-in-up"
+              style={{ animationDelay: '0.2s' }}
             >
               {slogan}
               <br />
               <span className="text-[#ff0000] font-bold">{sloganHighlight}</span>
-            </motion.p>
+            </p>
           </div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-xs sm:text-sm text-[#a1a1a1] leading-relaxed max-w-md uppercase tracking-wider font-semibold"
+          <p
+            className="text-xs sm:text-sm text-[#a1a1a1] leading-relaxed max-w-md uppercase tracking-wider font-semibold animate-fade-in-up"
+            style={{ animationDelay: '0.3s' }}
           >
             {description}
-          </motion.p>
+          </p>
 
           {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-wrap gap-4 pt-4"
+          <div
+            className="flex flex-wrap gap-4 pt-4 animate-fade-in-up"
+            style={{ animationDelay: '0.4s' }}
           >
             <button
               onClick={() => setActiveView('shop')}
@@ -123,7 +111,7 @@ export default function Hero({
             >
               Explore Catalog
             </button>
-          </motion.div>
+          </div>
         </div>
 
         {/* Dummy right column placeholder to push text left on desktop grids */}
