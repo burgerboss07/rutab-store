@@ -2,22 +2,33 @@
 
 import { motion } from 'framer-motion';
 import { MapPin, Package, Award, Users } from 'lucide-react';
+import { useStore } from '../lib/store';
 
-const milestones = [
+const defaultMilestones = [
   { year: '2023', title: 'The Vision', desc: 'RUTAB was born from a vision to fuse Arab heritage with modern streetwear, creating a brand that speaks to the GCC\'s bold new generation.' },
   { year: '2024', title: 'First Drop', desc: 'Our inaugural collection sold out in 48 hours, establishing RUTAB as a fastest-growing luxury streetwear label across the GCC.' },
   { year: '2025', title: 'GCC Expansion', desc: 'Expanded across the Gulf region with pop-ups in Dubai, Riyadh, and Doha — bringing Gulf luxury streetwear to the world.' },
   { year: '2026', title: 'Global Reach', desc: 'Launched worldwide shipping, collaborated with regional artists, and built a community of over 50,000 loyal customers.' },
 ];
 
-const values = [
-  { icon: Award, title: 'Quality First', desc: 'Every piece is crafted with premium materials and meticulous attention to detail.' },
-  { icon: Users, title: 'Community Driven', desc: 'Built by the culture, for the culture — our community shapes every collection.' },
-  { icon: Package, title: 'Limited Drops', desc: 'Exclusivity is at our core. Each drop is limited, making every piece a collector\'s item.' },
-  { icon: MapPin, title: 'Global Roots', desc: 'Rooted in Arab heritage, inspired by global street culture, designed for the world.' },
+const defaultValues = [
+  { title: 'Quality First', desc: 'Every piece is crafted with premium materials and meticulous attention to detail.' },
+  { title: 'Community Driven', desc: 'Built by the culture, for the culture — our community shapes every collection.' },
+  { title: 'Limited Drops', desc: 'Exclusivity is at our core. Each drop is limited, making every piece a collector\'s item.' },
+  { title: 'Global Roots', desc: 'Rooted in Arab heritage, inspired by global street culture, designed for the world.' },
 ];
 
+const valueIcons: Record<string, any> = { Award, Users, Package, MapPin };
+
 export default function StoryPage() {
+  const storeSettings = useStore((s) => s.storeSettings);
+  const story = storeSettings?.story || {};
+  const heroText = story.hero || 'From a bold idea to a movement redefining luxury streetwear. RUTAB is more than fashion — it\'s identity, heritage, and the future of style.';
+  const narrative = story.narrative || 'RUTAB (رطب) takes its name from the Arabic word for fresh dates — a symbol of hospitality, generosity, and cultural richness. Just as dates have been a cornerstone of tradition for millennia, RUTAB aims to be a cornerstone of modern luxury streetwear.\n\nOur brand represents the intersection of heritage and contemporary street culture. We believe that luxury should tell a story — one that honors where you come from while boldly stepping into the future, wherever that may be.\n\nEvery stitch, every fabric choice, every design element is a tribute to resilience, creativity, and ambition. We don\'t just follow trends — we set them, drawing inspiration from global street culture to the avant-garde runways of Tokyo, Milan, and beyond.';
+  const milestones = story.milestones || defaultMilestones;
+  const values = story.values || defaultValues;
+  const narrativeParagraphs = narrative.split('\n\n').filter(Boolean);
+
   return (
     <div className="pt-28 min-h-screen bg-black text-white px-6 max-w-7xl mx-auto pb-32">
       {/* Hero section */}
@@ -34,9 +45,7 @@ export default function StoryPage() {
           Our<br />
           <span className="text-[#ff0000]">Story</span>
         </h1>
-        <p className="text-sm md:text-base text-[#a1a1a1] max-w-2xl mt-6 leading-relaxed">
-          From a bold idea to a movement redefining luxury streetwear. RUTAB is more than fashion — it&apos;s identity, heritage, and the future of style.
-        </p>
+        <p className="text-sm md:text-base text-[#a1a1a1] max-w-2xl mt-6 leading-relaxed">{heroText}</p>
       </motion.div>
 
       {/* Brand narrative */}
@@ -52,15 +61,9 @@ export default function StoryPage() {
             Born from Vision,<br />Built for the <span className="text-[#ff0000]">World</span>
           </h2>
           <div className="space-y-4 text-sm text-[#a1a1a1] leading-relaxed">
-            <p>
-              RUTAB (رطب) takes its name from the Arabic word for fresh dates — a symbol of hospitality, generosity, and cultural richness. Just as dates have been a cornerstone of tradition for millennia, RUTAB aims to be a cornerstone of modern luxury streetwear.
-            </p>
-            <p>
-              Our brand represents the intersection of heritage and contemporary street culture. We believe that luxury should tell a story — one that honors where you come from while boldly stepping into the future, wherever that may be.
-            </p>
-            <p>
-              Every stitch, every fabric choice, every design element is a tribute to resilience, creativity, and ambition. We don&apos;t just follow trends — we set them, drawing inspiration from global street culture to the avant-garde runways of Tokyo, Milan, and beyond.
-            </p>
+            {narrativeParagraphs.map((p: string, i: number) => (
+              <p key={i}>{p}</p>
+            ))}
           </div>
         </motion.div>
 
@@ -89,9 +92,9 @@ export default function StoryPage() {
           <h2 className="text-3xl md:text-5xl font-black uppercase">The Journey</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {milestones.map((m, i) => (
+          {milestones.map((m: any, i: number) => (
             <motion.div
-              key={m.year}
+              key={m.year + i}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -113,22 +116,25 @@ export default function StoryPage() {
           <h2 className="text-3xl md:text-5xl font-black uppercase">Our Values</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {values.map((v, i) => (
-            <motion.div
-              key={v.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 text-center hover:border-[#ff0000]/20 transition group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#ff0000]/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-[#ff0000]/20 transition">
-                <v.icon className="w-5 h-5 text-[#ff0000]" />
-              </div>
-              <h3 className="text-sm font-bold uppercase tracking-wider mb-2">{v.title}</h3>
-              <p className="text-xs text-[#a1a1a1] leading-relaxed">{v.desc}</p>
-            </motion.div>
-          ))}
+          {values.map((v: any, i: number) => {
+            const Icon = valueIcons[v.title] || Award;
+            return (
+              <motion.div
+                key={v.title + i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 text-center hover:border-[#ff0000]/20 transition group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[#ff0000]/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-[#ff0000]/20 transition">
+                  <Icon className="w-5 h-5 text-[#ff0000]" />
+                </div>
+                <h3 className="text-sm font-bold uppercase tracking-wider mb-2">{v.title}</h3>
+                <p className="text-xs text-[#a1a1a1] leading-relaxed">{v.desc}</p>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { useStore, CURRENCY_CONFIG } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import {
   Settings, Globe, Mail, CreditCard, Search, Truck, Ruler,
-  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown
+  Save, AlertTriangle, ImageIcon, Trash2, RefreshCw, Loader2, Plus, X, ChevronDown, BookOpen
 } from 'lucide-react';
 
 const sections = [
@@ -18,6 +18,7 @@ const sections = [
   { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
   { id: 'sizing', label: 'Sizing Chart', icon: <Ruler className="w-4 h-4" /> },
   { id: 'fabric', label: 'Fabric & Materials', icon: <span className="text-xs font-bold w-4 h-4 flex items-center justify-center">F</span> },
+  { id: 'story', label: 'Our Story', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
@@ -86,6 +87,24 @@ export default function SettingsPanel() {
     'Screen-printed matte silicone graphics',
   ];
   const [fabricCare, setFabricCare] = useState(defaultFabricCare);
+
+  // Story page state
+  const defaultMilestones = [
+    { year: '2023', title: 'The Vision', desc: 'RUTAB was born from a vision to fuse Arab heritage with modern streetwear, creating a brand that speaks to the GCC\'s bold new generation.' },
+    { year: '2024', title: 'First Drop', desc: 'Our inaugural collection sold out in 48 hours, establishing RUTAB as a fastest-growing luxury streetwear label across the GCC.' },
+    { year: '2025', title: 'GCC Expansion', desc: 'Expanded across the Gulf region with pop-ups in Dubai, Riyadh, and Doha — bringing Gulf luxury streetwear to the world.' },
+    { year: '2026', title: 'Global Reach', desc: 'Launched worldwide shipping, collaborated with regional artists, and built a community of over 50,000 loyal customers.' },
+  ];
+  const defaultStoryValues = [
+    { title: 'Quality First', desc: 'Every piece is crafted with premium materials and meticulous attention to detail.' },
+    { title: 'Community Driven', desc: 'Built by the culture, for the culture — our community shapes every collection.' },
+    { title: 'Limited Drops', desc: 'Exclusivity is at our core. Each drop is limited, making every piece a collector\'s item.' },
+    { title: 'Global Roots', desc: 'Rooted in Arab heritage, inspired by global street culture, designed for the world.' },
+  ];
+  const [storyHero, setStoryHero] = useState('From a bold idea to a movement redefining luxury streetwear. RUTAB is more than fashion — it\'s identity, heritage, and the future of style.');
+  const [storyNarrative, setStoryNarrative] = useState('RUTAB (رطب) takes its name from the Arabic word for fresh dates — a symbol of hospitality, generosity, and cultural richness. Just as dates have been a cornerstone of tradition for millennia, RUTAB aims to be a cornerstone of modern luxury streetwear.\n\nOur brand represents the intersection of heritage and contemporary street culture. We believe that luxury should tell a story — one that honors where you come from while boldly stepping into the future, wherever that may be.\n\nEvery stitch, every fabric choice, every design element is a tribute to resilience, creativity, and ambition. We don\'t just follow trends — we set them, drawing inspiration from global street culture to the avant-garde runways of Tokyo, Milan, and beyond.');
+  const [storyMilestones, setStoryMilestones] = useState(defaultMilestones);
+  const [storyValues, setStoryValues] = useState(defaultStoryValues);
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -179,6 +198,13 @@ export default function SettingsPanel() {
 
         fabric_care: fabricCare,
 
+        story: {
+          hero: storyHero,
+          narrative: storyNarrative,
+          milestones: storyMilestones,
+          values: storyValues,
+        },
+
         sizing_chart: {
           rows: sizingRows,
           note: sizingNote,
@@ -244,6 +270,14 @@ export default function SettingsPanel() {
           if (v.return_policy) setReturnPolicy(v.return_policy);
 
           if (v.fabric_care) setFabricCare(v.fabric_care);
+
+          if (v.story) {
+            const st = v.story;
+            if (st.hero) setStoryHero(st.hero);
+            if (st.narrative) setStoryNarrative(st.narrative);
+            if (st.milestones) setStoryMilestones(st.milestones);
+            if (st.values) setStoryValues(st.values);
+          }
 
           if (v.sizing_chart) {
             const sc = v.sizing_chart;
@@ -493,6 +527,68 @@ export default function SettingsPanel() {
                 ))}
                 <button onClick={() => setFabricCare([...fabricCare, ''])}
                   className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Item</button>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'story' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Our Story Page</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Edit the hero text, narrative, milestones, and values shown on the Our Story page.</p>
+
+              {/* Hero text */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Hero Text</label>
+                <textarea value={storyHero} onChange={(e) => setStoryHero(e.target.value)}
+                  rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+              </div>
+
+              {/* Narrative */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Brand Narrative (separate paragraphs with blank line)</label>
+                <textarea value={storyNarrative} onChange={(e) => setStoryNarrative(e.target.value)}
+                  rows={6} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+              </div>
+
+              {/* Milestones */}
+              <div className="border-t border-white/5 pt-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Milestones Timeline</label>
+                {storyMilestones.map((m, idx) => (
+                  <div key={idx} className="flex items-center gap-2 flex-wrap mb-2">
+                    <input value={m.year} onChange={(e) => {
+                      const arr = [...storyMilestones]; arr[idx] = { ...arr[idx], year: e.target.value }; setStoryMilestones(arr);
+                    }} placeholder="Year" className="w-16 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={m.title} onChange={(e) => {
+                      const arr = [...storyMilestones]; arr[idx] = { ...arr[idx], title: e.target.value }; setStoryMilestones(arr);
+                    }} placeholder="Title" className="w-28 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={m.desc} onChange={(e) => {
+                      const arr = [...storyMilestones]; arr[idx] = { ...arr[idx], desc: e.target.value }; setStoryMilestones(arr);
+                    }} placeholder="Description" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setStoryMilestones(storyMilestones.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setStoryMilestones([...storyMilestones, { year: '', title: '', desc: '' }])}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Milestone</button>
+              </div>
+
+              {/* Values */}
+              <div className="border-t border-white/5 pt-4">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-3">Core Values</label>
+                {storyValues.map((v, idx) => (
+                  <div key={idx} className="flex items-center gap-2 flex-wrap mb-2">
+                    <input value={v.title} onChange={(e) => {
+                      const arr = [...storyValues]; arr[idx] = { ...arr[idx], title: e.target.value }; setStoryValues(arr);
+                    }} placeholder="Title" className="w-32 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <input value={v.desc} onChange={(e) => {
+                      const arr = [...storyValues]; arr[idx] = { ...arr[idx], desc: e.target.value }; setStoryValues(arr);
+                    }} placeholder="Description" className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setStoryValues(storyValues.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setStoryValues([...storyValues, { title: '', desc: '' }])}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Value</button>
               </div>
             </>
           )}
