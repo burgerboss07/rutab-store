@@ -402,10 +402,14 @@ export default function ProductDetails() {
                       </button>
                       {openAccordion === 'materials' && (
                         <div className="p-4 pt-0 text-xs text-[#e5e5e5] leading-relaxed space-y-1">
-                          <p>• 100% Premium Combed Cotton Loopback</p>
-                          <p>• Heavyweight build (Hoodies: 450GSM, T-Shirts: 300GSM)</p>
-                          <p>• Pre-shrunk fabric to preserve structural fitting</p>
-                          <p>• Screen-printed matte silicone graphics</p>
+                          {(storeSettings?.fabric_care || [
+                            '100% Premium Combed Cotton Loopback',
+                            'Heavyweight build (Hoodies: 450GSM, T-Shirts: 300GSM)',
+                            'Pre-shrunk fabric to preserve structural fitting',
+                            'Screen-printed matte silicone graphics',
+                          ]).map((item: string, idx: number) => (
+                            <p key={idx}>• {item}</p>
+                          ))}
                         </div>
                       )}
                     </div>

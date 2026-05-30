@@ -17,6 +17,7 @@ const sections = [
 
   { id: 'shipping', label: 'Shipping', icon: <Truck className="w-4 h-4" /> },
   { id: 'sizing', label: 'Sizing Chart', icon: <Ruler className="w-4 h-4" /> },
+  { id: 'fabric', label: 'Fabric & Materials', icon: <span className="text-xs font-bold w-4 h-4 flex items-center justify-center">F</span> },
   { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
@@ -76,6 +77,15 @@ export default function SettingsPanel() {
   ];
   const [sizingRows, setSizingRows] = useState(defaultSizingRows);
   const [sizingNote, setSizingNote] = useState('* Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.');
+
+  // Fabric & materials state
+  const defaultFabricCare = [
+    '100% Premium Combed Cotton Loopback',
+    'Heavyweight build (Hoodies: 450GSM, T-Shirts: 300GSM)',
+    'Pre-shrunk fabric to preserve structural fitting',
+    'Screen-printed matte silicone graphics',
+  ];
+  const [fabricCare, setFabricCare] = useState(defaultFabricCare);
 
   const handleExecuteReset = async (actionId: string) => {
     setResetting(actionId);
@@ -167,6 +177,8 @@ export default function SettingsPanel() {
         shipping_policy: shippingPolicy,
         return_policy: returnPolicy,
 
+        fabric_care: fabricCare,
+
         sizing_chart: {
           rows: sizingRows,
           note: sizingNote,
@@ -230,6 +242,8 @@ export default function SettingsPanel() {
           }
           if (v.shipping_policy) setShippingPolicy(v.shipping_policy);
           if (v.return_policy) setReturnPolicy(v.return_policy);
+
+          if (v.fabric_care) setFabricCare(v.fabric_care);
 
           if (v.sizing_chart) {
             const sc = v.sizing_chart;
@@ -456,6 +470,29 @@ export default function SettingsPanel() {
                 <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizing Note</label>
                 <textarea value={sizingNote} onChange={(e) => setSizingNote(e.target.value)}
                   rows={3} className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
+              </div>
+            </>
+          )}
+
+          {activeSection === 'fabric' && (
+            <>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Fabric & Materials</h3>
+              <p className="text-[10px] text-[#a1a1a1] -mt-4">Edit the fabric & materials info shown in the product detail accordion.</p>
+
+              <div className="space-y-2">
+                {fabricCare.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-[#ff0000] text-xs">•</span>
+                    <input value={item} onChange={(e) => {
+                      const arr = [...fabricCare]; arr[idx] = e.target.value; setFabricCare(arr);
+                    }} placeholder="e.g. 100% Premium Combed Cotton"
+                      className="flex-1 bg-black border border-white/10 rounded-lg py-2 px-3 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+                    <button onClick={() => setFabricCare(fabricCare.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+                <button onClick={() => setFabricCare([...fabricCare, ''])}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#ff0000] hover:text-white transition cursor-pointer">+ Add Item</button>
               </div>
             </>
           )}
