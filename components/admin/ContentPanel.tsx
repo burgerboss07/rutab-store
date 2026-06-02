@@ -109,7 +109,7 @@ export default function ContentPanel() {
   };
 
   const handleAddColor = (nameOrHex?: string) => {
-    const value = (nameOrHex || colorLabelEntry || colorEntry).trim();
+    const value = nameOrHex || colorLabelEntry.trim();
     if (!value || form.colors.includes(value)) return;
     setForm((prev) => ({ ...prev, colors: [...prev.colors, value] }));
     setColorLabelEntry('');

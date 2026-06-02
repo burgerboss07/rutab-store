@@ -94,12 +94,24 @@ export default function SettingsPanel() {
   const defaultColorConfig = [
     { name: 'Black', hex: '#0a0a0a' },
     { name: 'White', hex: '#ffffff' },
+    { name: 'Charcoal', hex: '#374151' },
     { name: 'Grey', hex: '#6b7280' },
     { name: 'Red', hex: '#dc2626' },
+    { name: 'Crimson', hex: '#991b1b' },
     { name: 'Blue', hex: '#2563eb' },
     { name: 'Navy', hex: '#1e3a8a' },
     { name: 'Green', hex: '#16a34a' },
     { name: 'Olive', hex: '#556b2f' },
+    { name: 'Brown', hex: '#78350f' },
+    { name: 'Beige', hex: '#f5f5dc' },
+    { name: 'Cream', hex: '#fffdd0' },
+    { name: 'Tan', hex: '#d2b48c' },
+    { name: 'Yellow', hex: '#eab308' },
+    { name: 'Purple', hex: '#7c3aed' },
+    { name: 'Pink', hex: '#db2777' },
+    { name: 'Orange', hex: '#ea580c' },
+    { name: 'Sand', hex: '#c2b280' },
+    { name: 'Wash', hex: '#4b5563' },
   ];
   const [sizeOrder, setSizeOrder] = useState(defaultSizeOrder);
   const [colorConfig, setColorConfig] = useState(defaultColorConfig);

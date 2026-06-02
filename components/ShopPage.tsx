@@ -118,8 +118,9 @@ export default function ShopPage() {
         .map(p => p.subCatalog)
         .filter((sc): sc is string => Boolean(sc))
     )];
-    // Apply admin visibility config
-    const visibleSubs = storeSettings?.filter_config?.visibleSubCatalogs?.[selectedCatalog] || uniqueSubCatalogs;
+    // Apply admin visibility config — merge saved visible sub-cats with any newly discovered ones
+    const savedVisible = storeSettings?.filter_config?.visibleSubCatalogs?.[selectedCatalog];
+    const visibleSubs = savedVisible ? [...new Set([...savedVisible, ...uniqueSubCatalogs])] : uniqueSubCatalogs;
     const filtered = uniqueSubCatalogs.filter(sc => visibleSubs.includes(sc));
     setSubCatalogs(['All', ...filtered]);
   }, [selectedCatalog, products]);
@@ -509,19 +510,23 @@ export default function ShopPage() {
                 <div className="space-y-3 pt-4 border-t border-white/5">
                   <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Color</h4>
                   <div className="flex gap-2 flex-wrap">
-                    {availableColors.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setSelectedColor(c)}
-                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
-                          selectedColor === c
-                            ? 'bg-white text-black border-white'
-                            : 'border-white/10 bg-white/5 text-white'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
+                    {availableColors.map((c) => {
+                      const colorHex = (storeSettings?.filter_config?.colorConfig || []).find((cc: any) => cc.name === c)?.hex;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() => setSelectedColor(c)}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer flex items-center gap-1.5 ${
+                            selectedColor === c
+                              ? 'bg-white text-black border-white'
+                              : 'border-white/10 bg-white/5 text-white'
+                          }`}
+                        >
+                          {colorHex && <span className="w-3 h-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: colorHex }} />}
+                          {c}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
