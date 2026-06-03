@@ -1026,11 +1026,23 @@ export default function ContentPanel() {
                 { key: 'price', label: 'Price', render: (p: Product) => (
                   <span className="text-xs font-bold text-white">{formatKWD(Number(p.price))}</span>
                 )},
-                { key: 'stock', label: 'Stock', render: (p: Product) => (
-                  <span className={`text-[10px] font-bold ${(p.stock ?? 0) <= 0 ? 'text-red-400' : (p.stock ?? 0) <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {p.stock ?? 0}
-                  </span>
-                )},
+                { key: 'stock', label: 'Stock', render: (p: Product) => {
+                  const perSize = p.stock_per_size && typeof p.stock_per_size === 'object' && Object.keys(p.stock_per_size).length > 0 ? p.stock_per_size : null;
+                  return (
+                    <div className="text-[10px]">
+                      <span className={`font-bold ${(p.stock ?? 0) <= 0 ? 'text-red-400' : (p.stock ?? 0) <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {p.stock ?? 0}
+                      </span>
+                      {perSize && (
+                        <div className="text-[8px] text-[#666] mt-0.5 space-x-1.5">
+                          {Object.entries(perSize).map(([size, qty]) => (
+                            <span key={size} className="inline-block">{size}:{String(qty)}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }},
                 { key: 'sizes', label: 'Size', render: (p: Product) => (
                   <span className="text-[10px] text-[#a1a1a1]">{p.sizes?.join(', ') || '-'}</span>
                 )},
