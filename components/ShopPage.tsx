@@ -222,7 +222,7 @@ export default function ShopPage() {
 
       <div className="grid lg:grid-cols-[250px_1fr] gap-10 items-start">
         {/* DESKTOP SIDEBAR FILTERS */}
-        <aside className="hidden lg:block space-y-8 sticky top-28 bg-[#0a0a0a] border border-white/5 rounded-[30px] p-6 shadow-xl">
+        <aside className="hidden lg:block space-y-8 sticky top-28 max-h-[calc(100vh-10rem)] overflow-y-auto bg-[#0a0a0a] border border-white/5 rounded-[30px] p-6 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <h3 className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[#ff0000]" />
