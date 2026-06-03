@@ -94,6 +94,7 @@ export default function ProductDetails() {
   
   // Custom states
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [sizeQuantities, setSizeQuantities] = useState<Record<string, number>>({});
   const [selectedColor, setSelectedColor] = useState<string>('Black');
   const [activeImage, setActiveImage] = useState<string>('');
   const [zoomStyle, setZoomStyle] = useState({ display: 'none', backgroundPosition: '0% 0%' });
@@ -165,15 +166,41 @@ export default function ProductDetails() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: priceVal,
-      image_url: product.image_url,
-      size: selectedSize,
-      color: selectedColor,
-    }, 1);
+    const itemsToAdd = Object.entries(sizeQuantities).filter(([, qty]) => qty > 0);
+    if (itemsToAdd.length === 0) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: priceVal,
+        image_url: product.image_url,
+        size: selectedSize,
+        color: selectedColor,
+      }, 1);
+    } else {
+      itemsToAdd.forEach(([size, qty]) => {
+        addToCart({
+          id: product.id,
+          name: product.name,
+          price: priceVal,
+          image_url: product.image_url,
+          size,
+          color: selectedColor,
+        }, qty);
+      });
+    }
     setCartOpen(true);
+  };
+
+  const updateSizeQty = (size: string, delta: number) => {
+    setSizeQuantities(prev => {
+      const current = prev[size] || 0;
+      const next = current + delta;
+      if (next <= 0) {
+        const { [size]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [size]: next };
+    });
   };
 
   // Zoom on hover logic
@@ -340,11 +367,11 @@ export default function ProductDetails() {
                     </div>
                   </div>
 
-                  {/* Size selector & Sizing guide trigger */}
+                  {/* Size selector with multi-quantity */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs uppercase font-bold tracking-widest text-[#a1a1a1]">
-                        Size: <strong className="text-white">{selectedSize}</strong>
+                        Select Sizes & Quantities
                       </span>
                       <button
                         onClick={() => setSizeGuideOpen(true)}
@@ -355,19 +382,34 @@ export default function ProductDetails() {
                       </button>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      {sizes.map((sz) => (
-                        <button
-                          key={sz}
-                          onClick={() => setSelectedSize(sz)}
-                          className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition uppercase cursor-pointer ${
-                            selectedSize === sz
-                              ? 'bg-white text-black border-white'
-                              : 'border-white/10 bg-white/5 text-white hover:border-white/30'
-                          }`}
-                        >
-                          {sz}
-                        </button>
-                      ))}
+                      {sizes.map((sz) => {
+                        const qty = sizeQuantities[sz] || 0;
+                        return (
+                          <div key={sz}
+                            className={`flex items-center gap-1 border rounded-xl transition ${
+                              qty > 0 ? 'border-[#ff0000] bg-[#ff0000]/5' : 'border-white/10 bg-white/5'
+                            }`}
+                          >
+                            <span className="text-xs font-bold uppercase px-3 py-2 text-white min-w-[28px] text-center">{sz}</span>
+                            <button
+                              onClick={() => {
+                                if (qty <= 1) {
+                                  setSelectedSize(sz);
+                                  updateSizeQty(sz, -1);
+                                } else {
+                                  updateSizeQty(sz, -1);
+                                }
+                              }}
+                              className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-[10px] text-white hover:bg-white/10 transition cursor-pointer"
+                            >−</button>
+                            <span className="text-xs font-bold w-5 text-center text-white">{qty}</span>
+                            <button
+                              onClick={() => { setSelectedSize(sz); updateSizeQty(sz, 1); }}
+                              className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-[10px] text-white hover:bg-white/10 transition cursor-pointer"
+                            >+</button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -378,7 +420,9 @@ export default function ProductDetails() {
                       className="flex-1 py-4 bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer shadow-[0_0_30px_rgba(255,0,0,0.3)]"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      Add to Cart
+                      {Object.values(sizeQuantities).reduce((a, b) => a + b, 0) > 0
+                        ? `Add (${Object.values(sizeQuantities).reduce((a, b) => a + b, 0)}) to Cart`
+                        : 'Add to Cart'}
                     </button>
 
                     <button
