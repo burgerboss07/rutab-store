@@ -481,7 +481,6 @@ export default function ContentPanel() {
       sizes: payload.sizes,
       colors: payload.colors,
       stock_per_size: stockPerSize,
-      images: payload.images || [],
       is_featured: payload.is_featured,
       category_id: catalogsState.find(c => c.name === payload.catalog)?.id || null
     };
