@@ -792,6 +792,7 @@ export default function ContentPanel() {
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
                   <select value={form.subCatalog} onChange={(e) => setForm({ ...form, subCatalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    <option value="">None</option>
                     {filteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 </div>
@@ -915,6 +916,7 @@ export default function ContentPanel() {
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
                   <select value={bulkEditForm.subCatalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, subCatalog: e.target.value })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
+                    <option value="">None</option>
                     {bulkFilteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 </div>
