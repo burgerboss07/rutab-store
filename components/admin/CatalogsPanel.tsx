@@ -35,7 +35,9 @@ export default function CatalogsPanel() {
         name: c.name,
         description: c.description || '',
         image_url: c.image_url || '/placeholder.svg',
-        subCatalogs: Array.isArray(c.sub_categories) ? c.sub_categories : [],
+        subCatalogs: Array.isArray(c.sub_categories)
+          ? c.sub_categories.map((sc: any) => typeof sc === 'string' ? { id: crypto.randomUUID(), name: sc, catalogId: c.id, created_at: new Date().toISOString() } : sc)
+          : [],
         created_at: c.created_at || new Date().toISOString()
       }));
       setCatalogs(mapped);

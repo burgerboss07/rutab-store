@@ -264,7 +264,9 @@ export default function ContentPanel() {
           name: c.name,
           description: c.description || '',
           image_url: c.image_url || '/placeholder.svg',
-          subCatalogs: Array.isArray(c.sub_categories) ? c.sub_categories : [],
+          subCatalogs: Array.isArray(c.sub_categories)
+            ? c.sub_categories.map((sc: any) => typeof sc === 'string' ? { id: crypto.randomUUID(), name: sc, catalogId: c.id, created_at: new Date().toISOString() } : sc)
+            : [],
           created_at: c.created_at || new Date().toISOString()
         }));
         setCatalogsState(mappedCats);
@@ -743,7 +745,7 @@ export default function ContentPanel() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
-                  <select value={form.catalog} onChange={(e) => setForm({ ...form, catalog: e.target.value })}
+                  <select value={form.catalog} onChange={(e) => setForm({ ...form, catalog: e.target.value, subCatalog: '' })}
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
                     {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
