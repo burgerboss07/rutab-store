@@ -170,14 +170,14 @@ export default function ShopPage() {
     sortedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } else if (sortBy === 'price-low') {
     sortedProducts.sort((a, b) => {
-      const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
-      const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
+      const priceA = typeof a.price === 'string' ? parseFloat(a.price) : Number(a.price) || 0;
+      const priceB = typeof b.price === 'string' ? parseFloat(b.price) : Number(b.price) || 0;
       return priceA - priceB;
     });
   } else if (sortBy === 'price-high') {
     sortedProducts.sort((a, b) => {
-      const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
-      const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
+      const priceA = typeof a.price === 'string' ? parseFloat(a.price) : Number(a.price) || 0;
+      const priceB = typeof b.price === 'string' ? parseFloat(b.price) : Number(b.price) || 0;
       return priceB - priceA;
     });
   } else if (sortBy === 'best-selling') {
