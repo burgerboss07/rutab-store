@@ -224,7 +224,7 @@ export default function ShopPage() {
         {/* DESKTOP SIDEBAR FILTERS */}
         <aside className="hidden lg:block sticky top-28 h-[calc(100vh-7rem)]">
           <div className="h-full overflow-y-auto no-scrollbar space-y-8 bg-[#0a0a0a] border border-white/5 rounded-[30px] p-6 shadow-xl" style={{ overscrollBehavior: 'contain' }}>
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <h3 className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[#ff0000]" />
               Filters
