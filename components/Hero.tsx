@@ -1,11 +1,19 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 
 const GarmentCanvas = dynamic(() => import('./3D/GarmentCanvas'), { ssr: false });
+
+function GarmentWrapper() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => { setIsDesktop(window.innerWidth >= 1024); }, []);
+  if (!isDesktop) return null;
+  return <GarmentCanvas />;
+}
 
 export default function Hero({
   title = "رُطب",
@@ -42,7 +50,7 @@ export default function Hero({
       <div className="absolute inset-y-0 right-0 w-full lg:w-1/2 h-[50vh] lg:h-screen z-0 opacity-80 lg:opacity-100 flex items-center justify-center pt-24 lg:pt-0">
         {/* Red Glow behind 3D Gun */}
         <div className="absolute w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] rounded-full bg-[#ff0000]/15 blur-[120px] pointer-events-none" />
-        <GarmentCanvas />
+        <GarmentWrapper />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 items-center gap-16 relative z-10 w-full min-h-[85vh]">

@@ -12,13 +12,24 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     });
 
     let rafId: number;
+    let idleTimeout: ReturnType<typeof setTimeout>;
 
     function raf(time: number) {
       lenis.raf(time);
       rafId = requestAnimationFrame(raf);
     }
 
-    rafId = requestAnimationFrame(raf);
+    function startRaf() {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(raf);
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(() => {
+        cancelAnimationFrame(rafId);
+      }, 2000);
+    }
+
+    lenis.on('scroll', startRaf);
+    startRaf();
 
     const resizeObserver = new ResizeObserver(() => {
       lenis.resize();
@@ -30,6 +41,7 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
 
     return () => {
       cancelAnimationFrame(rafId);
+      clearTimeout(idleTimeout);
       resizeObserver.disconnect();
       lenis.destroy();
     };
