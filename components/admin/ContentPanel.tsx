@@ -101,8 +101,8 @@ export default function ContentPanel() {
   const filteredSubCatalogs = catalogsState.find((c) => c.name === form.catalog)?.subCatalogs || [];
   const bulkFilteredSubCatalogs = catalogsState.find((c) => c.name === bulkEditForm.catalog)?.subCatalogs || [];
 
-  const handleAddSize = () => {
-    const value = sizeEntry.trim();
+  const handleAddSize = (sizeName?: string) => {
+    const value = (sizeName || sizeEntry).trim();
     if (!value || form.sizes.includes(value)) return;
     setForm((prev) => ({ ...prev, sizes: [...prev.sizes, value] }));
     setSizeEntry('');
@@ -672,7 +672,7 @@ export default function ContentPanel() {
                     <input value={sizeEntry} onChange={(e) => setSizeEntry(e.target.value)} placeholder="Custom size (e.g. 28, 30, 32)"
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSize(); }}}
                       className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                    <button type="button" onClick={handleAddSize}
+                    <button type="button" onClick={(e) => { e.preventDefault(); handleAddSize(); }}
                       className="px-3 py-2 rounded-xl bg-[#ff0000] hover:bg-[#d60000] text-white text-[10px] uppercase font-bold tracking-widest transition shrink-0">
                       Add
                     </button>
