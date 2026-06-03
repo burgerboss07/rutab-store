@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Package, Heart, ShoppingBag, LogOut, User, Mail, Phone, MapPin, Edit3, Save, X, ArrowUpRight } from 'lucide-react';
+import { Package, Heart, ShoppingBag, LogOut, User, Mail, Phone, MapPin, Edit3, Save, X, ArrowUpRight, Ruler } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -19,6 +19,9 @@ export default function UserDashboard() {
   const [editForm, setEditForm] = useState({ full_name: '', phone: '', address: '' });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [sizeEditing, setSizeEditing] = useState(false);
+  const [sizeForm, setSizeForm] = useState<Record<string, string>>({});
+  const [sizeSaving, setSizeSaving] = useState(false);
 
   const orders = useStore((s) => s.orders);
   const wishlist = useStore((s) => s.wishlist);
@@ -37,6 +40,7 @@ export default function UserDashboard() {
         if (p) {
           setProfile(p);
           setEditForm({ full_name: p.full_name || '', phone: p.phone || '', address: p.address || '' });
+          setSizeForm(p.customer_sizes || {});
         }
       }
     } catch {}
@@ -64,6 +68,7 @@ export default function UserDashboard() {
         phone: editForm.phone,
         address: editForm.address,
         area: '',
+        customerSizes: profile?.customer_sizes || {},
       });
       setSaveMsg('Profile updated');
       setEditing(false);
@@ -73,6 +78,29 @@ export default function UserDashboard() {
       setSaving(false);
       setTimeout(() => setSaveMsg(null), 3000);
     }
+  };
+
+  const handleSaveSizes = async () => {
+    if (!supaUser) return;
+    setSizeSaving(true);
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('profiles').update({
+        customer_sizes: sizeForm,
+      }).eq('id', supaUser.id);
+      if (error) throw error;
+      setProfile((prev: any) => ({ ...prev, customer_sizes: sizeForm }));
+      useStore.getState().setUser({
+        email: userEmail,
+        name: editForm.full_name || profile?.full_name || '',
+        phone: editForm.phone || profile?.phone || '',
+        address: editForm.address || profile?.address || '',
+        area: '',
+        customerSizes: sizeForm,
+      });
+      setSizeEditing(false);
+    } catch {}
+    setSizeSaving(false);
   };
 
   if (loading) {
@@ -234,6 +262,55 @@ export default function UserDashboard() {
               </>
             )}
           </div>
+        </div>
+
+        {/* My Sizes */}
+        <div className="bg-[#0a0a0a] border border-white/10 rounded-[35px] p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+              <Ruler className="w-4 h-4 text-[#ff0000]" />
+              My Sizes
+            </h3>
+            {!sizeEditing ? (
+              <button onClick={() => setSizeEditing(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer">
+                <Edit3 className="w-3 h-3" /> {Object.keys(sizeForm).length > 0 ? 'Edit' : 'Add Sizes'}
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button onClick={handleSaveSizes} disabled={sizeSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff0000] text-white text-[10px] font-bold transition cursor-pointer disabled:opacity-50">
+                  <Save className="w-3 h-3" /> {sizeSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button onClick={() => { setSizeEditing(false); setSizeForm(profile?.customer_sizes || {}); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/70 hover:text-white transition cursor-pointer">
+                  <X className="w-3 h-3" /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {sizeEditing ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {['Chest', 'Length', 'Sleeve', 'Waist', 'Hips', 'Shoulder'].map((label) => (
+                <div key={label} className="space-y-1">
+                  <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">{label} (cm)</label>
+                  <input value={sizeForm[label.toLowerCase()] || ''} onChange={(e) => setSizeForm(f => ({ ...f, [label.toLowerCase()]: e.target.value }))}
+                    className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
+                    placeholder="0" type="number" min="0" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {['chest', 'length', 'sleeve', 'waist', 'hips', 'shoulder'].map((key) => (
+                <div key={key} className="p-3 rounded-xl bg-white/5 text-center">
+                  <p className="text-[9px] text-[#a1a1a1] uppercase tracking-wider font-bold mb-1">{key}</p>
+                  <p className="text-sm font-bold text-white">{sizeForm[key] ? `${sizeForm[key]} cm` : '—'}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Stats */}

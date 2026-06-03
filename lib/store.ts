@@ -103,6 +103,7 @@ export interface UserProfile {
   phone: string;
   address: string;
   area: string;
+  customerSizes?: Record<string, string>;
 }
 
 export interface OrderItem {
@@ -346,6 +347,7 @@ export const useStore = create<StoreState>()(
                     phone: profile.phone || '',
                     address: profile.address || '',
                     area: '',
+                    customerSizes: profile.customer_sizes || {},
                   }
               });
             }

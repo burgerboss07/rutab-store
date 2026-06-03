@@ -169,6 +169,7 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
               phone: data.phone || '',
               address: data.address || '',
               area: '',
+              customerSizes: data.customer_sizes || {},
             });
           }
         }
