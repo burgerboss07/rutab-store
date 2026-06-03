@@ -22,6 +22,7 @@ interface ProductFormData {
   catalog: string; subCatalog: string;
   sizes: string[]; colors: string[];
   images: string[];
+  stockPerSize: Record<string, string>;
 }
 
 const emptyForm: ProductFormData = {
@@ -30,6 +31,7 @@ const emptyForm: ProductFormData = {
   catalog: '', subCatalog: '',
   sizes: [], colors: [],
   images: [],
+  stockPerSize: {},
 };
 
 interface BulkEditFormData {
@@ -124,7 +126,10 @@ export default function ContentPanel() {
     }
   };
 
-  const handleRemoveSize = (size: string) => setForm((prev) => ({ ...prev, sizes: prev.sizes.filter((s) => s !== size) }));
+  const handleRemoveSize = (size: string) => setForm((prev) => {
+    const { [size]: _, ...restStock } = prev.stockPerSize;
+    return { ...prev, sizes: prev.sizes.filter((s) => s !== size), stockPerSize: restStock };
+  });
   const handleRemoveColor = (color: string) => setForm((prev) => ({ ...prev, colors: prev.colors.filter((c) => c !== color) }));
 
   const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -415,6 +420,11 @@ export default function ContentPanel() {
 
   const handleEditProduct = (p: Product) => {
     setEditingProduct(p);
+    const rawStockPerSize = p.stock_per_size || {};
+    const stockPerSize: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawStockPerSize)) {
+      stockPerSize[k] = String(v ?? '');
+    }
     setForm({
       ...form,
       name: p.name, sku: p.sku || '',
@@ -426,6 +436,7 @@ export default function ContentPanel() {
       sizes: p.sizes || [],
       colors: p.colors || [],
       images: p.images || [],
+      stockPerSize,
     });
     setShowForm(true);
   };
@@ -436,6 +447,12 @@ export default function ContentPanel() {
 
     const isNew = !editingProduct;
     const prodId = editingProduct?.id || crypto.randomUUID();
+
+    const stockPerSize: Record<string, number> = {};
+    for (const [k, v] of Object.entries(form.stockPerSize)) {
+      const n = parseInt(v);
+      if (!isNaN(n)) stockPerSize[k] = n;
+    }
 
     const payload: Product = {
       id: prodId,
@@ -448,6 +465,7 @@ export default function ContentPanel() {
       sizes: form.sizes,
       colors: form.colors,
       images: form.images || [],
+      stock_per_size: stockPerSize,
       created_at: editingProduct?.created_at || new Date().toISOString(),
     };
 
@@ -462,6 +480,7 @@ export default function ContentPanel() {
       subcategory: payload.subCatalog || null,
       sizes: payload.sizes,
       colors: payload.colors,
+      stock_per_size: stockPerSize,
       images: payload.images || [],
       is_featured: payload.is_featured,
       category_id: catalogsState.find(c => c.name === payload.catalog)?.id || null
@@ -677,6 +696,26 @@ export default function ContentPanel() {
                       Add
                     </button>
                   </div>
+                  {/* Stock per size */}
+                  {form.sizes.length > 0 && (
+                    <div className="pt-3 border-t border-white/5">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1] block mb-2">Stock Per Size</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {form.sizes.map((size) => (
+                          <div key={size} className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-white uppercase w-10 shrink-0">{size}</span>
+                            <input
+                              type="number" min="0"
+                              value={form.stockPerSize[size] ?? ''}
+                              onChange={(e) => setForm((prev) => ({ ...prev, stockPerSize: { ...prev.stockPerSize, [size]: e.target.value } }))}
+                              placeholder="0"
+                              className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
