@@ -47,7 +47,12 @@ const secondaryImages: Record<string, string[]> = {
   ],
 };
 
-const getColorHex = (colorName: string) => {
+const getColorHex = (colorName: string, colorConfig?: { name: string; hex: string }[]) => {
+  // Check admin-defined color config first
+  if (colorConfig) {
+    const match = colorConfig.find((c) => c.name.toLowerCase() === colorName.trim().toLowerCase());
+    if (match?.hex) return match.hex;
+  }
   const normalized = colorName.trim().toLowerCase();
   const colorsMap: Record<string, string> = {
     black: '#0a0a0a',
@@ -336,7 +341,7 @@ export default function ProductDetails() {
                     </span>
                     <div className="flex gap-3">
                       {colors.map((c) => {
-                        const hex = getColorHex(c);
+                        const hex = getColorHex(c, storeSettings?.filter_config?.colorConfig);
                         const isSelected = selectedColor === c;
                         return (
                           <button

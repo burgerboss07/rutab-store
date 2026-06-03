@@ -506,7 +506,9 @@ export default function ShopPage() {
                   <h4 className="text-xs uppercase font-bold text-[#a1a1a1] tracking-wider">Color</h4>
                   <div className="flex gap-2 flex-wrap">
                     {availableColors.map((c) => {
-                      const colorHex = (storeSettings?.filter_config?.colorConfig || []).find((cc: any) => cc.name === c)?.hex;
+                const colorHex = (storeSettings?.filter_config?.colorConfig || []).find((cc: any) => cc.name === c)?.hex;
+                const fallbackHex: Record<string, string> = { black: '#0a0a0a', white: '#ffffff', wash: '#374151', grey: '#6b7280', gray: '#6b7280', charcoal: '#1f2937', red: '#dc2626', blue: '#2563eb', navy: '#1e3a8a', green: '#16a34a', olive: '#556b2f', brown: '#78350f', beige: '#f5f5dc', cream: '#fffdd0', tan: '#d2b48c', yellow: '#eab308', purple: '#7c3aed', pink: '#db2777', orange: '#ea580c', sand: '#c2b280' };
+                const swatchHex = colorHex || fallbackHex[c.toLowerCase()] || '#ff0000';
                       return (
                         <button
                           key={c}
@@ -517,7 +519,7 @@ export default function ShopPage() {
                               : 'border-white/10 bg-white/5 text-white'
                           }`}
                         >
-                          {colorHex && <span className="w-3 h-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: colorHex }} />}
+                    {<span className="w-3 h-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: swatchHex }} />}
                           {c}
                         </button>
                       );
