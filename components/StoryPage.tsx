@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { MapPin, Package, Award, Users } from 'lucide-react';
 import { useStore } from '../lib/store';
 
@@ -32,12 +31,7 @@ export default function StoryPage() {
   return (
     <div className="pt-28 min-h-screen bg-black text-white px-6 max-w-7xl mx-auto pb-32">
       {/* Hero section */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="border-b border-white/5 pb-14 mb-16"
-      >
+      <div className="border-b border-white/5 pb-14 mb-16 animate-fade-in-up">
         <span className="text-[#ff0000] text-[10px] font-bold tracking-[0.25em] uppercase block mb-4">
           About Rutab
         </span>
@@ -46,16 +40,11 @@ export default function StoryPage() {
           <span className="text-[#ff0000]">Story</span>
         </h1>
         <p className="text-sm md:text-base text-[#a1a1a1] max-w-2xl mt-6 leading-relaxed">{heroText}</p>
-      </motion.div>
+      </div>
 
       {/* Brand narrative */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div>
           <span className="text-[#ff0000] text-[10px] font-bold tracking-[0.25em] uppercase block mb-4">Our Heritage</span>
           <h2 className="text-3xl md:text-5xl font-black uppercase leading-tight mb-6">
             Born from Vision,<br />Built for the <span className="text-[#ff0000]">World</span>
@@ -65,15 +54,9 @@ export default function StoryPage() {
               <p key={i}>{p}</p>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
-        >
+        <div className="relative">
           <div className="aspect-[4/5] rounded-[30px] overflow-hidden bg-[#0a0a0a] border border-white/5 flex items-center justify-center">
             <div className="text-center p-10">
               <div className="text-8xl font-black text-[#ff0000]/10 leading-none mb-4">رطب</div>
@@ -82,7 +65,7 @@ export default function StoryPage() {
             </div>
           </div>
           <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#ff0000]/5 rounded-full blur-3xl pointer-events-none" />
-        </motion.div>
+        </div>
       </div>
 
       {/* Milestones timeline */}
@@ -93,18 +76,14 @@ export default function StoryPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {milestones.map((m: any, i: number) => (
-            <motion.div
+            <div
               key={m.year + i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 hover:border-[#ff0000]/20 transition group"
             >
               <span className="text-[#ff0000] text-2xl font-black block mb-2">{m.year}</span>
               <h3 className="text-sm font-bold uppercase tracking-wider mb-2 group-hover:text-[#ff0000] transition">{m.title}</h3>
               <p className="text-xs text-[#a1a1a1] leading-relaxed">{m.desc}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -119,12 +98,8 @@ export default function StoryPage() {
           {values.map((v: any, i: number) => {
             const Icon = valueIcons[v.title] || Award;
             return (
-              <motion.div
+              <div
                 key={v.title + i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 className="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 text-center hover:border-[#ff0000]/20 transition group"
               >
                 <div className="w-12 h-12 rounded-xl bg-[#ff0000]/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-[#ff0000]/20 transition">
@@ -132,7 +107,7 @@ export default function StoryPage() {
                 </div>
                 <h3 className="text-sm font-bold uppercase tracking-wider mb-2">{v.title}</h3>
                 <p className="text-xs text-[#a1a1a1] leading-relaxed">{v.desc}</p>
-              </motion.div>
+              </div>
             );
           })}
         </div>

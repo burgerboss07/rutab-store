@@ -1,7 +1,6 @@
 'use client';
 
 import { useStore, Product, formatPrice } from '../lib/store';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -18,6 +17,24 @@ export default function CartDrawer() {
   const addToCart = useStore((state) => state.addToCart);
 
   const [upsellItem, setUpsellItem] = useState<Product | null>(null);
+  const [exiting, setExiting] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  // Entrance/exit animation
+  useEffect(() => {
+    if (isCartOpen) {
+      setExiting(false);
+      setVisible(true);
+    } else if (visible) {
+      setExiting(true);
+      const timer = setTimeout(() => {
+        setExiting(false);
+        setVisible(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isCartOpen, visible]);
+
   const currency = useStore((state) => state.currency);
 
   // Hydration safety
@@ -63,26 +80,18 @@ export default function CartDrawer() {
     : false;
 
   return (
-    <AnimatePresence>
-      {isCartOpen && (
-        <>
-          {/* Dark Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setCartOpen(false)}
-            className="fixed inset-0 bg-black z-50 cursor-pointer"
-          />
+    visible ? (
+      <>
+        {/* Dark Backdrop */}
+        <div
+          className={`fixed inset-0 bg-black z-50 cursor-pointer transition-opacity duration-300 ${exiting ? 'opacity-0' : 'opacity-70'}`}
+          onClick={() => setCartOpen(false)}
+        />
 
-          {/* Cart Drawer panel */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 z-50 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)]"
-          >
+        {/* Cart Drawer panel */}
+        <div
+          className={`fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 z-50 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${exiting ? 'translate-x-full' : 'translate-x-0'}`}
+        >
             {/* Header */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -239,9 +248,8 @@ export default function CartDrawer() {
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
         </>
-      )}
-    </AnimatePresence>
+      ) : null
   );
 }
