@@ -4,7 +4,6 @@ import { useStore, Product, formatPrice } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { X, Heart, ShoppingBag, Ruler, Check, ChevronDown, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 // Map of product IDs to secondary high-res image details
@@ -197,6 +196,8 @@ export default function ProductDetails() {
   };
 
   const updateSizeQty = (size: string, delta: number) => {
+    const raw = product?.stock_per_size?.[size];
+    const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
     setSizeQuantities(prev => {
       const current = prev[size] || 0;
       const next = current + delta;
@@ -204,6 +205,7 @@ export default function ProductDetails() {
         const { [size]: _, ...rest } = prev;
         return rest;
       }
+      if (next > maxQty) return prev;
       return { ...prev, [size]: next };
     });
   };
@@ -232,16 +234,10 @@ export default function ProductDetails() {
     : ['Black', 'Wash', 'Red'];
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-black/95 flex items-center justify-center p-4 md:p-10">
-        
-        {/* Main Details Panel Container */}
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 50, scale: 0.95 }}
-          transition={{ type: 'spring', damping: 25 }}
-          className="relative w-full max-w-6xl max-h-[90vh] bg-[#0a0a0a] border border-white/10 rounded-[40px] shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col md:grid md:grid-cols-2 min-h-[80vh] md:overflow-visible"
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/95 flex items-center justify-center p-4 md:p-10">
+      
+      {/* Main Details Panel Container */}
+      <div className="relative w-full max-w-6xl max-h-[90vh] bg-[#0a0a0a] border border-white/10 rounded-[40px] shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col md:grid md:grid-cols-2 min-h-[80vh] md:overflow-visible animate-fade-in-up"
         >
           {/* Close Button */}
           <button
@@ -389,8 +385,12 @@ export default function ProductDetails() {
                     <div className="flex gap-2 flex-wrap">
                       {sizes.map((sz) => {
                         const qty = sizeQuantities[sz] || 0;
+                        const maxQty = product?.stock_per_size?.[sz];
+                        const max = maxQty === undefined || maxQty === null ? 99 : Number(maxQty);
+                        const atMax = qty >= max;
                         return (
-                          <div key={sz}
+                          <div key={sz} className="flex flex-col items-center gap-1">
+                          <div
                             className={`flex items-center gap-1 border rounded-xl transition ${
                               qty > 0 ? 'border-[#ff0000] bg-[#ff0000]/5' : 'border-white/10 bg-white/5'
                             }`}
@@ -410,8 +410,17 @@ export default function ProductDetails() {
                             <span className="text-xs font-bold w-5 text-center text-white">{qty}</span>
                             <button
                               onClick={() => { setSelectedSize(sz); updateSizeQty(sz, 1); }}
-                              className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-[10px] text-white hover:bg-white/10 transition cursor-pointer"
+                              disabled={atMax}
+                              className={`w-7 h-7 rounded-full border flex items-center justify-center text-[10px] transition cursor-pointer ${
+                                atMax
+                                  ? 'border-white/5 text-white/20 cursor-not-allowed'
+                                  : 'border-white/10 text-white hover:bg-white/10'
+                              }`}
                             >+</button>
+                          </div>
+                          {max !== undefined && max < 99 && (
+                            <span className="text-[9px] text-[#a1a1a1]">{qty}/{max} left</span>
+                          )}
                           </div>
                         );
                       })}
@@ -493,60 +502,60 @@ export default function ProductDetails() {
               </div>
             </>
           )}
-        </motion.div>
-
-        {/* STREETWEAR SIZING GUIDE MODAL POPUP */}
-        {isSizeGuideOpen && (
-          <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[30px] p-6 space-y-6 shadow-2xl relative">
-              <button
-                onClick={() => setSizeGuideOpen(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="flex items-center gap-3">
-                <Ruler className="w-5 h-5 text-[#ff0000]" />
-                <h3 className="text-xl font-black uppercase tracking-wider">Streetwear Sizing Chart</h3>
-              </div>
-
-              <div className="overflow-x-auto border border-white/5 rounded-2xl">
-                <table className="w-full text-xs text-left text-[#e5e5e5] select-none">
-                  <thead className="bg-white/5 text-[10px] uppercase font-bold tracking-wider text-white border-b border-white/5">
-                    <tr>
-                      <th className="p-3">Size</th>
-                      <th className="p-3">Chest (cm)</th>
-                      <th className="p-3">Length (cm)</th>
-                      <th className="p-3">Sleeve (cm)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {(storeSettings?.sizing_chart?.rows || [
-                      { size: 'S', chest: '118', length: '68', sleeve: '59' },
-                      { size: 'M', chest: '124', length: '71', sleeve: '61' },
-                      { size: 'L', chest: '130', length: '74', sleeve: '63' },
-                      { size: 'XL', chest: '136', length: '77', sleeve: '65' },
-                    ]).map((row: any, idx: number) => (
-                      <tr key={idx}>
-                        <td className="p-3 font-bold">{row.size}</td>
-                        <td className="p-3">{row.chest}</td>
-                        <td className="p-3">{row.length}</td>
-                        <td className="p-3">{row.sleeve}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="text-[10px] text-[#a1a1a1] leading-relaxed">
-                {storeSettings?.sizing_chart?.note || '* Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.'}
-              </p>
-            </div>
-          </div>
-        )}
 
       </div>
-    </AnimatePresence>
+
+      {/* STREETWEAR SIZING GUIDE MODAL POPUP */}
+      {isSizeGuideOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[30px] p-6 space-y-6 shadow-2xl relative">
+            <button
+              onClick={() => setSizeGuideOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <Ruler className="w-5 h-5 text-[#ff0000]" />
+              <h3 className="text-xl font-black uppercase tracking-wider">Streetwear Sizing Chart</h3>
+            </div>
+
+            <div className="overflow-x-auto border border-white/5 rounded-2xl">
+              <table className="w-full text-xs text-left text-[#e5e5e5] select-none">
+                <thead className="bg-white/5 text-[10px] uppercase font-bold tracking-wider text-white border-b border-white/5">
+                  <tr>
+                    <th className="p-3">Size</th>
+                    <th className="p-3">Chest (cm)</th>
+                    <th className="p-3">Length (cm)</th>
+                    <th className="p-3">Sleeve (cm)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {(storeSettings?.sizing_chart?.rows || [
+                    { size: 'S', chest: '118', length: '68', sleeve: '59' },
+                    { size: 'M', chest: '124', length: '71', sleeve: '61' },
+                    { size: 'L', chest: '130', length: '74', sleeve: '63' },
+                    { size: 'XL', chest: '136', length: '77', sleeve: '65' },
+                  ]).map((row: any, idx: number) => (
+                    <tr key={idx}>
+                      <td className="p-3 font-bold">{row.size}</td>
+                      <td className="p-3">{row.chest}</td>
+                      <td className="p-3">{row.length}</td>
+                      <td className="p-3">{row.sleeve}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-[10px] text-[#a1a1a1] leading-relaxed">
+              {storeSettings?.sizing_chart?.note || '* Note: All garments are designed for a relaxed, oversized drape. If you prefer a closer, traditional fit, we recommend ordering one size down.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 }
