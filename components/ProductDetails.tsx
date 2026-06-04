@@ -91,6 +91,10 @@ export default function ProductDetails() {
   const toggleWishlist = useStore((state) => state.toggleWishlist);
   const wishlist = useStore((state) => state.wishlist);
   const storeSettings = useStore((s) => s.storeSettings);
+  const cart = useStore((s) => s.cart);
+
+  const getSizeInCart = (size: string) =>
+    cart.filter((i) => i.id === selectedProductId && i.size === size).reduce((sum, i) => sum + i.quantity, 0);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -172,6 +176,11 @@ export default function ProductDetails() {
     if (!product) return;
     const itemsToAdd = Object.entries(sizeQuantities).filter(([, qty]) => qty > 0);
     if (itemsToAdd.length === 0) {
+      const raw = product?.stock_per_size?.[selectedSize];
+      const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+      const inCart = getSizeInCart(selectedSize);
+      const qty = Math.min(1, Math.max(0, maxQty - inCart));
+      if (qty <= 0) return;
       addToCart({
         id: product.id,
         name: product.name,
@@ -179,9 +188,14 @@ export default function ProductDetails() {
         image_url: product.image_url,
         size: selectedSize,
         color: selectedColor,
-      }, 1);
+      }, qty);
     } else {
       itemsToAdd.forEach(([size, qty]) => {
+        const raw = product?.stock_per_size?.[size];
+        const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+        const inCart = getSizeInCart(size);
+        const capped = Math.min(qty, Math.max(0, maxQty - inCart));
+        if (capped <= 0) return;
         addToCart({
           id: product.id,
           name: product.name,
@@ -189,7 +203,7 @@ export default function ProductDetails() {
           image_url: product.image_url,
           size,
           color: selectedColor,
-        }, qty);
+        }, capped);
       });
     }
     setCartOpen(true);
@@ -198,6 +212,8 @@ export default function ProductDetails() {
   const updateSizeQty = (size: string, delta: number) => {
     const raw = product?.stock_per_size?.[size];
     const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+    const inCart = getSizeInCart(size);
+    const maxAdd = Math.max(0, maxQty - inCart);
     setSizeQuantities(prev => {
       const current = prev[size] || 0;
       const next = current + delta;
@@ -205,7 +221,7 @@ export default function ProductDetails() {
         const { [size]: _, ...rest } = prev;
         return rest;
       }
-      if (next > maxQty) return prev;
+      if (next > maxAdd) return prev;
       return { ...prev, [size]: next };
     });
   };
@@ -387,7 +403,9 @@ export default function ProductDetails() {
                         const qty = sizeQuantities[sz] || 0;
                         const maxQty = product?.stock_per_size?.[sz];
                         const max = maxQty === undefined || maxQty === null ? 99 : Number(maxQty);
-                        const atMax = qty >= max;
+                        const inCart = getSizeInCart(sz);
+                        const remaining = Math.max(0, max - inCart);
+                        const atMax = qty >= remaining;
                         return (
                           <div key={sz} className="flex flex-col items-center gap-1">
                           <div
@@ -419,7 +437,7 @@ export default function ProductDetails() {
                             >+</button>
                           </div>
                           {max !== undefined && max < 99 && (
-                            <span className="text-[9px] text-[#a1a1a1]">{qty}/{max} left</span>
+                            <span className="text-[9px] text-[#a1a1a1]">{qty + inCart}/{max}</span>
                           )}
                           </div>
                         );
