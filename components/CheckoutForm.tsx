@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, Order, OrderItem, formatPrice, KUWAIT_AREAS } from '../lib/store';
 import { getSupabase } from '../lib/supabase';
 import { Check, ShieldCheck, Lock, Loader2, ArrowRight, Copy, AlertCircle, Upload, ChevronDown } from 'lucide-react';
@@ -450,8 +450,9 @@ export default function CheckoutForm() {
     );
   }
 
-  const account = useStore((s) => {
-    const pg = s.storeSettings?.payment_gateways?.[paymentMethod];
+  const storeSettings = useStore((s) => s.storeSettings);
+  const account = useMemo(() => {
+    const pg = storeSettings?.payment_gateways?.[paymentMethod];
     const details = pg?.details?.trim();
     if (!details) return undefined;
     return {
@@ -463,8 +464,8 @@ export default function CheckoutForm() {
           : { label: 'Details', value: parts[0], copyable: true };
       }),
     } as TransferInfo;
-  });
-  const whatsappNumber = useStore((s) => s.storeSettings?.whatsapp) || '96565145466';
+  }, [storeSettings, paymentMethod]);
+  const whatsappNumber = useMemo(() => storeSettings?.whatsapp || '96565145466', [storeSettings?.whatsapp]);
 
   return (
     <div className="pt-24 min-h-screen bg-black text-white px-6 max-w-5xl mx-auto pb-24 grid lg:grid-cols-[1fr_380px] gap-10 items-start">
