@@ -184,34 +184,6 @@ export default function SettingsPanel() {
       { label: 'Dashboard', href: '/admin/dashboard' },
       { label: 'Settings' },
     ]);
-
-    async function loadSettings() {
-      try {
-        const client = getSupabase();
-        const { data } = await client
-          .from('settings')
-          .select('value')
-          .eq('key', 'payment_gateways')
-          .maybeSingle();
-        if (data && data.value) {
-          const val = data.value;
-          // Handle old format (Record<string, boolean>) migration
-          const first = Object.values(val)[0];
-          if (typeof first === 'boolean') {
-            const migrated: Record<string, GatewayConfig> = {};
-            for (const [k, v] of Object.entries(val)) {
-              migrated[k] = { enabled: v as boolean, details: '' };
-            }
-            setGateways(migrated);
-          } else {
-            setGateways(val);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load gateways settings:', e);
-      }
-    }
-    loadSettings();
   }, [setBreadcrumbs]);
 
   const handleSave = async () => {

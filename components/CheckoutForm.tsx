@@ -160,31 +160,23 @@ export default function CheckoutForm() {
   ]);
 
   useEffect(() => {
-    async function loadActiveGateways() {
-      try {
-        const client = getSupabase();
-        const { data } = await client
-          .from('settings')
-          .select('value')
-          .eq('key', 'payment_gateways')
-          .maybeSingle();
-        if (data && data.value) {
-          const loadedOptions = Object.entries(data.value)
-            .filter(([_, enabled]) => enabled === true)
-            .map(([name]) => name as PaymentMethod);
-          if (loadedOptions.length > 0) {
-            setActivePaymentOptions(loadedOptions);
-            // set default payment method to the first active one if current is inactive
-            if (!loadedOptions.includes(paymentMethod)) {
-              setPaymentMethod(loadedOptions[0]);
-            }
-          }
+    const storeSettings = useStore.getState().storeSettings;
+    const pg = storeSettings?.payment_gateways;
+    if (pg && typeof pg === 'object') {
+      const loadedOptions = Object.entries(pg)
+        .filter(([_, config]) => {
+          if (typeof config === 'boolean') return config;
+          if (typeof config === 'object' && config !== null) return (config as any).enabled === true;
+          return false;
+        })
+        .map(([name]) => name as PaymentMethod);
+      if (loadedOptions.length > 0) {
+        setActivePaymentOptions(loadedOptions);
+        if (!loadedOptions.includes(paymentMethod)) {
+          setPaymentMethod(loadedOptions[0]);
         }
-      } catch (err) {
-        console.error('Failed to load active gateways for checkout:', err);
       }
     }
-    loadActiveGateways();
   }, [paymentMethod, syncVersion]);
 
   // Checkout flow control
