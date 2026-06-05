@@ -6,46 +6,6 @@ import { useState, useEffect } from 'react';
 import { X, Heart, ShoppingBag, Ruler, Check, ChevronDown, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 
-// Map of product IDs to secondary high-res image details
-const secondaryImages: Record<string, string[]> = {
-  '550e8400-e29b-41d4-a716-446655440101': [
-    'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=1200',
-    'https://images.unsplash.com/photo-1556821840-4a6f98721c04?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440103': [
-    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=1200',
-    'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440104': [
-    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200',
-    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440105': [
-    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200',
-    'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440106': [
-    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1200',
-    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440107': [
-    'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=1200',
-    'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440108': [
-    'https://images.unsplash.com/photo-1506629905607-d9d6b0b15f1c?q=80&w=1200',
-    'https://images.unsplash.com/photo-1506629905607-d9d6b0b15f1c?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440109': [
-    'https://images.unsplash.com/photo-1521369909029-2afed882baee?q=80&w=1200',
-    'https://images.unsplash.com/photo-1521369909029-2afed882baee?q=80&w=1200'
-  ],
-  '550e8400-e29b-41d4-a716-446655440110': [
-    'https://images.unsplash.com/photo-1576871337622-98d48d4aa53e?q=80&w=1200',
-    'https://images.unsplash.com/photo-1576871337622-98d48d4aa53e?q=80&w=1200'
-  ],
-};
-
 const getColorHex = (colorName: string, colorConfig?: { name: string; hex: string }[]) => {
   // Check admin-defined color config first
   if (colorConfig) {
@@ -163,12 +123,11 @@ export default function ProductDetails() {
   const isWishlisted = product ? wishlist.includes(product.id) : false;
   const priceVal = product ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0;
   
-  // Custom image thumbnails: always include main image first, then DB images, then mock fallbacks
+  // Gallery: main image + DB images only
   const gallery = product 
     ? Array.from(new Set([
         product.image_url, 
         ...(product.images || []), 
-        ...(secondaryImages[product.id] || [])
       ]))
     : [];
 
@@ -176,8 +135,7 @@ export default function ProductDetails() {
     if (!product) return;
     const itemsToAdd = Object.entries(sizeQuantities).filter(([, qty]) => qty > 0);
     if (itemsToAdd.length === 0) {
-      const raw = product?.stock_per_size?.[selectedSize];
-      const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+      const maxQty = getSizeMaxQty(selectedSize);
       const inCart = getSizeInCart(selectedSize);
       const qty = Math.min(1, Math.max(0, maxQty - inCart));
       if (qty <= 0) return;
@@ -191,8 +149,7 @@ export default function ProductDetails() {
       }, qty);
     } else {
       itemsToAdd.forEach(([size, qty]) => {
-        const raw = product?.stock_per_size?.[size];
-        const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+        const maxQty = getSizeMaxQty(size);
         const inCart = getSizeInCart(size);
         const capped = Math.min(qty, Math.max(0, maxQty - inCart));
         if (capped <= 0) return;
@@ -210,8 +167,7 @@ export default function ProductDetails() {
   };
 
   const updateSizeQty = (size: string, delta: number) => {
-    const raw = product?.stock_per_size?.[size];
-    const maxQty = raw === undefined || raw === null ? 99 : Number(raw);
+    const maxQty = getSizeMaxQty(size);
     const inCart = getSizeInCart(size);
     const maxAdd = Math.max(0, maxQty - inCart);
     setSizeQuantities(prev => {
@@ -248,6 +204,20 @@ export default function ProductDetails() {
   const colors = product?.colors && product.colors.length > 0
     ? product.colors
     : ['Black', 'Wash', 'Red'];
+
+  const hasPerSizeStock = product?.stock_per_size && typeof product.stock_per_size === 'object' && Object.keys(product.stock_per_size).length > 0;
+
+  const getSizeMaxQty = (size: string): number => {
+    const raw = product?.stock_per_size?.[size];
+    if (hasPerSizeStock) {
+      return raw === undefined || raw === null ? 0 : Number(raw);
+    }
+    return raw === undefined || raw === null ? (product?.stock ?? 99) : Number(raw);
+  };
+
+  const productOutOfStock = hasPerSizeStock
+    ? sizes.every(sz => getSizeMaxQty(sz) <= 0)
+    : (product?.stock ?? -1) === 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/95 flex items-center justify-center p-4 md:p-10">
@@ -401,8 +371,7 @@ export default function ProductDetails() {
                     <div className="flex gap-2 flex-wrap">
                       {sizes.map((sz) => {
                         const qty = sizeQuantities[sz] || 0;
-                        const maxQty = product?.stock_per_size?.[sz];
-                        const max = maxQty === undefined || maxQty === null ? 99 : Number(maxQty);
+                        const max = getSizeMaxQty(sz);
                         const inCart = getSizeInCart(sz);
                         const remaining = Math.max(0, max - inCart);
                         const atMax = qty >= remaining;
@@ -410,10 +379,10 @@ export default function ProductDetails() {
                           <div key={sz} className="flex flex-col items-center gap-1">
                           <div
                             className={`flex items-center gap-1 border rounded-xl transition ${
-                              qty > 0 ? 'border-[#ff0000] bg-[#ff0000]/5' : 'border-white/10 bg-white/5'
+                              qty > 0 ? 'border-[#ff0000] bg-[#ff0000]/5' : remaining <= 0 ? 'border-white/5 bg-white/5 opacity-40' : 'border-white/10 bg-white/5'
                             }`}
                           >
-                            <span className="text-xs font-bold uppercase px-3 py-2 text-white min-w-[28px] text-center">{sz}</span>
+                            <span className={`text-xs font-bold uppercase px-3 py-2 min-w-[28px] text-center ${remaining <= 0 ? 'text-[#555]' : 'text-white'}`}>{sz}</span>
                             <button
                               onClick={() => {
                                 if (qty <= 1) {
@@ -428,15 +397,15 @@ export default function ProductDetails() {
                             <span className="text-xs font-bold w-5 text-center text-white">{qty}</span>
                             <button
                               onClick={() => { setSelectedSize(sz); updateSizeQty(sz, 1); }}
-                              disabled={atMax}
+                              disabled={remaining <= 0}
                               className={`w-7 h-7 rounded-full border flex items-center justify-center text-[10px] transition cursor-pointer ${
-                                atMax
+                                remaining <= 0
                                   ? 'border-white/5 text-white/20 cursor-not-allowed'
                                   : 'border-white/10 text-white hover:bg-white/10'
                               }`}
                             >+</button>
                           </div>
-                          {max !== undefined && max < 99 && (
+                          {hasPerSizeStock && (
                             <span className="text-[9px] text-[#a1a1a1]">{qty + inCart}/{max}</span>
                           )}
                           </div>
@@ -449,10 +418,15 @@ export default function ProductDetails() {
                   <div className="flex gap-4 pt-4">
                     <button
                       onClick={handleAddToCart}
-                      className="flex-1 py-4 bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer shadow-[0_0_30px_rgba(255,0,0,0.3)]"
+                      disabled={productOutOfStock}
+                      className={`flex-1 py-4 font-bold text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition cursor-pointer ${
+                        productOutOfStock
+                          ? 'bg-[#333] text-[#666] cursor-not-allowed shadow-none'
+                          : 'bg-[#ff0000] text-white hover:bg-[#d60000] shadow-[0_0_30px_rgba(255,0,0,0.3)]'
+                      }`}
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      {Object.values(sizeQuantities).reduce((a, b) => a + b, 0) > 0
+                      {productOutOfStock ? 'Out of Stock' : Object.values(sizeQuantities).reduce((a, b) => a + b, 0) > 0
                         ? `Add (${Object.values(sizeQuantities).reduce((a, b) => a + b, 0)}) to Cart`
                         : 'Add to Cart'}
                     </button>

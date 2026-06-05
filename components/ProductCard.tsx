@@ -18,21 +18,9 @@ interface ProductCardProps {
     stock?: number;
     sizes?: string[];
     colors?: string[];
+    stock_per_size?: Record<string, number> | Record<string, string>;
   };
 }
-
-// Map of product IDs to secondary high-res image details
-const secondaryImages: Record<string, string> = {
-  '550e8400-e29b-41d4-a716-446655440101': 'https://images.unsplash.com/photo-1556821840-4a6f98721c04?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440103': 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440104': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440105': 'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440106': 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440107': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440108': 'https://images.unsplash.com/photo-1506629905607-d9d6b0b15f1c?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440109': 'https://images.unsplash.com/photo-1521369909029-2afed882baee?q=80&w=600',
-  '550e8400-e29b-41d4-a716-446655440110': 'https://images.unsplash.com/photo-1576871337622-98d48d4aa53e?q=80&w=600',
-};
 
 export default function ProductCard({ product }: ProductCardProps) {
   const setSelectedProductId = useStore((state) => state.setSelectedProductId);
@@ -45,7 +33,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [addingSize, setAddingSize] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [secondaryImgError, setSecondaryImgError] = useState(false);
 
   const isWishlisted = wishlist.includes(product.id);
   const priceVal = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
@@ -83,7 +70,14 @@ export default function ProductCard({ product }: ProductCardProps) {
     ? product.sizes
     : (productCategory === 'Caps' ? ['One Size'] : ['S', 'M', 'L', 'XL']);
   const firstColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Black';
-  const secondaryImg = secondaryImages[product.id] || product.image_url || '/placeholder.svg';
+
+  const hasPerSizeStock = product.stock_per_size && typeof product.stock_per_size === 'object' && Object.keys(product.stock_per_size).length > 0;
+  const productOutOfStock = hasPerSizeStock
+    ? sizes.every((sz) => {
+        const raw = product.stock_per_size?.[sz];
+        return raw === undefined || raw === null || Number(raw) <= 0;
+      })
+    : (product.stock ?? -1) === 0;
 
   return (
     <div
@@ -115,25 +109,12 @@ export default function ProductCard({ product }: ProductCardProps) {
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
             className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
-              !imgLoaded ? 'opacity-0' : hovered ? 'scale-105 opacity-0' : 'scale-100 opacity-100'
+              !imgLoaded ? 'opacity-0' : 'scale-100 opacity-100 group-hover:scale-105'
             }`}
             loading="lazy"
           />
         )}
         
-        {/* Secondary Detail Image on Hover */}
-        {!secondaryImgError && !imgError && imgLoaded && product.image_url && (
-          <img
-            src={secondaryImg}
-            alt={`${product.name} detail`}
-            onError={() => setSecondaryImgError(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
-              hovered ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            }`}
-            loading="lazy"
-          />
-        )}
-
         {/* Wishlist Button */}
         <button
           onClick={handleWishlistToggle}
@@ -143,18 +124,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         </button>
 
         {/* Stock Badge Warning */}
-        {(product.stock ?? 0) <= 0 ? (
+        {productOutOfStock ? (
           <span className="absolute top-4 left-4 bg-black/85 text-xs text-stroke-white border border-white/10 uppercase tracking-widest font-heading font-black px-3.5 py-1.5 rounded-full z-10">
             Out of Stock
           </span>
-        ) : (product.stock ?? 0) <= 5 ? (
+        ) : !hasPerSizeStock && (product.stock ?? 0) <= 5 ? (
           <span className="absolute top-4 left-4 bg-[#ff0000] text-white text-[9px] uppercase tracking-widest font-bold px-3 py-1 rounded-full z-10">
             Low Stock
           </span>
         ) : null}
 
         {/* Quick Add Overlay Panel */}
-        {(product.stock ?? 0) > 0 && (
+        {!productOutOfStock && (
           <div className="absolute inset-x-0 bottom-0 p-4 z-10 bg-gradient-to-t from-black via-black/80 to-transparent translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
             {addingSize ? (
               <div className="flex flex-col items-center gap-2">
