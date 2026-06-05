@@ -335,7 +335,35 @@ export default function CheckoutForm() {
 
         if (itemsError) throw itemsError;
 
-        // 3. Log to Zustand Store
+        // 3. Decrement stock_per_size for each ordered item
+        for (const item of cart) {
+          if (!item.size) continue;
+          const { data: product } = await client
+            .from('products')
+            .select('stock_per_size')
+            .eq('id', item.id)
+            .single();
+          if (product?.stock_per_size) {
+            const sps = { ...product.stock_per_size } as Record<string, number>;
+            const raw = sps[item.size];
+            const currentQty = raw === undefined || raw === null ? 0 : Number(raw);
+            if (currentQty > 0) {
+              sps[item.size] = Math.max(0, currentQty - item.quantity);
+              await fetch('/api/admin/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  table: 'products',
+                  action: 'update',
+                  id: item.id,
+                  data: { stock_per_size: sps },
+                }),
+              });
+            }
+          }
+        }
+
+        // 4. Log to Zustand Store
         const localItems: OrderItem[] = cart.map((item) => ({
           id: item.id,
           product_name: item.name,
