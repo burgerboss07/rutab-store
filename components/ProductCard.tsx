@@ -51,19 +51,6 @@ export default function ProductCard({ product }: ProductCardProps) {
     setAddingSize(true);
   };
 
-  const handleSizeSelect = (e: React.MouseEvent, size: string) => {
-    e.stopPropagation();
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: priceVal,
-      image_url: product.image_url || '',
-      size,
-      color: firstColor,
-    }, 1);
-    setAddingSize(false);
-  };
-
   // Determine sizes and colors from DB, with sensible fallbacks
   const productCategory = product.category || product.catalog;
   const sizes = product.sizes && product.sizes.length > 0
@@ -72,12 +59,35 @@ export default function ProductCard({ product }: ProductCardProps) {
   const firstColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Black';
 
   const hasPerSizeStock = product.stock_per_size && typeof product.stock_per_size === 'object' && Object.keys(product.stock_per_size).length > 0;
+  const getSizeStock = (size: string): number => {
+    if (hasPerSizeStock) {
+      const raw = product.stock_per_size?.[size];
+      return raw === undefined || raw === null ? 0 : Number(raw);
+    }
+    return product.stock ?? 99;
+  };
   const productOutOfStock = hasPerSizeStock
-    ? sizes.every((sz) => {
-        const raw = product.stock_per_size?.[sz];
-        return raw === undefined || raw === null || Number(raw) <= 0;
-      })
+    ? sizes.every((sz) => getSizeStock(sz) <= 0)
     : (product.stock ?? -1) === 0;
+
+  const handleSizeSelect = (e: React.MouseEvent, size: string) => {
+    e.stopPropagation();
+    const maxQty = getSizeStock(size);
+    const inCart = useStore.getState().cart
+      .filter((i) => i.id === product.id && i.size === size)
+      .reduce((sum, i) => sum + i.quantity, 0);
+    const qty = Math.min(1, Math.max(0, maxQty - inCart));
+    if (qty <= 0) return;
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: priceVal,
+      image_url: product.image_url || '',
+      size,
+      color: firstColor,
+    }, qty);
+    setAddingSize(false);
+  };
 
   return (
     <div
@@ -143,15 +153,27 @@ export default function ProductCard({ product }: ProductCardProps) {
                   Select Size
                 </span>
                 <div className="flex gap-1.5 flex-wrap justify-center">
-                  {sizes.map((sz) => (
+                  {sizes.map((sz) => {
+                    const maxQty = getSizeStock(sz);
+                    const inCart = useStore.getState().cart
+                      .filter((i) => i.id === product.id && i.size === sz)
+                      .reduce((sum, i) => sum + i.quantity, 0);
+                    const sizeSoldOut = maxQty - inCart <= 0;
+                    return (
                     <button
                       key={sz}
                       onClick={(e) => handleSizeSelect(e, sz)}
-                      className="px-3.5 py-1.5 bg-white text-black hover:bg-[#ff0000] hover:text-white font-bold text-xs rounded-xl transition cursor-pointer border border-white/10"
+                      disabled={sizeSoldOut}
+                      className={`px-3.5 py-1.5 font-bold text-xs rounded-xl transition border ${
+                        sizeSoldOut
+                          ? 'bg-[#222] text-[#555] border-white/5 cursor-not-allowed'
+                          : 'bg-white text-black hover:bg-[#ff0000] hover:text-white cursor-pointer border-white/10'
+                      }`}
                     >
                       {sz}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
