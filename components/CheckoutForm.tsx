@@ -94,6 +94,7 @@ const transferAccounts: Partial<Record<PaymentMethod, TransferInfo>> = {
 const requiresProof: PaymentMethod[] = ['Wamd', 'Binance', 'PayPal', 'Skrill', 'EasyPaisa', 'Meezan Bank'];
 // Methods only available in Kuwait
 const kuwaitOnly: PaymentMethod[] = ['Cash on Delivery', 'Pickup'];
+const defaultTransferInfo: TransferInfo = { fields: [{ label: 'Details', value: '', copyable: true }] };
 
 export default function CheckoutForm() {
   const cart = useStore((state) => state.cart);
@@ -449,7 +450,21 @@ export default function CheckoutForm() {
     );
   }
 
-  const account = transferAccounts[paymentMethod];
+  const account = useStore((s) => {
+    const pg = s.storeSettings?.payment_gateways?.[paymentMethod];
+    const details = pg?.details?.trim();
+    if (!details) return undefined;
+    return {
+      fields: details.split('\n').filter(Boolean).map((line: string) => {
+        const sep: string = line.includes(':') ? ': ' : line.includes('=') ? ' = ' : '\n';
+        const parts = sep === '\n' ? [line] : line.split(sep).map((p) => p.trim());
+        return parts.length > 1
+          ? { label: parts[0], value: parts.slice(1).join(sep), copyable: true }
+          : { label: 'Details', value: parts[0], copyable: true };
+      }),
+    } as TransferInfo;
+  });
+  const whatsappNumber = useStore((s) => s.storeSettings?.whatsapp) || '96565145466';
 
   return (
     <div className="pt-24 min-h-screen bg-black text-white px-6 max-w-5xl mx-auto pb-24 grid lg:grid-cols-[1fr_380px] gap-10 items-start">
@@ -665,7 +680,7 @@ export default function CheckoutForm() {
                       Contact us on WhatsApp for address
                     </p>
                     <a
-                      href="https://wa.me/96565145466"
+                      href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-2 rounded-lg bg-[#25D366] text-white font-bold text-[10px] uppercase tracking-wider hover:bg-[#1dab52] transition cursor-pointer"

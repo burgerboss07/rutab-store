@@ -66,6 +66,7 @@ export default function SettingsPanel() {
   const [fromEmail, setFromEmail] = useState('noreply@rutab.store');
   const [shippingPolicy, setShippingPolicy] = useState('• **Kuwait**: Same day or next day delivery (Free of charge)\n• **GCC Countries**: 2-3 business days via DHL/SMSA (5 KWD)');
   const [returnPolicy, setReturnPolicy] = useState('• Free 14-day local returns in original unworn state');
+  const [whatsapp, setWhatsapp] = useState('96565145466');
   const [socialTitle, setSocialTitle] = useState('Seen in Rutab');
   const [socialSubtitle, setSocialSubtitle] = useState('Community Style');
   const [socialDesc, setSocialDesc] = useState('Tag @RutabStore on Instagram or TikTok for a chance to be featured and receive 10% off your next drop.');
@@ -226,6 +227,8 @@ export default function SettingsPanel() {
           rows: sizingRows,
           note: sizingNote,
         },
+
+        whatsapp,
       };
       const res = await fetch('/api/admin/data', {
         method: 'POST',
@@ -285,6 +288,7 @@ export default function SettingsPanel() {
           }
           if (v.shipping_policy) setShippingPolicy(v.shipping_policy);
           if (v.return_policy) setReturnPolicy(v.return_policy);
+          if (v.whatsapp) setWhatsapp(v.whatsapp);
 
           if (v.fabric_care) setFabricCare(v.fabric_care);
 
@@ -446,6 +450,12 @@ export default function SettingsPanel() {
             <>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Payment Gateways</h3>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">WhatsApp Number</label>
+                <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="e.g. 96565145466"
+                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
               </div>
               <div className="space-y-3">
                 {Object.entries(gateways).map(([name, config]) => (
@@ -901,9 +911,10 @@ function GatewayCard({ name, config, isExpanded, onToggleExpand, onToggle, onUpd
             </div>
             <div className="space-y-1">
               <label className="text-[9px] uppercase font-bold tracking-widest text-[#a1a1a1]">Account Details</label>
-              <input value={config.details} onChange={(e) => onUpdate('details', e.target.value)}
-                placeholder="Gateway details (account email, wallet address, etc.)"
-                className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
+              <textarea value={config.details} onChange={(e) => onUpdate('details', e.target.value)}
+                placeholder="Gateway details (account numbers, emails, wallet addresses...)"
+                rows={3}
+                className="w-full bg-black border border-white/10 rounded-lg py-2 px-3 text-[11px] text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition resize-none" />
             </div>
           </div>
         </div>
