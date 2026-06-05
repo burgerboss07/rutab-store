@@ -1,7 +1,7 @@
 'use client';
 
 import { useStore, Product, formatPrice } from '../lib/store';
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Trash2, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getSupabase } from '../lib/supabase';
@@ -10,10 +10,10 @@ export default function CartDrawer() {
   const isCartOpen = useStore((state) => state.isCartOpen);
   const setCartOpen = useStore((state) => state.setCartOpen);
   const cart = useStore((state) => state.cart);
-  const updateQuantity = useStore((state) => state.updateQuantity);
   const removeFromCart = useStore((state) => state.removeFromCart);
   const getCartTotal = useStore((state) => state.getCartTotal);
   const setActiveView = useStore((state) => state.setActiveView);
+  const setSelectedProductId = useStore((state) => state.setSelectedProductId);
   const addToCart = useStore((state) => state.addToCart);
 
   const [upsellItem, setUpsellItem] = useState<Product | null>(null);
@@ -130,7 +130,10 @@ export default function CartDrawer() {
                       className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 relative group hover:border-[#ff0000]/20 transition-all duration-300"
                     >
                       {/* Product Thumbnail */}
-                      <div className="w-20 h-24 relative rounded-xl border border-white/10 bg-black overflow-hidden shrink-0">
+                      <div
+                        onClick={() => { setSelectedProductId(item.id); setCartOpen(false); }}
+                        className="w-20 h-24 relative rounded-xl border border-white/10 bg-black overflow-hidden shrink-0 cursor-pointer"
+                      >
                         <Image
                           src={item.image_url}
                           alt={item.name}
@@ -144,28 +147,17 @@ export default function CartDrawer() {
                       {/* Item Details */}
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <h3 className="font-bold text-sm text-white uppercase line-clamp-1">{item.name}</h3>
+                          <h3
+                            onClick={() => { setSelectedProductId(item.id); setCartOpen(false); }}
+                            className="font-bold text-sm text-white uppercase line-clamp-1 cursor-pointer hover:text-[#ff0000] transition-colors"
+                          >
+                            {item.name}
+                          </h3>
                           <div className="flex gap-3 text-[10px] text-[#a1a1a1] uppercase mt-1">
                             <span>Size: <strong className="text-white">{item.size}</strong></span>
                             <span>Color: <strong className="text-white">{item.color}</strong></span>
+                            {item.quantity > 1 && <span>Qty: <strong className="text-white">{item.quantity}</strong></span>}
                           </div>
-                        </div>
-
-                        {/* Quantity Adjusters */}
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.size, item.color, item.quantity - 1)}
-                            className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-white hover:bg-[#ff0000] transition cursor-pointer"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-xs font-bold text-white w-4 text-center">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.size, item.color, item.quantity + 1)}
-                            className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-white hover:bg-[#ff0000] transition cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
                         </div>
                       </div>
 
