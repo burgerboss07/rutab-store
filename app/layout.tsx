@@ -1,9 +1,8 @@
 import './globals.css';
 import { Bebas_Neue, Poppins, Inter } from 'next/font/google';
-import LenisProvider from '@/components/LenisProvider';
-import FaviconUpdater from '@/components/FaviconUpdater';
-import SessionProvider from '@/components/SessionProvider';
 import SyncProvider from '@/components/SyncProvider';
+import SessionProvider from '@/components/SessionProvider';
+import FaviconUpdater from '@/components/FaviconUpdater';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import { createClient } from '@supabase/supabase-js';
@@ -72,9 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FaviconUpdater />
         <SessionProvider>
           <SyncProvider>
-            <LenisProvider>
-              {children}
-            </LenisProvider>
+            {children}
           </SyncProvider>
         </SessionProvider>
       </body>

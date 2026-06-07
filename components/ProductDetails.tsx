@@ -298,7 +298,7 @@ export default function ProductDetails() {
               </div>
 
               {/* RIGHT COLUMN: Info, selectors, action buttons */}
-              <div className="p-6 md:p-10 flex flex-col justify-between overflow-y-auto no-scrollbar" style={{ maxHeight: '90vh' }} data-lenis-prevent>
+              <div className="p-6 md:p-10 flex flex-col justify-between overflow-y-auto no-scrollbar" style={{ maxHeight: '90vh' }}>
                 <div className="space-y-6 pt-10 md:pt-0">
                   {/* Category & Title */}
                   <div>

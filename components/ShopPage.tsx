@@ -222,7 +222,7 @@ export default function ShopPage() {
 
       <div className="grid lg:grid-cols-[250px_1fr] gap-10 items-start">
         {/* DESKTOP SIDEBAR FILTERS */}
-        <aside data-lenis-prevent className="hidden lg:block sticky top-28 h-[calc(100vh-7rem)] overflow-y-scroll no-scrollbar" style={{ overscrollBehavior: 'contain' }}>
+        <aside className="hidden lg:block sticky top-28 h-[calc(100vh-7rem)] overflow-y-scroll no-scrollbar" style={{ overscrollBehavior: 'contain' }}>
           <div className="bg-[#0a0a0a] border border-white/5 rounded-[30px] p-6 shadow-xl space-y-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <h3 className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
@@ -408,7 +408,7 @@ export default function ShopPage() {
           />
 
           {/* Drawer content */}
-          <div data-lenis-prevent className="relative w-full max-w-xs bg-[#0a0a0a] border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
+          <div className="relative w-full max-w-xs bg-[#0a0a0a] border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <h3 className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
