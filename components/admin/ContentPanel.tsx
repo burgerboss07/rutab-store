@@ -366,37 +366,25 @@ export default function ContentPanel() {
   };
 
   const handleSaveBulkEdit = async (ids: string[]) => {
-    if (ids.length === 0 || tab !== 'products') return;
-    const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
-    if (priceVal === undefined || isNaN(priceVal)) return;
-    console.log('Bulk edit starting:', { ids: ids, priceVal });
+    if (tab !== 'products' || ids.length === 0) return;
+    const priceNum = Number(bulkEditForm.price);
+    if (!bulkEditForm.price || isNaN(priceNum)) return;
     try {
-      let successCount = 0;
+      let ok = 0, fail = 0;
       for (const id of ids) {
-        const res = await fetch('/api/admin/data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ table: 'products', action: 'update', id, data: { price: priceVal } }),
-        });
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          console.error(`Bulk update failed for product ${id}:`, errBody);
-          continue;
-        }
-        successCount++;
+        const body = JSON.stringify({ table: 'products', action: 'update', id, data: { price: priceNum } });
+        const res = await fetch('/api/admin/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (res.ok) ok++; else { fail++; console.error('Bulk fail', id, await res.text()); }
       }
-      
-      setProducts(prev => prev.map(p => {
-        if (!ids.includes(p.id)) return p;
-        return { ...p, price: priceVal };
-      }));
-      
-      useStore.getState().setToast(`Updated ${successCount} product(s) to ${formatKWD(priceVal)}`);
+      setProducts(prev => prev.map(p => ids.includes(p.id) ? { ...p, price: priceNum } : p));
+      useStore.getState().setProducts(
+        useStore.getState().products.map(p => ids.includes(p.id) ? { ...p, price: priceNum } : p)
+      );
+      useStore.getState().bumpSync();
+      useStore.getState().setToast(`Price set to ${priceNum.toFixed(3)} KWD on ${ok} product(s)` + (fail ? ` (${fail} failed)` : ''));
     } catch (err) {
-      console.error('Error during bulk update:', err);
-      alert('Failed to perform bulk update in Supabase');
+      console.error('Bulk edit error:', err);
     }
-    
     setSelectedRows(new Set());
     setSelectAll(false);
     resetBulkForm();
