@@ -35,13 +35,11 @@ const emptyForm: ProductFormData = {
 };
 
 interface BulkEditFormData {
-  price: string; stock: string; catalog: string; subCatalog: string;
-  sizes: string[]; colors: string[];
+  price: string;
 }
 
 const emptyBulkForm: BulkEditFormData = {
-  price: '', stock: '', catalog: '', subCatalog: '',
-  sizes: [], colors: [],
+  price: '',
 };
 const orderStatuses = ['pending', 'shipped', 'delivered', 'cancelled', 'refunded'];
 
@@ -101,7 +99,6 @@ export default function ContentPanel() {
   ];
 
   const filteredSubCatalogs = catalogsState.find((c) => c.name === form.catalog)?.subCatalogs || [];
-  const bulkFilteredSubCatalogs = catalogsState.find((c) => c.name === bulkEditForm.catalog)?.subCatalogs || [];
 
   const handleAddSize = (sizeName?: string) => {
     const value = (sizeName || sizeEntry).trim();
@@ -370,27 +367,14 @@ export default function ContentPanel() {
 
   const handleSaveBulkEdit = async () => {
     if (selectedRows.size === 0 || tab !== 'products') return;
-    
     const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
-    const stockVal = bulkEditForm.stock ? parseInt(bulkEditForm.stock) : undefined;
-
+    if (priceVal === undefined) return;
     try {
-      const dbUpdates: any = {};
-      if (priceVal !== undefined) dbUpdates.price = priceVal;
-      if (stockVal !== undefined) dbUpdates.stock = stockVal;
-      if (bulkEditForm.catalog) {
-        dbUpdates.category = bulkEditForm.catalog;
-        dbUpdates.category_id = catalogsState.find(c => c.name === bulkEditForm.catalog)?.id || null;
-      }
-      if (bulkEditForm.subCatalog) dbUpdates.subcategory = bulkEditForm.subCatalog;
-      if (bulkEditForm.sizes && bulkEditForm.sizes.length > 0) dbUpdates.sizes = bulkEditForm.sizes;
-      if (bulkEditForm.colors && bulkEditForm.colors.length > 0) dbUpdates.colors = bulkEditForm.colors;
-
       for (const id of selectedRows) {
         const res = await fetch('/api/admin/data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ table: 'products', action: 'update', id, data: dbUpdates }),
+          body: JSON.stringify({ table: 'products', action: 'update', id, data: { price: priceVal } }),
         });
         if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
       }
@@ -401,11 +385,6 @@ export default function ContentPanel() {
         return {
           ...p,
           ...(priceVal !== undefined ? { price: priceVal } : {}),
-          ...(stockVal !== undefined ? { stock: stockVal } : {}),
-          ...(bulkEditForm.catalog ? { catalog: bulkEditForm.catalog } : {}),
-          ...(bulkEditForm.subCatalog ? { subCatalog: bulkEditForm.subCatalog } : {}),
-          ...(bulkEditForm.sizes && bulkEditForm.sizes.length > 0 ? { sizes: bulkEditForm.sizes } : {}),
-          ...(bulkEditForm.colors && bulkEditForm.colors.length > 0 ? { colors: bulkEditForm.colors } : {}),
         };
       }));
     } catch (err) {
@@ -894,72 +873,9 @@ export default function ContentPanel() {
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="flex-1 overflow-y-auto p-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Price (KWD)</label>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Price (KWD)</label>
                   <input value={bulkEditForm.price} onChange={(e) => setBulkEditForm({ ...bulkEditForm, price: e.target.value })} type="number" step="0.001"
                     className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Stock</label>
-                  <input value={bulkEditForm.stock} onChange={(e) => setBulkEditForm({ ...bulkEditForm, stock: e.target.value })} type="number"
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-[#555] focus:outline-none focus:border-[#ff0000]/40 transition" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Catalog</label>
-                  <select value={bulkEditForm.catalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, catalog: e.target.value })}
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    {catalogsState.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sub Catalog</label>
-                  <select value={bulkEditForm.subCatalog} onChange={(e) => setBulkEditForm({ ...bulkEditForm, subCatalog: e.target.value })}
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 px-3.5 text-sm text-white focus:outline-none focus:border-[#ff0000]/40 transition">
-                    <option value="">None</option>
-                    {bulkFilteredSubCatalogs.map((sc) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Sizes</label>
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-black rounded-xl border border-white/10">
-                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'One Size'].map((s) => {
-                      const isSelected = bulkEditForm.sizes.includes(s);
-                      return (
-                        <button key={s} type="button" onClick={() => {
-                          setBulkEditForm((prev) => ({
-                            ...prev,
-                            sizes: isSelected ? prev.sizes.filter((x) => x !== s) : [...prev.sizes, s],
-                          }));
-                        }} className={`px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold tracking-wider transition cursor-pointer ${
-                          isSelected ? 'bg-[#ff0000] text-white' : 'border border-white/10 text-[#a1a1a1] hover:border-white/30'
-                        }`}>{s}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Colors</label>
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-black rounded-xl border border-white/10">
-                    {PRESET_COLORS.map((c) => {
-                      const isSelected = bulkEditForm.colors.includes(c.name);
-                      return (
-                        <button key={c.name} type="button" onClick={() => {
-                          setBulkEditForm((prev) => ({
-                            ...prev,
-                            colors: isSelected ? prev.colors.filter((x) => x !== c.name) : [...prev.colors, c.name],
-                          }));
-                        }} className={`w-6 h-6 rounded-full transition cursor-pointer relative ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-black scale-105' : 'ring-1 ring-white/10 hover:scale-110'}`}
-                          style={{ backgroundColor: c.hex }} title={c.name}>
-                          {isSelected && (
-                            <span className="absolute inset-0 flex items-center justify-center">
-                              <svg viewBox="0 0 10 10" className="w-2 h-2">
-                                <path d="M2 5l2.5 2.5L8 3" stroke={c.hex === '#ffffff' || c.hex === '#fffdd0' || c.hex === '#f5f5dc' ? '#000' : '#fff'} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                              </svg>
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
                 <div className="flex items-center gap-3 pt-2 border-t border-white/10">
                   <button type="button" onClick={resetBulkForm}
