@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
-import { Product, Order } from '@/lib/store';
+import { Product, Order, useStore } from '@/lib/store';
 import { useAdminStore, Catalog } from '@/lib/admin-store';
 import Image from 'next/image';
 import DataTable from './ui/DataTable';
@@ -368,25 +368,30 @@ export default function ContentPanel() {
   const handleSaveBulkEdit = async () => {
     if (selectedRows.size === 0 || tab !== 'products') return;
     const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
-    if (priceVal === undefined) return;
+    if (priceVal === undefined || isNaN(priceVal)) return;
+    const ids = Array.from(selectedRows);
     try {
-      for (const id of selectedRows) {
+      let successCount = 0;
+      for (const id of ids) {
         const res = await fetch('/api/admin/data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ table: 'products', action: 'update', id, data: { price: priceVal } }),
         });
-        if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          console.error(`Bulk update failed for product ${id}:`, errBody);
+          continue;
+        }
+        successCount++;
       }
       
       setProducts(prev => prev.map(p => {
-        if (!selectedRows.has(p.id)) return p;
-        
-        return {
-          ...p,
-          ...(priceVal !== undefined ? { price: priceVal } : {}),
-        };
+        if (!ids.includes(p.id)) return p;
+        return { ...p, price: priceVal };
       }));
+      
+      useStore.getState().setToast(`Updated ${successCount} product(s) to ${formatKWD(priceVal)}`);
     } catch (err) {
       console.error('Error during bulk update:', err);
       alert('Failed to perform bulk update in Supabase');
