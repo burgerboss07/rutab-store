@@ -370,18 +370,18 @@ export default function ContentPanel() {
     const priceNum = Number(bulkEditForm.price);
     if (!bulkEditForm.price || isNaN(priceNum)) return;
     try {
-      let ok = 0, fail = 0;
-      for (const id of ids) {
-        const body = JSON.stringify({ table: 'products', action: 'update', id, data: { price: priceNum } });
-        const res = await fetch('/api/admin/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-        if (res.ok) ok++; else { fail++; console.error('Bulk fail', id, await res.text()); }
-      }
+      const res = await fetch('/api/admin/data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'products', action: 'bulkUpdate', ids, data: { price: priceNum } }),
+      });
+      if (!res.ok) { const err = await res.text(); console.error('Bulk edit failed', err); return; }
+      const json = await res.json();
       setProducts(prev => prev.map(p => ids.includes(p.id) ? { ...p, price: priceNum } : p));
       useStore.getState().setProducts(
         useStore.getState().products.map(p => ids.includes(p.id) ? { ...p, price: priceNum } : p)
       );
       useStore.getState().bumpSync();
-      useStore.getState().setToast(`Price set to ${priceNum.toFixed(3)} KWD on ${ok} product(s)` + (fail ? ` (${fail} failed)` : ''));
+      useStore.getState().setToast(`Price set to ${priceNum.toFixed(3)} KWD on ${json.count} product(s)`);
     } catch (err) {
       console.error('Bulk edit error:', err);
     }

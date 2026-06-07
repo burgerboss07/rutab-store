@@ -76,6 +76,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, data: result });
     }
 
+    // Bulk update multiple rows (same data applied to all matching ids)
+    if (action === 'bulkUpdate') {
+      const { ids } = body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json({ error: 'Missing ids array' }, { status: 400 });
+      }
+      const { data: result, error } = await adminClient
+        .from(table)
+        .update(data)
+        .in('id', ids)
+        .select();
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ success: true, count: result?.length || 0 });
+    }
+
     if (action === 'delete') {
       if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
