@@ -880,21 +880,18 @@ export default function ContentPanel() {
 
 
 
-      {/* Bulk Edit Form */}
-      <AnimatePresence>
-        {bulkEditMode && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-[#111111] border border-white/5 rounded-3xl w-full max-w-md p-6 space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bulk Edit Products</h3>
-                <button type="button" onClick={resetBulkForm}
-                  className="px-3 py-1.5 rounded-xl border border-white/10 text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-              <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="space-y-4">
+      {/* Bulk Edit Form — Popup Modal */}
+      {bulkEditMode && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-[#111111] border border-white/5 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bulk Edit Products</h3>
+              <button type="button" onClick={resetBulkForm}
+                className="w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:border-white/30 transition cursor-pointer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Price (KWD)</label>
                   <input value={bulkEditForm.price} onChange={(e) => setBulkEditForm({ ...bulkEditForm, price: e.target.value })} type="number" step="0.001"
@@ -973,10 +970,9 @@ export default function ContentPanel() {
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Loading */}
       {loading ? (
