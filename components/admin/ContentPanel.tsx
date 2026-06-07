@@ -370,6 +370,7 @@ export default function ContentPanel() {
     const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
     if (priceVal === undefined || isNaN(priceVal)) return;
     const ids = Array.from(selectedRows);
+    console.log('Bulk edit starting:', { ids, priceVal });
     try {
       let successCount = 0;
       for (const id of ids) {
