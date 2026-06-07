@@ -365,12 +365,11 @@ export default function ContentPanel() {
     setBulkEditMode(false);
   };
 
-  const handleSaveBulkEdit = async () => {
-    if (selectedRows.size === 0 || tab !== 'products') return;
+  const handleSaveBulkEdit = async (ids: string[]) => {
+    if (ids.length === 0 || tab !== 'products') return;
     const priceVal = bulkEditForm.price ? parseFloat(bulkEditForm.price) : undefined;
     if (priceVal === undefined || isNaN(priceVal)) return;
-    const ids = Array.from(selectedRows);
-    console.log('Bulk edit starting:', { ids, priceVal });
+    console.log('Bulk edit starting:', { ids: ids, priceVal });
     try {
       let successCount = 0;
       for (const id of ids) {
@@ -877,7 +876,7 @@ export default function ContentPanel() {
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="flex-1 overflow-y-auto p-6 space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(Array.from(selectedRows)); }} className="flex-1 overflow-y-auto p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">New Price (KWD)</label>
                   <input value={bulkEditForm.price} onChange={(e) => setBulkEditForm({ ...bulkEditForm, price: e.target.value })} type="number" step="0.001"
