@@ -880,18 +880,19 @@ export default function ContentPanel() {
 
 
 
-      {/* Bulk Edit Form — Popup Modal */}
+      {/* Bulk Edit — Slide-in Panel */}
       {bulkEditMode && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-white/5 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+        <>
+          <div className="fixed inset-0 z-50 bg-black/60" onClick={resetBulkForm} />
+          <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bulk Edit Products</h3>
               <button type="button" onClick={resetBulkForm}
                 className="w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:border-white/30 transition cursor-pointer">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveBulkEdit(); }} className="flex-1 overflow-y-auto p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-[#a1a1a1]">Price (KWD)</label>
                   <input value={bulkEditForm.price} onChange={(e) => setBulkEditForm({ ...bulkEditForm, price: e.target.value })} type="number" step="0.001"
@@ -960,19 +961,19 @@ export default function ContentPanel() {
                     })}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-3 pt-2 border-t border-white/10">
                   <button type="button" onClick={resetBulkForm}
-                    className="px-4 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                    className="flex-1 py-2.5 border border-white/10 rounded-xl text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                     Cancel
                   </button>
-                  <button type="submit" className="px-6 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+                  <button type="submit" className="flex-1 py-2.5 bg-[#ff0000] hover:bg-[#d60000] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer">
                     <Save className="w-3.5 h-3.5" /> Apply Changes
                   </button>
                 </div>
               </form>
             </div>
-          </div>
-        )}
+        </>
+      )}
 
       {/* Loading */}
       {loading ? (
