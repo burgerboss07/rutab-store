@@ -53,9 +53,27 @@ export default function OrdersPanel() {
       const client = getSupabase();
       const { data, error } = await client
         .from('orders')
-        .select('*')
+        .select('*, order_items(*)')
         .order('created_at', { ascending: false });
-      if (!error) setOrders((data || []) as Order[]);
+      if (!error) {
+        const prods = useStore.getState().products;
+        const mapped = (data || []).map((o: any) => ({
+          ...o,
+          items: (o.order_items || []).map((i: any) => {
+            const prod = prods.find((p: any) => p.id === (i.product_id || i.id));
+            return {
+              id: i.product_id || i.id,
+              product_name: i.product_name || '',
+              price: i.price,
+              quantity: i.quantity,
+              size: i.size || '',
+              color: i.color || '',
+              image_url: prod?.image_url || '',
+            };
+          }),
+        }));
+        setOrders(mapped as Order[]);
+      }
     } catch (err) {
       console.error('Error fetching orders:', err);
     } finally {
@@ -223,6 +241,30 @@ export default function OrdersPanel() {
             )},
             { key: 'id', label: 'Order ID', render: (o: Order) => (
               <span className="font-mono text-[11px] text-white">#{o.id.slice(0, 8)}</span>
+            )},
+            { key: 'items', label: 'Items', render: (o: Order) => (
+              <div className="flex flex-col gap-1.5 min-w-[180px]">
+                {(o.items || []).map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    {item.image_url ? (
+                      <div className="w-8 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-black">
+                        <img src={item.image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-10 rounded-lg bg-black border border-white/10 shrink-0 flex items-center justify-center">
+                        <ShoppingBag className="w-3 h-3 text-[#333]" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold text-white truncate max-w-[160px]">{item.product_name}</p>
+                      <p className="text-[9px] text-[#a1a1a1]">
+                        {item.size && <span className="uppercase">{item.size}</span>}
+                        {item.size && ' · '}x{item.quantity}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )},
             { key: 'total', label: 'Total', render: (o: Order) => (
               <span className="text-xs font-bold text-white">{formatKWD(Number(o.total_price))}</span>

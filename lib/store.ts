@@ -113,6 +113,7 @@ export interface OrderItem {
   quantity: number;
   size: string;
   color: string;
+  image_url?: string;
 }
 
 export interface Order {
