@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
-import { Order } from '@/lib/store';
+import { Order, useStore } from '@/lib/store';
 import { useAdminStore } from '@/lib/admin-store';
 import DataTable from './ui/DataTable';
 import {
@@ -116,7 +116,10 @@ export default function OrdersPanel() {
         body: JSON.stringify({ table: 'orders', action: 'update', id: orderId, data: { status: newStatus } }),
       });
       if (!res.ok) throw new Error((await res.json())?.error || 'Update failed');
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+      const updated = (prev: Order[]) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
+      setOrders(updated);
+      useStore.getState().setOrders(updated(useStore.getState().orders));
+      useStore.getState().bumpSync();
     } catch (err) {
       console.error('Error updating order status:', err);
     }

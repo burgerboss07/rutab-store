@@ -79,7 +79,7 @@ export default function DashboardHome() {
   const setBreadcrumbs = useAdminStore((s) => s.setBreadcrumbs);
   const activities = useAdminStore((s) => s.activities);
 
-  const { currency, setCurrency } = useStore();
+  const { currency, setCurrency, syncVersion } = useStore();
   const formatKWD = (v: number) => formatPrice(v, currency);
 
   const [stats, setStats] = useState({
@@ -96,18 +96,19 @@ export default function DashboardHome() {
   useEffect(() => {
     setBreadcrumbs([{ label: 'Dashboard', href: '/admin/dashboard' }]);
     fetchStats();
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, syncVersion]);
 
   const fetchStats = async () => {
     try {
       const client = getSupabase();
 
-      // 1. Total Revenue & Pending Orders
+      // 1. Total Revenue (exclude cancelled/refunded) & Pending Orders
       const { data: orders } = await client
         .from('orders')
         .select('total_price, status');
       
-      const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_price || 0), 0) || 0;
+      const activeOrders = orders?.filter(o => o.status !== 'cancelled' && o.status !== 'refunded') || [];
+      const totalRevenue = activeOrders.reduce((sum, o) => sum + Number(o.total_price || 0), 0);
       const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
       const totalOrdersCount = orders?.length || 0;
 

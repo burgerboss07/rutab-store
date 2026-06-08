@@ -483,8 +483,21 @@ export default function ContentPanel() {
   };
 
   // ─── Order Status Edit ───
-  const handleOrderStatusChange = (orderId: string, newStatus: string) => {
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+  const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'orders', action: 'update', id: orderId, data: { status: newStatus } }),
+      });
+      if (!res.ok) return;
+      const updated = (prev: Order[]) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
+      setOrders(updated);
+      useStore.getState().setOrders(updated(useStore.getState().orders));
+      useStore.getState().bumpSync();
+    } catch (err) {
+      console.error('Error updating order status:', err);
+    }
     setEditingOrderId(null);
   };
 
