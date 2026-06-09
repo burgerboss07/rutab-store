@@ -295,7 +295,7 @@ export default function ContentPanel() {
             const prod = rawProds.find((p: any) => p.id === (i.product_id || i.id));
             return {
               id: i.product_id || i.id,
-              product_name: i.product_name || '',
+              product_name: i.product_name || prod?.name || 'Unknown Product',
               price: i.price,
               quantity: i.quantity,
               size: i.size || '',
