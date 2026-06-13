@@ -151,6 +151,8 @@ interface StoreState {
   removeFromCart: (id: string, size: string, color: string) => void;
   updateQuantity: (id: string, size: string, color: string, quantity: number) => void;
   clearCart: () => void;
+  orderSuccess: string | null;
+  setOrderSuccess: (id: string | null) => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
 
@@ -262,6 +264,8 @@ export const useStore = create<StoreState>()(
         set({ cart: updated });
       },
       clearCart: () => set({ cart: [] }),
+      orderSuccess: null,
+      setOrderSuccess: (id) => set({ orderSuccess: id }),
       getCartTotal: () => {
         return get().cart.reduce((total, item) => total + item.price * item.quantity, 0);
       },
@@ -381,6 +385,7 @@ export const useStore = create<StoreState>()(
         wishlist: state.wishlist,
         user: state.user,
         orders: state.orders,
+        orderSuccess: state.orderSuccess,
       }),
     }
   )

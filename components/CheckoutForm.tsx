@@ -182,7 +182,8 @@ export default function CheckoutForm() {
 
   // Checkout flow control
   const [isSubmitting, setSubmitting] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const orderSuccess = useStore((s) => s.orderSuccess);
+  const setOrderSuccess = useStore((s) => s.setOrderSuccess);
 
   const subtotal = getCartTotal();
   let discountAmount = 0;
