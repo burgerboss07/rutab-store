@@ -314,6 +314,7 @@ export default function CheckoutForm() {
     try {
       const shippingAddress = `${house}, Street ${street}, Block ${block}, ${area}, Kuwait`;
       const finalPrice = parseFloat(totalAmount.toFixed(3));
+      if (isNaN(finalPrice) || finalPrice <= 0) throw new Error('Invalid total amount: ' + totalAmount);
 
       const client = getSupabase();
 
@@ -426,9 +427,10 @@ export default function CheckoutForm() {
       setOrderSuccess(orderData.id);
       setProofFile(null);
       clearCart();
-    } catch (err) {
-      console.error('Error submitting order to Supabase:', err);
-      alert('An error occurred while placing the order. Please try again.');
+    } catch (err: any) {
+      const msg = err?.message || err?.error_description || err?.error || err?.details || (typeof err === 'string' ? err : JSON.stringify(err));
+      console.error('Order error:', { message: err?.message, details: err?.details, code: err?.code, hint: err?.hint, status: err?.status });
+      alert(msg);
     } finally {
       setSubmitting(false);
     }
