@@ -10,6 +10,7 @@ export async function proxy(request: NextRequest) {
   if (searchParams.has('code')) {
     const url = request.nextUrl.clone();
     url.pathname = pathname === '/' ? '/auth/callback' : pathname;
+    url.search = '';
 
     let response = NextResponse.redirect(url);
     const supabase = createServerClient(
@@ -28,8 +29,11 @@ export async function proxy(request: NextRequest) {
       }
     );
 
-    await supabase.auth.exchangeCodeForSession(searchParams.get('code')!);
-    url.search = '';
+    try {
+      await supabase.auth.exchangeCodeForSession(searchParams.get('code')!);
+    } catch {
+      // Code exchange failed — redirect without code anyway
+    }
     return response;
   }
 
