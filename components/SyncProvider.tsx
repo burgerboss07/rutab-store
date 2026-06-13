@@ -12,16 +12,25 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const supabase = getSupabase();
+    const store = useStore.getState();
 
     // Get current user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
       setAuthReady(true);
+      if (session?.user) {
+        store.setAuthUser(session.user);
+      }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id || null);
+      if (session?.user) {
+        store.setAuthUser(session.user);
+      } else {
+        store.setAuthUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
