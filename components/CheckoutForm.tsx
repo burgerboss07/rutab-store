@@ -105,6 +105,7 @@ export default function CheckoutForm() {
   const user = useStore((state) => state.user);
   const currency = useStore((state) => state.currency);
   const syncVersion = useStore((state) => state.syncVersion);
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
   
   // Promo code states
   const [promoCode, setPromoCode] = useState('');
@@ -406,6 +407,28 @@ export default function CheckoutForm() {
   const formatKWD = (value: number) => {
     return formatPrice(value, currency);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto bg-black text-white flex flex-col items-center">
+        <div className="w-16 h-16 rounded-full bg-[#ff0000]/10 border border-[#ff0000]/30 flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-7 h-7 text-[#ff0000]" />
+        </div>
+        <h2 className="text-3xl font-black mb-4">Sign In to Checkout</h2>
+        <p className="text-[#a1a1a1] mb-8">You need to be signed in to place an order.</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button onClick={() => setActiveView('home')}
+            className="px-8 py-4 rounded-xl border border-white/10 text-white/70 hover:text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer">
+            Back to Store
+          </button>
+          <a href="/auth/login"
+            className="px-8 py-4 rounded-xl bg-[#ff0000] text-white hover:bg-[#d60000] font-bold text-xs uppercase tracking-widest transition cursor-pointer inline-block text-center">
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.length === 0 && !orderSuccess) {
     return (
