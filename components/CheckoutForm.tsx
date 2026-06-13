@@ -106,6 +106,17 @@ export default function CheckoutForm() {
   const currency = useStore((state) => state.currency);
   const syncVersion = useStore((state) => state.syncVersion);
   const isAuthenticated = useStore((state) => state.isAuthenticated);
+  const setAuthUser = useStore((state) => state.setAuthUser);
+
+  // Double-check session directly in case Zustand state hasn't synced
+  const [sessionChecked, setSessionChecked] = useState(false);
+  useEffect(() => {
+    if (isAuthenticated) { setSessionChecked(true); return; }
+    getSupabase().auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setAuthUser(session.user);
+      setSessionChecked(true);
+    });
+  }, [isAuthenticated]);
   
   // Promo code states
   const [promoCode, setPromoCode] = useState('');
@@ -407,6 +418,14 @@ export default function CheckoutForm() {
   const formatKWD = (value: number) => {
     return formatPrice(value, currency);
   };
+
+  if (!sessionChecked) {
+    return (
+      <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto bg-black text-white flex flex-col items-center">
+        <div className="w-8 h-8 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
