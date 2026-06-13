@@ -105,18 +105,18 @@ export default function CheckoutForm() {
   const user = useStore((state) => state.user);
   const currency = useStore((state) => state.currency);
   const syncVersion = useStore((state) => state.syncVersion);
-  const isAuthenticated = useStore((state) => state.isAuthenticated);
-  const setAuthUser = useStore((state) => state.setAuthUser);
 
-  // Double-check session directly in case Zustand state hasn't synced
-  const [sessionChecked, setSessionChecked] = useState(false);
+  const [authOk, setAuthOk] = useState<boolean | null>(null);
   useEffect(() => {
-    if (isAuthenticated) { setSessionChecked(true); return; }
     getSupabase().auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setAuthUser(session.user);
-      setSessionChecked(true);
+      if (session?.user) {
+        useStore.getState().setAuthUser(session.user);
+        setAuthOk(true);
+      } else {
+        setAuthOk(false);
+      }
     });
-  }, [isAuthenticated]);
+  }, []);
   
   // Promo code states
   const [promoCode, setPromoCode] = useState('');
@@ -419,7 +419,7 @@ export default function CheckoutForm() {
     return formatPrice(value, currency);
   };
 
-  if (!sessionChecked) {
+  if (authOk === null) {
     return (
       <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto bg-black text-white flex flex-col items-center">
         <div className="w-8 h-8 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
@@ -427,7 +427,7 @@ export default function CheckoutForm() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!authOk) {
     return (
       <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto bg-black text-white flex flex-col items-center">
         <div className="w-16 h-16 rounded-full bg-[#ff0000]/10 border border-[#ff0000]/30 flex items-center justify-center mx-auto mb-6">
