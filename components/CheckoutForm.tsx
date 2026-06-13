@@ -331,7 +331,7 @@ export default function CheckoutForm() {
 
       // 1. Insert into orders table in Supabase
       const session = (await client.auth.getSession()).data.session;
-      const { data: orderData, error: orderError } = await client
+      const { data: orderRaw, error: orderError } = await client
         .from('orders')
         .insert({
           user_id: session?.user?.id || null,
@@ -341,10 +341,10 @@ export default function CheckoutForm() {
           address: shippingAddress,
           payment_method: paymentMethod,
           payment_proof: proofUrl || null,
-        })
-        .select()
-        .maybeSingle();
+        });
 
+      const orderArr = Array.isArray(orderRaw) ? orderRaw : orderRaw ? [orderRaw] : [];
+      const orderData = orderArr[0] as Record<string, any> | undefined;
       if (orderError || !orderData) throw orderError || new Error('Failed to create order');
 
       // Update coupon usage if code applied
