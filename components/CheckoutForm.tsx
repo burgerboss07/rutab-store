@@ -330,11 +330,13 @@ export default function CheckoutForm() {
         }
       }
 
-      // 1. Insert into orders table in Supabase
+      // 1. Generate UUID client-side and insert into orders table
       const session = (await client.auth.getSession()).data.session;
-      const { data: orderRaw, error: orderError } = await client
+      const orderId = crypto.randomUUID();
+      const { error: orderError } = await client
         .from('orders')
         .insert({
+          id: orderId,
           user_id: session?.user?.id || null,
           phone: phone,
           total_price: finalPrice,
@@ -344,12 +346,10 @@ export default function CheckoutForm() {
           payment_proof: proofUrl || null,
         });
 
-      const orderArr = Array.isArray(orderRaw) ? orderRaw : orderRaw ? [orderRaw] : [];
-      const orderData = orderArr[0] as Record<string, any> | undefined;
-      if (orderError || !orderData) throw orderError || new Error('Failed to create order');
+      if (orderError) throw orderError;
 
       // Update coupon usage if code applied
-      if (orderData && appliedCoupon) {
+      if (appliedCoupon) {
         await client
           .from('coupons')
           .update({ used_count: (appliedCoupon.used_count || 0) + 1 })
@@ -357,9 +357,9 @@ export default function CheckoutForm() {
       }
 
       // 2. Insert order items
-      if (orderData && cart.length > 0) {
+      if (cart.length > 0) {
         const orderItemsPayload = cart.map((item) => ({
-          order_id: orderData.id,
+          order_id: orderId,
           product_id: item.id,
           quantity: item.quantity,
           price: item.price,
@@ -410,7 +410,7 @@ export default function CheckoutForm() {
         }));
 
         const newStoreOrder: Order = {
-          id: orderData.id,
+          id: orderId,
           created_at: new Date().toISOString(),
           total_price: finalPrice,
           status: 'pending',
@@ -424,7 +424,7 @@ export default function CheckoutForm() {
         addOrder(newStoreOrder);
       }
 
-      setOrderSuccess(orderData.id);
+      setOrderSuccess(orderId);
       setProofFile(null);
       clearCart();
     } catch (err: any) {
