@@ -452,7 +452,9 @@ export default function CheckoutForm() {
     );
   }
 
-  if (cart.length === 0 && !orderSuccess) {
+  const cartItems = Array.isArray(cart) ? cart : [];
+
+  if (cartItems.length === 0 && !orderSuccess) {
     return (
       <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto bg-black text-white flex flex-col items-center">
         <h2 className="text-3xl font-black mb-4">YOUR BAG IS EMPTY</h2>
@@ -924,7 +926,7 @@ export default function CheckoutForm() {
         </h3>
 
         <div className="space-y-4 max-h-[300px] overflow-y-auto no-scrollbar">
-          {cart.map((item) => (
+          {cartItems.map((item) => (
             <div key={`${item.id}-${item.size}-${item.color}`} className="flex gap-3">
               <div className="w-12 h-16 relative rounded-xl border border-white/10 bg-black overflow-hidden shrink-0">
                 <Image

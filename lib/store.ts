@@ -268,10 +268,14 @@ export const useStore = create<StoreState>()(
       orderSuccess: null,
       setOrderSuccess: (id) => set({ orderSuccess: id }),
       getCartTotal: () => {
-        return get().cart.reduce((total, item) => total + item.price * item.quantity, 0);
+        const cart = get().cart;
+        if (!Array.isArray(cart)) return 0;
+        return cart.reduce((total, item) => total + item.price * item.quantity, 0);
       },
       getCartItemCount: () => {
-        return get().cart.reduce((count, item) => count + item.quantity, 0);
+        const cart = get().cart;
+        if (!Array.isArray(cart)) return 0;
+        return cart.reduce((count, item) => count + item.quantity, 0);
       },
 
       // Wishlist Actions

@@ -13,6 +13,9 @@ class ErrorBoundary extends Component<{ children: ReactElement }, { hasError: bo
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) {
+    console.error('[Checkout Error]', error.message, error.stack);
+  }
   render() {
     if (this.state.hasError) {
       return (
