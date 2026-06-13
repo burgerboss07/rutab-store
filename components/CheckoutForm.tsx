@@ -199,6 +199,22 @@ export default function CheckoutForm() {
   const [isSubmitting, setSubmitting] = useState(false);
   const orderSuccess = useStore((s) => s.orderSuccess);
   const setOrderSuccess = useStore((s) => s.setOrderSuccess);
+  const storeSettings = useStore((s) => s.storeSettings);
+  const account = useMemo(() => {
+    const pg = storeSettings?.payment_gateways?.[paymentMethod];
+    const details = pg?.details?.trim();
+    if (!details) return undefined;
+    return {
+      fields: details.split('\n').filter(Boolean).map((line: string) => {
+        const sep: string = line.includes(':') ? ': ' : line.includes('=') ? ' = ' : '\n';
+        const parts = sep === '\n' ? [line] : line.split(sep).map((p) => p.trim());
+        return parts.length > 1
+          ? { label: parts[0], value: parts.slice(1).join(sep), copyable: true }
+          : { label: 'Details', value: parts[0], copyable: true };
+      }),
+    } as TransferInfo;
+  }, [storeSettings, paymentMethod]);
+  const whatsappNumber = useMemo(() => storeSettings?.whatsapp || '96565145466', [storeSettings?.whatsapp]);
 
   const subtotal = getCartTotal();
   let discountAmount = 0;
@@ -528,23 +544,6 @@ export default function CheckoutForm() {
       </div>
     );
   }
-
-  const storeSettings = useStore((s) => s.storeSettings);
-  const account = useMemo(() => {
-    const pg = storeSettings?.payment_gateways?.[paymentMethod];
-    const details = pg?.details?.trim();
-    if (!details) return undefined;
-    return {
-      fields: details.split('\n').filter(Boolean).map((line: string) => {
-        const sep: string = line.includes(':') ? ': ' : line.includes('=') ? ' = ' : '\n';
-        const parts = sep === '\n' ? [line] : line.split(sep).map((p) => p.trim());
-        return parts.length > 1
-          ? { label: parts[0], value: parts.slice(1).join(sep), copyable: true }
-          : { label: 'Details', value: parts[0], copyable: true };
-      }),
-    } as TransferInfo;
-  }, [storeSettings, paymentMethod]);
-  const whatsappNumber = useMemo(() => storeSettings?.whatsapp || '96565145466', [storeSettings?.whatsapp]);
 
   return (
     <div className="pt-24 min-h-screen bg-black text-white px-6 max-w-5xl mx-auto pb-24 grid lg:grid-cols-[1fr_380px] gap-10 items-start">
