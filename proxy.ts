@@ -11,6 +11,7 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = pathname === '/' ? '/auth/callback' : pathname;
 
+    let response = NextResponse.redirect(url);
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,7 +19,10 @@ export async function proxy(request: NextRequest) {
         cookies: {
           getAll() { return request.cookies.getAll(); },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(name, value, options);
+            });
           },
         },
       }
@@ -26,7 +30,7 @@ export async function proxy(request: NextRequest) {
 
     await supabase.auth.exchangeCodeForSession(searchParams.get('code')!);
     url.search = '';
-    return NextResponse.redirect(url);
+    return response;
   }
 
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
