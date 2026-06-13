@@ -6,9 +6,26 @@ const protectedPaths = ['/account', '/api/account'];
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  if (pathname === '/' && searchParams.has('code')) {
+  // ─── OAuth callback (PKCE) — exchange code server-side ───
+  if (searchParams.has('code')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/auth/callback';
+    url.pathname = pathname === '/' ? '/auth/callback' : pathname;
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          },
+        },
+      }
+    );
+
+    await supabase.auth.exchangeCodeForSession(searchParams.get('code')!);
+    url.search = '';
     return NextResponse.redirect(url);
   }
 
@@ -51,5 +68,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/account/:path*', '/api/account/:path*'],
+  matcher: ['/', '/auth/callback', '/account/:path*', '/api/account/:path*'],
 };
