@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
+import CheckoutForm from '@/components/CheckoutForm';
 
 class ErrorBoundary extends Component<{ children: ReactElement }, { hasError: boolean }> {
   constructor(props: { children: ReactElement }) {
@@ -36,7 +37,6 @@ const Footer = dynamic(() => import('@/components/Footer'), { ssr: false });
 const ShopPage = dynamic(() => import('@/components/ShopPage'), { ssr: false });
 const ProductDetails = dynamic(() => import('@/components/ProductDetails'), { ssr: false });
 const CartDrawer = dynamic(() => import('@/components/CartDrawer'), { ssr: false });
-const CheckoutForm = dynamic(() => import('@/components/CheckoutForm'), { ssr: false });
 const UserDashboard = dynamic(() => import('@/components/UserDashboard'), { ssr: false });
 const OrdersPage = dynamic(() => import('@/components/OrdersPage'), { ssr: false });
 const OrderTracking = dynamic(() => import('@/components/OrderTracking'), { ssr: false });

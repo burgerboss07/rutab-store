@@ -343,9 +343,9 @@ export default function CheckoutForm() {
           payment_proof: proofUrl || null,
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (orderError) throw orderError;
+      if (orderError || !orderData) throw orderError || new Error('Failed to create order');
 
       // Update coupon usage if code applied
       if (orderData && appliedCoupon) {
@@ -377,7 +377,7 @@ export default function CheckoutForm() {
             .from('products')
             .select('stock_per_size')
             .eq('id', item.id)
-            .single();
+            .maybeSingle();
           if (product?.stock_per_size) {
             const sps = { ...product.stock_per_size } as Record<string, number>;
             const raw = sps[item.size];
