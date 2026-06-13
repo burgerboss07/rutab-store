@@ -125,6 +125,7 @@ export interface Order {
   phone: string;
   payment_method: string;
   payment_proof?: string;
+  user_id?: string;
   items: OrderItem[];
 }
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getSupabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 
 export default function SyncProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -15,6 +16,7 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
     // Get current user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
+      setAuthReady(true);
     });
 
     // Listen for auth changes
@@ -27,8 +29,9 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (initialized) return;
-    setInitialized(true);
+    if (!authReady) return;
+    if (initialized.current) return;
+    initialized.current = true;
 
     const supabase = getSupabase();
 
@@ -36,6 +39,7 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
 
     // —— INITIAL FETCH: populate store with current DB data ———
     (async () => {
+      const userFilter = userId ? { filter: `user_id=eq.${userId}` } : {};
       const [ordersRes, productsRes, bannersRes, catsRes, storeRes, homeRes] = await Promise.all([
         supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
         supabase.from('products').select('*'),
@@ -45,8 +49,11 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
         supabase.from('settings').select('value').eq('key', 'home_settings').maybeSingle(),
       ]);
       if (ordersRes.data) {
-        const mapped = ordersRes.data.map((o: any) => ({
-          id: o.id, created_at: o.created_at, total_price: o.total_price,
+        const userOrders = userId
+          ? ordersRes.data.filter((o: any) => o.user_id === userId)
+          : [];
+        const mapped = userOrders.map((o: any) => ({
+          id: o.id, created_at: o.created_at, total_price: o.total_price, user_id: o.user_id,
           status: o.status, address: o.address || '', phone: o.phone || '',
           payment_method: o.payment_method || '', payment_proof: o.payment_proof || undefined,
           items: (o.order_items || []).map((i: any) => ({
@@ -71,10 +78,12 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
         bump();
         const { data } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
         if (data) {
-          const mapped = data.map((o: any) => ({
+          const userOrders = userId ? data.filter((o: any) => o.user_id === userId) : [];
+          const mapped = userOrders.map((o: any) => ({
             id: o.id,
             created_at: o.created_at,
             total_price: o.total_price,
+            user_id: o.user_id,
             status: o.status,
             address: o.address || '',
             phone: o.phone || '',
@@ -145,7 +154,7 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       supabase.removeChannel(categoriesChannel);
       supabase.removeChannel(settingsChannel);
     };
-  }, [initialized]);
+  }, [authReady]);
 
   // Profile sync (re-subscribes when userId changes)
   useEffect(() => {

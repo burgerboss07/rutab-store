@@ -299,9 +299,12 @@ export default function CheckoutForm() {
       }
 
       // 1. Insert into orders table in Supabase
+      const session = (await client.auth.getSession()).data.session;
       const { data: orderData, error: orderError } = await client
         .from('orders')
         .insert({
+          user_id: session?.user?.id || null,
+          phone: phone,
           total_price: finalPrice,
           status: 'pending',
           address: shippingAddress,
