@@ -1,11 +1,30 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode, Component, type ReactElement } from 'react';
 import dynamic from 'next/dynamic';
 import { useStore } from '@/lib/store';
 import { getSupabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
+
+class ErrorBoundary extends Component<{ children: ReactElement }, { hasError: boolean }> {
+  constructor(props: { children: ReactElement }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="pt-32 pb-24 px-6 text-center max-w-lg mx-auto text-white">
+          <h2 className="text-3xl font-black mb-4">Something went wrong</h2>
+          <p className="text-[#a1a1a1] mb-8">Please try again or refresh the page.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const FeaturedCategories = dynamic(() => import('@/components/FeaturedCategories'), { ssr: false });
 const TrendingSlider = dynamic(() => import('@/components/TrendingSlider'), { ssr: false });
@@ -128,7 +147,7 @@ export default function HomeClient() {
       case 'shop':
         return <ShopPage />;
       case 'checkout':
-        return <CheckoutForm />;
+        return <ErrorBoundary key="checkout"><CheckoutForm /></ErrorBoundary>;
       case 'wishlist':
         return <WishlistPage />;
       case 'orders':

@@ -108,14 +108,17 @@ export default function CheckoutForm() {
 
   const [authOk, setAuthOk] = useState<boolean | null>(null);
   useEffect(() => {
+    let cancelled = false;
     getSupabase().auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
       if (session?.user) {
         useStore.getState().setAuthUser(session.user);
         setAuthOk(true);
       } else {
         setAuthOk(false);
       }
-    });
+    }).catch(() => { if (!cancelled) setAuthOk(false); });
+    return () => { cancelled = true; };
   }, []);
   
   // Promo code states
